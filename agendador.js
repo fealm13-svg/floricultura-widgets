@@ -253,11 +253,12 @@ $(document).ready(function(){
   if(!$('.comprar, a.botao-comprar').length)return;
   buildModal();
   // Intercepta clique no botão de comprar
-  $(document).on('click','a.botao-comprar, .botao-comprar, a[class*="botao-comprar"]',function(e){
+  document.querySelectorAll('a.botao-comprar').forEach(function(btn){btn.addEventListener('click',function(e){
     e.preventDefault();e.stopImmediatePropagation();
     abrirModal();
     return false;
-  });
+  });});
+
 });
 
 })();
