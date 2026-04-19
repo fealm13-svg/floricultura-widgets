@@ -163,9 +163,9 @@ window.fdConfirmar=function(){
   var texto='[Agendamento] '+tipo+': '+ds+' ('+dow+') | Período: '+p.name+' ('+p.time+') | Produto: '+nomeProduto;
   preencherObservacaoCheckout(texto);
   fecharModal();
-  // Continua o fluxo normal de compra
-  var btn=document.querySelector('a.botao-comprar');
-  if(btn)btn.click();
+  // Redireciona para o carrinho
+  var link=document.querySelector('a.botao-comprar');
+  if(link){var u=link.href;window.location.href=u;}
 };
 
 function fecharModal(){document.getElementById('fd-overlay').style.display='none';}
