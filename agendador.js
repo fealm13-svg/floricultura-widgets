@@ -17,6 +17,12 @@ function isDis(date){
   var d=new Date(date.getFullYear(),date.getMonth(),date.getDate());
   if(d<today)return true;
   if(isCesta&&sameDay(d,today))return true;
+  if(sameDay(d,today)){
+    var nowMin=now.getHours()*60+now.getMinutes();
+    var slots=date.getDay()===0||date.getDay()===6?ENT_F:ENT_S;
+    var anyAvail=slots.some(function(p){return nowMin<p.c.h*60+p.c.m;});
+    if(!anyAvail)return true;
+  }
   return false;
 }
 function getSlots(date){
