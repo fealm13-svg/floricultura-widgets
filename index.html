@@ -470,7 +470,7 @@ body{font-family:'Jost',sans-serif;background:#faf7f4;color:var(--txt);min-heigh
               <div class="form-campo full">
                 <label>Fotos (até 4)</label>
                 <div class="fotos-grid" id="fotos-grid"></div>
-                <div class="foto-aviso">Máx. 500KB por foto. Use <a href="https://squoosh.app" target="_blank" style="color:var(--r)">squoosh.app</a> para reduzir.</div>
+                <div class="foto-aviso">Até 4 fotos por produto.</div>
               </div>
               <div class="form-btns">
                 <button class="btn-salvar" onclick="salvarProduto()">Salvar Produto</button>
@@ -614,6 +614,10 @@ var EMAILJS_SERVICE='service_8nyc25b';
 var EMAILJS_TEMPLATE='template_etilbsh';
 var EMAILJS_KEY='LZISdXcU2KCrtNwVd';
 var EMAIL_DESTINO='contato@floriculturadias.com';
+var GH_TOKEN='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';
+var GH_REPO='fealm13-svg/floricultura-widgets';
+var GH_BRANCH='main';
+var GH_PASTA='fotos';
 var PEDIDO_INICIAL=8704;
 
 var MESES=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -1138,6 +1142,32 @@ function editarProd(id){
   document.getElementById('form-wrap').scrollIntoView({behavior:'smooth'});
 }
 
+
+function uploadFotoGitHub(file, callback){
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var base64 = e.target.result.split(',')[1];
+    var ext = file.name.split('.').pop().toLowerCase()||'jpg';
+    var nome = GH_PASTA+'/'+Date.now()+'.'+ext;
+    fetch('https://api.github.com/repos/'+GH_REPO+'/contents/'+nome,{
+      method:'PUT',
+      headers:{'Authorization':'token '+GH_TOKEN,'Content-Type':'application/json'},
+      body:JSON.stringify({message:'Upload foto produto',content:base64,branch:GH_BRANCH})
+    })
+    .then(function(r){return r.json();})
+    .then(function(d){
+      if(d.content&&d.content.download_url){
+        callback(d.content.download_url);
+      } else {
+        alert('Erro ao fazer upload da foto. Tente novamente.');
+        callback(null);
+      }
+    })
+    .catch(function(){alert('Erro de conexão ao fazer upload.');callback(null);});
+  };
+  reader.readAsDataURL(file);
+}
+
 function renderFotoSlots(){
   var grid=document.getElementById('fotos-grid');grid.innerHTML='';
   for(var i=0;i<4;i++){
@@ -1152,7 +1182,7 @@ function renderFotoSlots(){
         var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
         inp.addEventListener('change',function(e){
           var file=e.target.files[0];if(!file)return;
-          if(file.size>500*1024){alert('Foto grande demais: '+Math.round(file.size/1024)+'KB. Máximo 500KB.\nUse squoosh.app para reduzir.');return;}
+
           var rd=new FileReader();rd.onload=function(ev){E.fotoSlots[i]=ev.target.result;renderFotoSlots();};rd.readAsDataURL(file);
         });
         slot.appendChild(inp);
