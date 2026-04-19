@@ -158,7 +158,7 @@ window.fdConfirmar=function(){
   preencherObservacaoCheckout(texto);
   fecharModal();
   // Continua o fluxo normal de compra
-  var btn=document.querySelector('.produto-comprar .btn-comprar, .produto-acao-primaria button, form.produto-comprar [type=submit]');
+  var btn=document.querySelector('a.botao-comprar');
   if(btn)btn.click();
 };
 
@@ -250,10 +250,10 @@ function verificarAgendamentoSalvo(){
 $(document).ready(function(){
   verificarAgendamentoSalvo();
   // Só monta o modal em páginas de produto
-  if(!$('.produto-comprar, .pagina-produto').length)return;
+  if(!$('.comprar, a.botao-comprar').length)return;
   buildModal();
   // Intercepta clique no botão de comprar
-  $(document).on('click','.produto-comprar [type=submit], .produto-comprar .btn-comprar, .produto-acao-primaria [type=submit]',function(e){
+  $(document).on('click','a.botao-comprar, .botao-comprar, a[class*="botao-comprar"]',function(e){
     e.preventDefault();e.stopImmediatePropagation();
     abrirModal();
     return false;
