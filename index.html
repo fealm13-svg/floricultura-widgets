@@ -1051,28 +1051,20 @@ function finalizarPedido(){
   var btn=document.getElementById('btn-fin-el');
   btn.disabled=true;btn.textContent='Enviando...';
 
-  function enviarWpp(){
-    var msg='Olá! Novo pedido recebido:\n\n';
-    msg+='Pedido: #'+E.pedidoNum+'\n';
-    msg+='Produto: '+params.produto+'\n';
-    msg+='Valor: '+params.preco+' ('+params.pagamento+')\n';
-    msg+=params.tipo_entrega+': '+params.data_entrega+'\n';
-    msg+='Período: '+params.periodo+'\n';
-    msg+='CEP: '+params.cep+'\n';
-    if(dest)msg+='Destinatário: '+dest+'\n';
-    if(end)msg+='Endereço: '+end+'\n';
-    if(msgCartao)msg+='Mensagem: '+msgCartao+'\n';
-    msg+='WhatsApp cliente: '+wpp+'\n';
-    window.open('https://wa.me/'+WPP+'?text='+encodeURIComponent(msg),'_blank');
-  }
-
   if(EMAILJS_KEY&&EMAILJS_SERVICE&&EMAILJS_TEMPLATE){
     emailjs.init({publicKey:EMAILJS_KEY});
     emailjs.send(EMAILJS_SERVICE,EMAILJS_TEMPLATE,params)
-      .then(function(){toast('Pedido #'+E.pedidoNum+' enviado com sucesso!');fecharModal();enviarWpp();})
-      .catch(function(err){console.error(err);toast('Erro ao enviar e-mail. Redirecionando para WhatsApp...');fecharModal();enviarWpp();});
+      .then(function(){
+        fecharModal();
+        toast('Pedido #'+E.pedidoNum+' enviado com sucesso! Entraremos em contato em breve.');
+      })
+      .catch(function(err){
+        console.error(err);
+        btn.disabled=false;btn.textContent='Finalizar Pedido';
+        toast('Erro ao enviar pedido. Tente novamente.');
+      });
   } else {
-    fecharModal();enviarWpp();
+    fecharModal();
     toast('Pedido #'+E.pedidoNum+' enviado!');
   }
 }
