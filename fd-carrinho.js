@@ -6,6 +6,12 @@
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
+  // ── Só roda em /carrinho/index ───────────────────────────────────────
+  function isCarrinho(){
+    return window.location.pathname.indexOf("/carrinho")!==-1;
+  }
+  if(!isCarrinho())return;
+
   var PERIODOS_ENTREGA=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,dias:[1,2,3,4,5]},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,dias:[1,2,3,4,5]},
@@ -35,23 +41,12 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
-  function isCarrinho(){
-    return window.location.href.indexOf("/carrinho")!==-1||
-           document.body.classList.contains("pagina-carrinho")||
-           document.querySelector(".carrinho-interno")!==null||
-           document.querySelector(".cart-items")!==null;
-  }
-
   function isBotaoFinalizar(el){
     if(!el||!el.classList)return false;
-    var txt=(el.innerText||el.textContent||"").toLowerCase();
-    return (
-      el.classList.contains("finalizar")||
-      el.classList.contains("btn-finalizar")||
-      el.classList.contains("checkout")||
-      txt.indexOf("finalizar")!==-1||
-      txt.indexOf("checkout")!==-1
-    );
+    // Detecta especificamente o botão de finalizar da Loja Integrada
+    return el.classList.contains("finalizar")||
+           (el.classList.contains("botao")&&el.classList.contains("principal")&&
+            (el.getAttribute("href")||"").indexOf("finalizar")!==-1);
   }
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
@@ -98,15 +93,6 @@
     return periodosParaDia(d).some(function(p){return p.ok;});
   }
 
-  function mascaraTel(el){
-    var v=el.value.replace(/\D/g,"").substring(0,11);
-    if(v.length<=2)v="("+v;
-    else if(v.length<=6)v="("+v.substring(0,2)+") "+v.substring(2);
-    else if(v.length<=10)v="("+v.substring(0,2)+") "+v.substring(2,6)+"-"+v.substring(6);
-    else v="("+v.substring(0,2)+") "+v.substring(2,7)+"-"+v.substring(7);
-    el.value=v;
-  }
-
   function injetarCSS(){
     var css=[
       ".fdc-bloco{background:#f7f7f2;border:1.5px solid #e0d5c0;border-radius:10px;padding:20px 22px;margin:22px 0;font-family:inherit}",
@@ -120,7 +106,6 @@
       ".fdc-campo label small{font-weight:400;color:#888;font-size:11px;display:block;margin-top:1px}",
       ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #e0d5c0;border-radius:7px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}",
       ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
-      ".fdc-campo input.fdc-err,.fdc-campo textarea.fdc-err{border-color:#c0392b;background:#fff8f8}",
       ".fdc-campo textarea{resize:vertical;min-height:90px}",
       ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
       ".fdc-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px}",
@@ -147,8 +132,6 @@
       ".fdc-st{font-size:11px;padding:3px 10px;border-radius:20px;background:#efefef;color:#999}",
       ".fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
       ".fdc-erro-geral{color:#c0392b;font-size:12px;margin-top:8px;display:none;padding:8px 10px;background:#fde8e8;border-radius:6px;border-left:3px solid #c0392b}",
-
-      // Modal
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
       ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -196,31 +179,21 @@
     div.id="fdc-bloco";div.className="fdc-bloco";
     div.innerHTML=[
       '<div class="fdc-titulo">🌸 Dados do Pedido</div>',
-
       '<div class="fdc-toggle">',
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-
       '<div id="fdc-bloco-pres">',
         '<div class="fdc-sec">Presenteado</div>',
-        '<div class="fdc-campo">',
-          '<label>Nome completo de quem vai receber</label>',
-          '<input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcVerificar()"/>',
-        '</div>',
-        '<div class="fdc-campo">',
-          '<label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label>',
-          '<input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcVerificar()"/>',
-        '</div>',
+        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcVerificar()"/></div>',
+        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcVerificar()"/></div>',
       '</div>',
-
       '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
       '<div class="fdc-campo">',
         '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)"></textarea>',
         '<div class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</div>',
       '</div>',
       '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-
       '<div id="fdc-bloco-end">',
         '<div class="fdc-sec">Endereço de Entrega</div>',
         '<div class="fdc-campo"><label>Rua / Avenida</label><input type="text" id="fdc-rua" placeholder="Ex.: Al. Barão de Limeira" oninput="fdcVerificar()"/></div>',
@@ -228,10 +201,9 @@
           '<div class="fdc-campo" style="margin-bottom:0"><label>Número</label><input type="text" id="fdc-num" placeholder="998" oninput="fdcVerificar()"/></div>',
           '<div class="fdc-campo" style="margin-bottom:0"><label>Complemento</label><input type="text" id="fdc-comp" placeholder="Apto, sala..."/></div>',
         '</div>',
-        '<div class="fdc-campo" style="margin-top:12px"><label>Departamento / Ramal<small>Opcional — para endereços comerciais</small></label><input type="text" id="fdc-ramal" placeholder="Ex.: Depto. Financeiro, Ramal 204"/></div>',
+        '<div class="fdc-campo" style="margin-top:12px"><label>Departamento / Ramal<small>Opcional</small></label><input type="text" id="fdc-ramal" placeholder="Ex.: Depto. Financeiro, Ramal 204"/></div>',
         '<div class="fdc-aviso">Consulte a disponibilidade de entrega para o seu bairro e o valor do frete no campo <strong>Calcule o frete</strong> abaixo.</div>',
       '</div>',
-
       '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
@@ -241,13 +213,11 @@
         '</div>',
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
-
       '<div class="fdc-sec">Termos</div>',
       '<div class="fdc-termo-wrap">',
         '<div class="fdc-termo-txt" id="fdc-termo-txt">'+TERMOS.entrega+'</div>',
         '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcVerificar()"/> Estou ciente dos termos</label>',
       '</div>',
-
       '<div class="fdc-status">',
         '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
         '<div class="fdc-status-items">',
@@ -258,7 +228,6 @@
           '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
         '</div>',
       '</div>',
-
       '<div class="fdc-erro-geral" id="fdc-erro-geral">Por favor, preencha todos os campos obrigatórios antes de finalizar.</div>',
     ].join("");
     return div;
@@ -269,10 +238,7 @@
     overlay.id="fdc-overlay";overlay.className="fdc-overlay";
     overlay.innerHTML=[
       '<div class="fdc-modal">',
-        '<div class="fdc-modal-header">',
-          '<h4 id="fdc-modal-titulo">Escolha a data e o período de entrega</h4>',
-          '<button class="fdc-modal-fechar" onclick="fdcFecharModal()">&times;</button>',
-        '</div>',
+        '<div class="fdc-modal-header"><h4 id="fdc-modal-titulo">Escolha a data e o período de entrega</h4><button class="fdc-modal-fechar" onclick="fdcFecharModal()">&times;</button></div>',
         '<div class="fdc-modal-body">',
           '<div class="fdc-cal-lado">',
             '<div class="fdc-cal-nav"><button onclick="fdcMudarMes(-1)">&#8249;</button><span id="fdc-mes-titulo"></span><button onclick="fdcMudarMes(1)">&#8250;</button></div>',
@@ -299,7 +265,6 @@
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
   }
 
-  // ── Funções globais (chamadas pelo onclick inline) ───────────────────
   window.fdcSetTipo=function(t){
     tipo=t;
     document.getElementById("fdc-btn-ent").className="fdc-toggle-btn"+(t==="entrega"?" ativo":"");
@@ -337,27 +302,27 @@
   window.fdcVerificar=function(){
     function st(id,ok){var e=document.getElementById(id);if(e)e.className="fdc-st"+(ok?" ok":"");}
     if(tipo==="entrega"){
-      var nome=document.getElementById("fdc-nome").value.trim();
-      var tel=document.getElementById("fdc-tel").value.trim();
-      var rua=document.getElementById("fdc-rua").value.trim();
-      var num=document.getElementById("fdc-num").value.trim();
-      st("fdc-st-nome",!!nome);
-      st("fdc-st-tel",tel.length>=14);
-      st("fdc-st-end",!!(rua&&num));
+      var nome=(document.getElementById("fdc-nome")||{}).value||"";
+      var tel=(document.getElementById("fdc-tel")||{}).value||"";
+      var rua=(document.getElementById("fdc-rua")||{}).value||"";
+      var num=(document.getElementById("fdc-num")||{}).value||"";
+      st("fdc-st-nome",!!nome.trim());
+      st("fdc-st-tel",tel.trim().length>=14);
+      st("fdc-st-end",!!(rua.trim()&&num.trim()));
     }
     st("fdc-st-ag",agConfirmado);
-    st("fdc-st-termo",document.getElementById("fdc-termo").checked);
+    st("fdc-st-termo",(document.getElementById("fdc-termo")||{}).checked);
   };
 
   function tudo_valido(){
-    var termo=document.getElementById("fdc-termo").checked;
+    var termo=(document.getElementById("fdc-termo")||{}).checked;
     if(!agConfirmado||!termo)return false;
     if(tipo==="entrega"){
-      var nome=document.getElementById("fdc-nome").value.trim();
-      var tel=document.getElementById("fdc-tel").value.trim();
-      var rua=document.getElementById("fdc-rua").value.trim();
-      var num=document.getElementById("fdc-num").value.trim();
-      if(!nome||tel.length<14||!rua||!num)return false;
+      var nome=(document.getElementById("fdc-nome")||{}).value||"";
+      var tel=(document.getElementById("fdc-tel")||{}).value||"";
+      var rua=(document.getElementById("fdc-rua")||{}).value||"";
+      var num=(document.getElementById("fdc-num")||{}).value||"";
+      if(!nome.trim()||tel.trim().length<14||!rua.trim()||!num.trim())return false;
     }
     return true;
   }
@@ -446,8 +411,8 @@
     var p=periodoSel?getPeriodos().find(function(x){return x.id===periodoSel;}):null;
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
-      nome_presenteado:tipo==="entrega"?(document.getElementById("fdc-nome")||{}).value||"(não informado)":"(retirada na loja)",
-      tel_presenteado:tipo==="entrega"?(document.getElementById("fdc-tel")||{}).value||"(não informado)":"(retirada na loja)",
+      nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
+      tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
       endereco:tipo==="entrega"?[
         (document.getElementById("fdc-rua")||{}).value||"",
@@ -460,7 +425,6 @@
       data_hora:new Date().toLocaleString("pt-BR"),
       pagina:window.location.href
     };
-
     function send(){
       emailjs.init({publicKey:CFG.emailjs_public_key});
       emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(function(){
@@ -477,21 +441,17 @@
   }
 
   function init(){
-    if(!isCarrinho())return;
-
     injetarCSS();
     var bloco=montarBloco();
     montarModal();
 
-    // Insere antes da tabela de produtos ou do botão finalizar
+    // Insere antes da tabela de produtos do carrinho
     var alvos=[
       ".carrinho-produtos",
-      ".cart-items",
       "table.carrinho",
-      ".finalizar-compra",
-      ".cart-summary",
-      "#conteudo-carrinho",
-      ".conteiner-principal .conteiner"
+      ".cart-table",
+      "#carrinho-produtos",
+      ".conteudo-carrinho"
     ];
     var ok=false;
     for(var i=0;i<alvos.length;i++){
@@ -499,23 +459,30 @@
       if(a){a.parentNode.insertBefore(bloco,a);ok=true;break;}
     }
     if(!ok){
-      var main=document.querySelector(".conteudo-principal")||document.querySelector("#corpo")||document.body;
-      main.insertBefore(bloco,main.firstChild);
+      var main=document.querySelector(".secao-principal")||document.querySelector("#corpo .conteiner");
+      if(main)main.insertBefore(bloco,main.firstChild);
     }
 
-    // Contador de caracteres
     document.getElementById("fdc-msg").addEventListener("input",function(){
       document.getElementById("fdc-faltam").textContent=500-this.value.length;
     });
 
-    // Intercepta botão finalizar
+    // Intercepta SOMENTE o botão finalizar — verifica href contém "finalizar"
     document.addEventListener("click",function(e){
       var el=e.target;
-      while(el&&el!==document){
-        if(isBotaoFinalizar(el))break;
+      while(el&&el!==document.body){
+        var href=el.getAttribute&&el.getAttribute("href")||"";
+        var txt=(el.innerText||el.textContent||"").toLowerCase().trim();
+        if(href.indexOf("finalizar")!==-1||txt==="finalizar compra"||txt==="✓ finalizar compra"){
+          break;
+        }
         el=el.parentNode;
       }
-      if(!el||el===document||!isBotaoFinalizar(el))return;
+      if(!el||el===document.body)return;
+      var href=el.getAttribute&&el.getAttribute("href")||"";
+      var txt=(el.innerText||el.textContent||"").toLowerCase().trim();
+      if(href.indexOf("finalizar")===-1&&txt!=="finalizar compra"&&txt!=="✓ finalizar compra")return;
+
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
         var err=document.getElementById("fdc-erro-geral");
