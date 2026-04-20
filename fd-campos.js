@@ -32,7 +32,6 @@
     );
     if(!isProd)return;
 
-    // Bloqueia se a URL contiver "adicional"
     if(window.location.href.indexOf("adicional")!==-1)return;
 
     var tentativas=0;
@@ -40,7 +39,8 @@
 
     function tentar(){
       tentativas++;
-      var elNomeProd=document.querySelector(".nome-produto");
+      // Busca especificamente o h1 que é o título principal do produto
+      var elNomeProd=document.querySelector("h1.nome-produto")||document.querySelector(".nome-produto");
       var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
 
       if(!nomeProdutoValido(nomeProd)){
@@ -50,10 +50,8 @@
         return;
       }
 
-      // Bloqueia se nome começar com ADICIONAL
       if(normalizar(nomeProd).indexOf("adicional")===0)return;
 
-      // Verifica palavras-chave
       var nomeNorm=normalizar(nomeProd);
       var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
       if(!exibir)return;
@@ -61,7 +59,7 @@
       montar(nomeProd);
     }
 
-    setTimeout(tentar,500);
+    setTimeout(tentar,300);
   }
 
   function montar(nomeProd){
