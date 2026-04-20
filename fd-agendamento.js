@@ -14,6 +14,8 @@
   var dataSel=null;
   var periodoSel=null;
   var agendamentoConfirmado=false;
+  var mesAtual=new Date().getMonth();
+  var anoAtual=new Date().getFullYear();
 
   function normalizar(t){
     return t.toLowerCase()
@@ -33,8 +35,8 @@
     return true;
   }
 
-  function isCesta(url){
-    return url.indexOf("cesta")!==-1;
+  function isCesta(){
+    return window.location.href.indexOf("cesta")!==-1;
   }
 
   function hoje(){
@@ -48,7 +50,7 @@
   function minData(){
     var agora=new Date();
     var h=agora.getHours()+agora.getMinutes()/60;
-    if(isCesta(window.location.href)){
+    if(isCesta()){
       if(h>=18)return addDias(hoje(),2);
       return addDias(hoje(),1);
     }
@@ -74,17 +76,15 @@
 
     return PERIODOS.map(function(p){
       if(p.dias.indexOf(dow)===-1)return Object.assign({},p,{ok:false});
-
-      // Regra cesta: pedido após 18h → só Manhã II do dia seguinte
-      if(isCesta(window.location.href)&&h>=18&&isAmanha){
+      if(isCesta()&&h>=18&&isAmanha){
         return Object.assign({},p,{ok:p.id==="m2"});
       }
-
       if(isHoje){
-        var tol=p.tolerancia||0;
-        return Object.assign({},p,{ok:(p.ini+tol-h)>=1||( p.tolerancia&&h<=p.ini+p.tolerancia)});
+        if(p.tolerancia){
+          return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
+        }
+        return Object.assign({},p,{ok:(p.ini-h)>=1});
       }
-
       return Object.assign({},p,{ok:true});
     });
   }
@@ -93,7 +93,37 @@
     return diaDisponivel(d)&&periodosParaDia(d).some(function(p){return p.ok;});
   }
 
-  // ── CSS ──────────────────────────────────────────────────────────────
+  function salvarSessao(){
+    if(!dataSel||!periodoSel)return;
+    var p=PERIODOS.find(function(x){return x.id===periodoSel;});
+    try{
+      var dados=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
+      dados.data_entrega=dataSel.toLocaleDateString("pt-BR");
+      dados.periodo_entrega=p.nome+" ("+p.hora+")";
+      dados._dataSel=dataSel.toISOString();
+      dados._periodoSel=periodoSel;
+      sessionStorage.setItem("fd_dados",JSON.stringify(dados));
+    }catch(x){}
+  }
+
+  function restaurarSessao(){
+    try{
+      var dados=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
+      if(dados._dataSel&&dados._periodoSel){
+        var d=new Date(dados._dataSel);
+        // Só restaura se a data ainda for válida
+        if(temPeriodoDisponivel(d)){
+          dataSel=d;
+          periodoSel=dados._periodoSel;
+          mesAtual=d.getMonth();
+          anoAtual=d.getFullYear();
+          return true;
+        }
+      }
+    }catch(x){}
+    return false;
+  }
+
   function injetarCSS(){
     var css=[
       ".fda-bloco{background:#fff5e1;border:1.5px solid #e8c9a0;border-radius:10px;padding:20px 22px 16px;margin:22px 0 18px;font-family:inherit}",
@@ -110,8 +140,6 @@
       ".fda-btn-alterar{background:none;border:1px solid #a91537;color:#a91537;border-radius:6px;padding:6px 14px;font-size:12px;cursor:pointer;margin-top:8px}",
       ".fda-btn-alterar:hover{background:#fff0f3}",
       ".fda-erro{color:#c0392b;font-size:12px;margin-top:6px;display:none}",
-
-      // Modal overlay — usando min-height em vez de fixed
       ".fda-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fda-overlay.ativo{display:flex}",
       ".fda-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -119,7 +147,7 @@
       ".fda-modal-header h4{font-size:15px;font-weight:600;color:#333;margin:0}",
       ".fda-modal-fechar{background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1}",
       ".fda-modal-body{display:grid;grid-template-columns:1fr 1fr;min-height:320px}",
-      "@media(max-width:520px){.fda-modal-body{grid-template-columns:1fr}.fda-modal-body .fda-per-lado{border-left:none;border-top:1px solid #eee}}",
+      "@media(max-width:520px){.fda-modal-body{grid-template-columns:1fr}.fda-per-lado{border-left:none!important;border-top:1px solid #eee}}",
       ".fda-cal-lado{padding:14px}",
       ".fda-per-lado{padding:14px;border-left:1px solid #eee}",
       ".fda-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}",
@@ -154,11 +182,9 @@
     var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);
   }
 
-  // ── HTML do bloco na página ──────────────────────────────────────────
   function montarBloco(){
     var div=document.createElement("div");
-    div.id="fda-bloco";
-    div.className="fda-bloco";
+    div.id="fda-bloco";div.className="fda-bloco";
     div.innerHTML=[
       '<h3>&#128666; Agendar entrega</h3>',
       '<p class="fda-sub">Escolha a data e o período que preferir para receber seu pedido.</p>',
@@ -188,11 +214,9 @@
     return div;
   }
 
-  // ── HTML do modal ────────────────────────────────────────────────────
   function montarModal(){
     var overlay=document.createElement("div");
-    overlay.id="fda-overlay";
-    overlay.className="fda-overlay";
+    overlay.id="fda-overlay";overlay.className="fda-overlay";
     overlay.innerHTML=[
       '<div class="fda-modal" id="fda-modal">',
         '<div class="fda-modal-header">',
@@ -237,10 +261,6 @@
     return overlay;
   }
 
-  // ── Calendário ───────────────────────────────────────────────────────
-  var mesAtual=new Date().getMonth();
-  var anoAtual=new Date().getFullYear();
-
   function renderCal(){
     var titulo=document.getElementById("fda-mes-titulo");
     if(titulo)titulo.textContent=MESES[mesAtual]+" "+anoAtual;
@@ -248,8 +268,7 @@
     if(!grid)return;
     grid.innerHTML="";
     DIASABREV.forEach(function(d){
-      var el=document.createElement("div");
-      el.className="fda-dow";el.textContent=d;grid.appendChild(el);
+      var el=document.createElement("div");el.className="fda-dow";el.textContent=d;grid.appendChild(el);
     });
     var primeiro=new Date(anoAtual,mesAtual,1).getDay();
     for(var i=0;i<primeiro;i++){
@@ -304,18 +323,11 @@
     if(dataSel){
       if(md)md.textContent=dataSel.toLocaleDateString("pt-BR");
       if(mds)mds.textContent=DIASLONG[dataSel.getDay()];
-    }else{
-      if(md)md.textContent="—";
-      if(mds)mds.textContent="";
-    }
+    }else{if(md)md.textContent="—";if(mds)mds.textContent="";}
     if(periodoSel){
       var p=PERIODOS.find(function(x){return x.id===periodoSel;});
-      if(mp)mp.textContent=p.nome;
-      if(mh)mh.textContent=p.hora;
-    }else{
-      if(mp)mp.textContent="—";
-      if(mh)mh.textContent="";
-    }
+      if(mp)mp.textContent=p.nome;if(mh)mh.textContent=p.hora;
+    }else{if(mp)mp.textContent="—";if(mh)mh.textContent="";}
     if(btn)btn.disabled=!(dataSel&&periodoSel);
   }
 
@@ -329,12 +341,8 @@
     if(overlay)overlay.classList.remove("ativo");
   }
 
-  function confirmarAgendamento(){
-    if(!dataSel||!periodoSel)return;
-    agendamentoConfirmado=true;
+  function mostrarResumoNaPagina(){
     var p=PERIODOS.find(function(x){return x.id===periodoSel;});
-
-    // Atualiza resumo na página
     var rd=document.getElementById("fda-res-data");
     var rds=document.getElementById("fda-res-diasem");
     var rp=document.getElementById("fda-res-per");
@@ -343,34 +351,28 @@
     if(rds)rds.textContent=DIASLONG[dataSel.getDay()];
     if(rp)rp.textContent=p.nome;
     if(rh)rh.textContent=p.hora;
-
-    // Mostra resumo, esconde botão agendar
     var btnAbrir=document.getElementById("fda-btn-abrir");
     var resumoBox=document.getElementById("fda-resumo-box");
     var erroAg=document.getElementById("fda-erro-ag");
     if(btnAbrir)btnAbrir.style.display="none";
     if(resumoBox)resumoBox.style.display="block";
     if(erroAg)erroAg.style.display="none";
+  }
 
-    // Salva no sessionStorage
-    try{
-      var ag=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
-      ag.data_entrega=dataSel.toLocaleDateString("pt-BR");
-      ag.periodo_entrega=p.nome+" ("+p.hora+")";
-      sessionStorage.setItem("fd_dados",JSON.stringify(ag));
-    }catch(x){}
-
+  function confirmarAgendamento(){
+    if(!dataSel||!periodoSel)return;
+    agendamentoConfirmado=true;
+    salvarSessao();
+    mostrarResumoNaPagina();
     fecharModal();
   }
 
-  // ── Init ─────────────────────────────────────────────────────────────
   function init(){
     var isProd=document.body&&(
       document.body.classList.contains("pagina-produto")||
       document.querySelector(".produto")!==null
     );
     if(!isProd)return;
-
     if(window.location.href.indexOf("adicional")!==-1)return;
 
     // Não exibe aos sábados e domingos
@@ -395,9 +397,8 @@
   function montar(){
     injetarCSS();
     var bloco=montarBloco();
-    var overlay=montarModal();
+    montarModal();
 
-    // Insere o bloco antes do botão Comprar
     var alvos=[".acoes-produto .comprar",".cep","#formCalcularCep",".acoes-produto",".produto .span6 .principal"];
     var ok=false;
     for(var i=0;i<alvos.length;i++){
@@ -406,7 +407,13 @@
     }
     if(!ok){var p=document.querySelector(".principal")||document.querySelector(".produto");if(p)p.appendChild(bloco);}
 
-    // Eventos
+    // Restaura agendamento anterior se existir
+    var tinha=restaurarSessao();
+    if(tinha){
+      agendamentoConfirmado=true;
+      mostrarResumoNaPagina();
+    }
+
     document.getElementById("fda-btn-abrir").onclick=abrirModal;
     document.getElementById("fda-btn-alterar").onclick=function(){
       agendamentoConfirmado=false;
@@ -426,7 +433,6 @@
     };
     document.getElementById("fda-btn-confirmar").onclick=confirmarAgendamento;
 
-    // Intercepta botão Comprar
     document.addEventListener("click",function(e){
       var el=e.target;
       var isC=(
@@ -442,6 +448,7 @@
         if(erroAg)erroAg.style.display="block";
         document.getElementById("fda-bloco").scrollIntoView({behavior:"smooth",block:"center"});
         abrirModal();
+        return;
       }
     },true);
   }
