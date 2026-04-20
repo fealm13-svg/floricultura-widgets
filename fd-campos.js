@@ -17,8 +17,15 @@
       .replace(/[ç]/g,"c");
   }
 
+  function nomeProdutoValido(nome){
+    if(!nome)return false;
+    if(nome.indexOf("--PRODUTO")!==-1)return false;
+    if(nome==="Produto teste")return false;
+    if(nome.trim()==="")return false;
+    return true;
+  }
+
   function init(){
-    // Só roda em páginas de produto
     var isProd=document.body&&(
       document.body.classList.contains("pagina-produto")||
       document.querySelector(".produto")!==null
@@ -28,19 +35,36 @@
     // Bloqueia se a URL contiver "adicional"
     if(window.location.href.indexOf("adicional")!==-1)return;
 
-    // Verifica nome do produto
-    var elNomeProd=document.querySelector(".nome-produto");
-    var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
-    if(!nomeProd||nomeProd.indexOf("--PRODUTO")!==-1||nomeProd==="Produto teste")return;
+    var tentativas=0;
+    var maxTentativas=20;
 
-    // Bloqueia se o nome começar com ADICIONAL
-    if(normalizar(nomeProd).indexOf("adicional")===0)return;
+    function tentar(){
+      tentativas++;
+      var elNomeProd=document.querySelector(".nome-produto");
+      var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
 
-    // Verifica palavras-chave no nome
-    var nomeNorm=normalizar(nomeProd);
-    var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
-    if(!exibir)return;
+      if(!nomeProdutoValido(nomeProd)){
+        if(tentativas<maxTentativas){
+          setTimeout(tentar,300);
+        }
+        return;
+      }
 
+      // Bloqueia se nome começar com ADICIONAL
+      if(normalizar(nomeProd).indexOf("adicional")===0)return;
+
+      // Verifica palavras-chave
+      var nomeNorm=normalizar(nomeProd);
+      var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
+      if(!exibir)return;
+
+      montar(nomeProd);
+    }
+
+    setTimeout(tentar,500);
+  }
+
+  function montar(nomeProd){
     var css=[
       ".fd{background:#fff5e1;border:1.5px solid #e8c9a0;border-radius:10px;padding:20px 22px 16px;margin:22px 0 18px;font-family:inherit}",
       ".fd h3{color:#a91537;font-size:16px;margin:0 0 12px;font-weight:700}",
@@ -195,11 +219,9 @@
   }
 
   if(document.readyState==="complete"){
-    setTimeout(init,500);
+    init();
   }else{
-    window.addEventListener("load",function(){
-      setTimeout(init,500);
-    });
+    window.addEventListener("load",init);
   }
 
 })();
