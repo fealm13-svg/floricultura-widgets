@@ -25,13 +25,20 @@
     return true;
   }
 
+  function isBotaoComprar(el){
+    // Deve ter botao-comprar E principal E grande — exatamente o botão vermelho
+    if(!el||!el.classList)return false;
+    return el.classList.contains("botao-comprar")&&
+           el.classList.contains("principal")&&
+           el.classList.contains("grande");
+  }
+
   function init(){
     var isProd=document.body&&(
       document.body.classList.contains("pagina-produto")||
       document.querySelector(".produto")!==null
     );
     if(!isProd)return;
-
     if(window.location.href.indexOf("adicional")!==-1)return;
 
     var tentativas=0;
@@ -117,7 +124,6 @@
     }
 
     function dados(){
-      // Lê agendamento salvo pelo fd-agendamento
       var ag={};
       try{ag=JSON.parse(sessionStorage.getItem("fd_dados"))||{};}catch(x){}
       return{
@@ -173,16 +179,15 @@
     }
 
     document.addEventListener("click",function(e){
+      // Sobe na árvore para pegar o elemento clicável real
       var el=e.target;
-      var isC=(
-        el.classList.contains("botao-comprar")||
-        el.classList.contains("btn-comprar")||
-        (el.getAttribute&&(el.getAttribute("href")||"").indexOf("/carrinho/produto/")!==-1)||
-        (el.innerText&&el.innerText.toLowerCase().indexOf("comprar")!==-1)
-      );
-      if(!isC)return;
+      while(el&&el!==document){
+        if(isBotaoComprar(el))break;
+        el=el.parentNode;
+      }
+      if(!el||el===document||!isBotaoComprar(el))return;
+
       var d=dados();
-      // Salva personalização no sessionStorage mantendo agendamento
       try{
         var ag=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
         ag.nome=d.nome;ag.tel=d.tel;ag.msg=d.msg;
