@@ -18,23 +18,23 @@
   }
 
   function init(){
-    // Só roda em páginas de produto
     var isProd=document.body&&(
       document.body.classList.contains("pagina-produto")||
       document.querySelector(".produto")!==null
     );
     if(!isProd)return;
 
-    // Verifica nome do produto — ignora templates não substituídos
     var elNomeProd=document.querySelector(".nome-produto");
     var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
     if(!nomeProd||nomeProd.indexOf("--PRODUTO")!==-1||nomeProd==="Produto teste")return;
+
+    // Bloqueia produtos adicionais
+    if(normalizar(nomeProd).indexOf("adicional")===0)return;
 
     var nomeNorm=normalizar(nomeProd);
     var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
     if(!exibir)return;
 
-    // CSS
     var css=[
       ".fd{background:#fff5e1;border:1.5px solid #e8c9a0;border-radius:10px;padding:20px 22px 16px;margin:22px 0 18px;font-family:inherit}",
       ".fd h3{color:#a91537;font-size:16px;margin:0 0 12px;font-weight:700}",
@@ -53,7 +53,6 @@
     s.innerHTML=css;
     document.head.appendChild(s);
 
-    // Recupera dados salvos anteriormente
     var salvo={};
     try{salvo=JSON.parse(sessionStorage.getItem("fd_dados"))||{};}catch(x){}
 
@@ -189,7 +188,6 @@
     },true);
   }
 
-  // Aguarda a página carregar completamente antes de executar
   if(document.readyState==="complete"){
     setTimeout(init,500);
   }else{
