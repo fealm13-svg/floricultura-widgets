@@ -18,19 +18,25 @@
   }
 
   function init(){
+    // Só roda em páginas de produto
     var isProd=document.body&&(
       document.body.classList.contains("pagina-produto")||
       document.querySelector(".produto")!==null
     );
     if(!isProd)return;
 
+    // Bloqueia se a URL contiver "adicional"
+    if(window.location.href.indexOf("adicional")!==-1)return;
+
+    // Verifica nome do produto
     var elNomeProd=document.querySelector(".nome-produto");
     var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
     if(!nomeProd||nomeProd.indexOf("--PRODUTO")!==-1||nomeProd==="Produto teste")return;
 
-    // Bloqueia produtos adicionais
+    // Bloqueia se o nome começar com ADICIONAL
     if(normalizar(nomeProd).indexOf("adicional")===0)return;
 
+    // Verifica palavras-chave no nome
     var nomeNorm=normalizar(nomeProd);
     var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
     if(!exibir)return;
