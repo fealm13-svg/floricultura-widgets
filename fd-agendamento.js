@@ -35,6 +35,13 @@
     return true;
   }
 
+  function isBotaoComprar(el){
+    if(!el||!el.classList)return false;
+    return el.classList.contains("botao-comprar")&&
+           el.classList.contains("principal")&&
+           el.classList.contains("grande");
+  }
+
   function isCesta(){
     return window.location.href.indexOf("cesta")!==-1;
   }
@@ -111,7 +118,6 @@
       var dados=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
       if(dados._dataSel&&dados._periodoSel){
         var d=new Date(dados._dataSel);
-        // Só restaura se a data ainda for válida
         if(temPeriodoDisponivel(d)){
           dataSel=d;
           periodoSel=dados._periodoSel;
@@ -193,20 +199,10 @@
       '<div id="fda-resumo-box" style="display:none">',
         '<div class="fda-resumo">',
           '<div class="fda-resumo-grid">',
-            '<div class="fda-resumo-item">',
-              '<label>&#128197; Data escolhida</label>',
-              '<strong id="fda-res-data">—</strong>',
-              '<span id="fda-res-diasem"></span>',
-            '</div>',
-            '<div class="fda-resumo-item">',
-              '<label>&#128336; Período escolhido</label>',
-              '<strong id="fda-res-per">—</strong>',
-              '<span id="fda-res-hora"></span>',
-            '</div>',
+            '<div class="fda-resumo-item"><label>&#128197; Data escolhida</label><strong id="fda-res-data">—</strong><span id="fda-res-diasem"></span></div>',
+            '<div class="fda-resumo-item"><label>&#128336; Período escolhido</label><strong id="fda-res-per">—</strong><span id="fda-res-hora"></span></div>',
           '</div>',
-          '<div class="fda-aviso-frete">',
-            'Consulte a disponibilidade de entrega para o seu bairro e o valor do frete no campo <strong>Calcule o frete</strong> abaixo.',
-          '</div>',
+          '<div class="fda-aviso-frete">Consulte a disponibilidade de entrega para o seu bairro e o valor do frete no campo <strong>Calcule o frete</strong> abaixo.</div>',
           '<button class="fda-btn-alterar" id="fda-btn-alterar">Alterar agendamento</button>',
         '</div>',
       '</div>'
@@ -219,17 +215,10 @@
     overlay.id="fda-overlay";overlay.className="fda-overlay";
     overlay.innerHTML=[
       '<div class="fda-modal" id="fda-modal">',
-        '<div class="fda-modal-header">',
-          '<h4>Escolha a data e o período de entrega</h4>',
-          '<button class="fda-modal-fechar" id="fda-fechar">&times;</button>',
-        '</div>',
+        '<div class="fda-modal-header"><h4>Escolha a data e o período de entrega</h4><button class="fda-modal-fechar" id="fda-fechar">&times;</button></div>',
         '<div class="fda-modal-body">',
           '<div class="fda-cal-lado">',
-            '<div class="fda-cal-nav">',
-              '<button id="fda-mes-ant">&#8249;</button>',
-              '<span id="fda-mes-titulo"></span>',
-              '<button id="fda-mes-prox">&#8250;</button>',
-            '</div>',
+            '<div class="fda-cal-nav"><button id="fda-mes-ant">&#8249;</button><span id="fda-mes-titulo"></span><button id="fda-mes-prox">&#8250;</button></div>',
             '<div class="fda-cal-grid" id="fda-cal-grid"></div>',
             '<div class="fda-legenda">',
               '<div class="fda-leg"><div class="fda-leg-dot" style="background:#a91537"></div>Selecionado</div>',
@@ -243,16 +232,8 @@
           '</div>',
         '</div>',
         '<div class="fda-modal-resumo">',
-          '<div class="fda-modal-res-item">',
-            '<label>&#128197; Data escolhida</label>',
-            '<strong id="fda-modal-data">—</strong>',
-            '<small id="fda-modal-diasem"></small>',
-          '</div>',
-          '<div class="fda-modal-res-item">',
-            '<label>&#128336; Período escolhido</label>',
-            '<strong id="fda-modal-per">—</strong>',
-            '<small id="fda-modal-hora"></small>',
-          '</div>',
+          '<div class="fda-modal-res-item"><label>&#128197; Data escolhida</label><strong id="fda-modal-data">—</strong><small id="fda-modal-diasem"></small></div>',
+          '<div class="fda-modal-res-item"><label>&#128336; Período escolhido</label><strong id="fda-modal-per">—</strong><small id="fda-modal-hora"></small></div>',
         '</div>',
         '<button class="fda-btn-confirmar" id="fda-btn-confirmar" disabled>Confirmar</button>',
       '</div>'
@@ -320,14 +301,10 @@
     var mp=document.getElementById("fda-modal-per");
     var mh=document.getElementById("fda-modal-hora");
     var btn=document.getElementById("fda-btn-confirmar");
-    if(dataSel){
-      if(md)md.textContent=dataSel.toLocaleDateString("pt-BR");
-      if(mds)mds.textContent=DIASLONG[dataSel.getDay()];
-    }else{if(md)md.textContent="—";if(mds)mds.textContent="";}
-    if(periodoSel){
-      var p=PERIODOS.find(function(x){return x.id===periodoSel;});
-      if(mp)mp.textContent=p.nome;if(mh)mh.textContent=p.hora;
-    }else{if(mp)mp.textContent="—";if(mh)mh.textContent="";}
+    if(dataSel){if(md)md.textContent=dataSel.toLocaleDateString("pt-BR");if(mds)mds.textContent=DIASLONG[dataSel.getDay()];}
+    else{if(md)md.textContent="—";if(mds)mds.textContent="";}
+    if(periodoSel){var p=PERIODOS.find(function(x){return x.id===periodoSel;});if(mp)mp.textContent=p.nome;if(mh)mh.textContent=p.hora;}
+    else{if(mp)mp.textContent="—";if(mh)mh.textContent="";}
     if(btn)btn.disabled=!(dataSel&&periodoSel);
   }
 
@@ -375,7 +352,6 @@
     if(!isProd)return;
     if(window.location.href.indexOf("adicional")!==-1)return;
 
-    // Não exibe aos sábados e domingos
     var dow=new Date().getDay();
     if(dow===0||dow===6)return;
 
@@ -407,12 +383,8 @@
     }
     if(!ok){var p=document.querySelector(".principal")||document.querySelector(".produto");if(p)p.appendChild(bloco);}
 
-    // Restaura agendamento anterior se existir
     var tinha=restaurarSessao();
-    if(tinha){
-      agendamentoConfirmado=true;
-      mostrarResumoNaPagina();
-    }
+    if(tinha){agendamentoConfirmado=true;mostrarResumoNaPagina();}
 
     document.getElementById("fda-btn-abrir").onclick=abrirModal;
     document.getElementById("fda-btn-alterar").onclick=function(){
@@ -425,30 +397,23 @@
     };
     document.getElementById("fda-fechar").onclick=fecharModal;
     document.getElementById("fda-overlay").onclick=function(e){if(e.target===this)fecharModal();};
-    document.getElementById("fda-mes-ant").onclick=function(){
-      mesAtual--;if(mesAtual<0){mesAtual=11;anoAtual--;}renderCal();
-    };
-    document.getElementById("fda-mes-prox").onclick=function(){
-      mesAtual++;if(mesAtual>11){mesAtual=0;anoAtual++;}renderCal();
-    };
+    document.getElementById("fda-mes-ant").onclick=function(){mesAtual--;if(mesAtual<0){mesAtual=11;anoAtual--;}renderCal();};
+    document.getElementById("fda-mes-prox").onclick=function(){mesAtual++;if(mesAtual>11){mesAtual=0;anoAtual++;}renderCal();};
     document.getElementById("fda-btn-confirmar").onclick=confirmarAgendamento;
 
     document.addEventListener("click",function(e){
       var el=e.target;
-      var isC=(
-        el.classList.contains("botao-comprar")||
-        el.classList.contains("btn-comprar")||
-        (el.getAttribute&&(el.getAttribute("href")||"").indexOf("/carrinho/produto/")!==-1)||
-        (el.innerText&&el.innerText.toLowerCase().indexOf("comprar")!==-1)
-      );
-      if(!isC)return;
+      while(el&&el!==document){
+        if(isBotaoComprar(el))break;
+        el=el.parentNode;
+      }
+      if(!el||el===document||!isBotaoComprar(el))return;
       if(!agendamentoConfirmado){
         e.preventDefault();e.stopPropagation();
         var erroAg=document.getElementById("fda-erro-ag");
         if(erroAg)erroAg.style.display="block";
         document.getElementById("fda-bloco").scrollIntoView({behavior:"smooth",block:"center"});
         abrirModal();
-        return;
       }
     },true);
   }
