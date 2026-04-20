@@ -3,53 +3,80 @@
     emailjs_service_id:"service_8nyc25b",
     emailjs_template_id:"template_jaeoc5u",
     emailjs_public_key:"LZISdXcU2KCrtNwVd",
-    limite:320
+    limite:320,
+    palavras:["buque","buquê","kit","cesta","arranjo","orquidea","orquídea"]
   };
 
+  // Só roda em páginas de produto
   var isProd=document.body&&(
     document.body.classList.contains("pagina-produto")||
     document.querySelector(".produto")!==null
   );
   if(!isProd)return;
 
+  // Verifica se o nome do produto contém alguma palavra-chave
+  function normalizar(t){
+    return t.toLowerCase()
+      .replace(/[áàãâä]/g,"a")
+      .replace(/[éèêë]/g,"e")
+      .replace(/[íìîï]/g,"i")
+      .replace(/[óòõôö]/g,"o")
+      .replace(/[úùûü]/g,"u")
+      .replace(/[ç]/g,"c");
+  }
+
+  var elNomeProd=document.querySelector(".nome-produto");
+  var nomeProd=elNomeProd?elNomeProd.innerText||elNomeProd.textContent:"";
+  var nomeNorm=normalizar(nomeProd);
+  var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
+  if(!exibir)return;
+
+  // CSS
   var css=[
     ".fd{background:#fff5e1;border:1.5px solid #e8c9a0;border-radius:10px;padding:20px 22px 16px;margin:22px 0 18px;font-family:inherit}",
-    ".fd h3{color:#a91537;font-size:16px;margin:0 0 4px;font-weight:700}",
-    ".fd .fds{color:#555;font-size:13px;margin:0 0 14px;line-height:1.5}",
+    ".fd h3{color:#a91537;font-size:16px;margin:0 0 12px;font-weight:700}",
     ".fdc{margin-bottom:14px}",
     ".fdc label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:5px}",
     ".fdc label small{font-weight:400;color:#888;font-size:11px;display:block;margin-top:2px}",
     ".fdc input,.fdc textarea{width:100%;box-sizing:border-box;border:1.5px solid #e8c9a0;border-radius:7px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}",
     ".fdc input:focus,.fdc textarea:focus{border-color:#a91537}",
+    ".fdc input.fd-erro,.fdc textarea.fd-erro{border-color:#c0392b;background:#fff8f8}",
     ".fdc textarea{resize:vertical;min-height:110px}",
     ".fdct{text-align:right;font-size:11px;color:#aaa;margin-top:3px}",
-    ".fdae{background:#fff8e1;border-left:3px solid #f0a500;color:#7a5200;font-size:12px;padding:6px 10px;border-radius:0 5px 5px 0;margin-top:5px;display:none}",
-    ".fdr{font-size:11px;color:#999;margin-top:10px;text-align:center;line-height:1.5}",
-    ".fdr strong{color:#95a37b}"
+    ".fd-msg-erro{color:#c0392b;font-size:12px;margin-top:4px;display:none}",
+    ".fdae{background:#fff8e1;border-left:3px solid #f0a500;color:#7a5200;font-size:12px;padding:6px 10px;border-radius:0 5px 5px 0;margin-top:5px;display:none}"
   ].join("");
   var s=document.createElement("style");
   s.innerHTML=css;
   document.head.appendChild(s);
 
+  // Recupera dados salvos anteriormente
+  var salvo={};
+  try{salvo=JSON.parse(sessionStorage.getItem("fd_dados"))||{};}catch(x){}
+
   var html=[
     '<div class="fd" id="fd-bloco">',
     '<h3>&#128140; Personalizar meu pedido</h3>',
-    '<p class="fds">Preencha os dados abaixo para personalizarmos seu presente com carinho.</p>',
+
     '<div class="fdc">',
     '<label>Nome de quem vai receber o presente</label>',
-    '<input type="text" id="fd-nome" placeholder="Ex.: Maria da Silva" maxlength="80"/>',
+    '<input type="text" id="fd-nome" placeholder="Ex.: Maria da Silva" maxlength="80" value="'+(salvo.nome||"")+'"/>',
+    '<div class="fd-msg-erro" id="fd-erro-nome">Por favor, informe o nome de quem vai receber.</div>',
     '</div>',
+
     '<div class="fdc">',
-    '<label>Telefone de quem vai receber<small>Opcional — só usamos se não conseguirmos falar com você</small></label>',
-    '<input type="tel" id="fd-tel" placeholder="Ex.: (11) 98765-4321" maxlength="20"/>',
+    '<label>Telefone de quem vai receber<small>Só usamos se não conseguirmos falar com você</small></label>',
+    '<input type="tel" id="fd-tel" placeholder="Ex.: (11) 98765-4321" maxlength="20" value="'+(salvo.tel||"")+'"/>',
+    '<div class="fd-msg-erro" id="fd-erro-tel">Por favor, informe o telefone de quem vai receber.</div>',
     '</div>',
+
     '<div class="fdc">',
     '<label>Mensagem para o cartãozinho<small>Até 8 linhas, sem emojis</small></label>',
-    '<textarea id="fd-msg" placeholder="Digite aqui sua mensagem de coração..." maxlength="'+CFG.limite+'"></textarea>',
+    '<textarea id="fd-msg" placeholder="Digite aqui sua mensagem de coração..." maxlength="'+CFG.limite+'">'+(salvo.msg||"")+'</textarea>',
     '<div class="fdae" id="fd-ae">Por favor, remova os emojis. Nossos cartões são escritos à mão e emojis não ficam legíveis.</div>',
-    '<div class="fdct"><span id="fd-cc">0</span>/'+CFG.limite+' caracteres</div>',
+    '<div class="fdct"><span id="fd-cc">'+(salvo.msg?salvo.msg.length:0)+'</span>/'+CFG.limite+' caracteres</div>',
     '</div>',
-    '<p class="fdr"><strong>Floricultura Dias</strong> — Seus dados são usados somente para preparar e entregar seu pedido com carinho.</p>',
+
     '</div>'
   ].join("");
 
@@ -80,10 +107,43 @@
       nome:(document.getElementById("fd-nome")||{}).value||"",
       tel:(document.getElementById("fd-tel")||{}).value||"",
       msg:(document.getElementById("fd-msg")||{}).value||"",
-      produto:(document.querySelector(".nome-produto")||{}).innerText||document.title,
+      produto:nomeProd||document.title,
       pagina:window.location.href,
       hora:new Date().toLocaleString("pt-BR")
     };
+  }
+
+  function validar(d){
+    var ok=true;
+
+    var inNome=document.getElementById("fd-nome");
+    var erNome=document.getElementById("fd-erro-nome");
+    if(!d.nome.trim()){
+      inNome.classList.add("fd-erro");
+      erNome.style.display="block";
+      ok=false;
+    }else{
+      inNome.classList.remove("fd-erro");
+      erNome.style.display="none";
+    }
+
+    var inTel=document.getElementById("fd-tel");
+    var erTel=document.getElementById("fd-erro-tel");
+    if(!d.tel.trim()){
+      inTel.classList.add("fd-erro");
+      erTel.style.display="block";
+      ok=false;
+    }else{
+      inTel.classList.remove("fd-erro");
+      erTel.style.display="none";
+    }
+
+    if(er.test(d.msg)){
+      ae.style.display="block";
+      ok=false;
+    }
+
+    return ok;
   }
 
   function enviar(d){
@@ -119,16 +179,20 @@
       (el.innerText&&el.innerText.toLowerCase().indexOf("comprar")!==-1)
     );
     if(!isC)return;
+
     var d=dados();
-    if(!d.nome&&!d.tel&&!d.msg)return;
-    if(er.test(d.msg)){
+
+    // Salva sempre no sessionStorage (pré-preenche em outros produtos)
+    try{sessionStorage.setItem("fd_dados",JSON.stringify(d));}catch(x){}
+
+    // Valida — trava se inválido
+    if(!validar(d)){
       e.preventDefault();e.stopPropagation();
-      ae.style.display="block";
-      txt.focus();
-      txt.scrollIntoView({behavior:"smooth",block:"center"});
+      document.getElementById("fd-bloco").scrollIntoView({behavior:"smooth",block:"center"});
       return;
     }
-    try{sessionStorage.setItem("fd_dados",JSON.stringify(d));}catch(x){}
+
     enviar(d);
   },true);
+
 })();
