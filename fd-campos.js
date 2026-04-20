@@ -35,30 +35,20 @@
     if(window.location.href.indexOf("adicional")!==-1)return;
 
     var tentativas=0;
-    var maxTentativas=20;
-
     function tentar(){
       tentativas++;
-      // Busca especificamente o h1 que é o título principal do produto
-      var elNomeProd=document.querySelector("h1.nome-produto")||document.querySelector(".nome-produto");
-      var nomeProd=elNomeProd?elNomeProd.innerText.trim():"";
-
+      var elNome=document.querySelector("h1.nome-produto")||document.querySelector(".nome-produto");
+      var nomeProd=elNome?elNome.innerText.trim():"";
       if(!nomeProdutoValido(nomeProd)){
-        if(tentativas<maxTentativas){
-          setTimeout(tentar,300);
-        }
+        if(tentativas<20)setTimeout(tentar,300);
         return;
       }
-
       if(normalizar(nomeProd).indexOf("adicional")===0)return;
-
       var nomeNorm=normalizar(nomeProd);
       var exibir=CFG.palavras.some(function(p){return nomeNorm.indexOf(normalizar(p))!==-1;});
       if(!exibir)return;
-
       montar(nomeProd);
     }
-
     setTimeout(tentar,300);
   }
 
@@ -77,9 +67,7 @@
       ".fd-msg-erro{color:#c0392b;font-size:12px;margin-top:4px;display:none}",
       ".fdae{background:#fff8e1;border-left:3px solid #f0a500;color:#7a5200;font-size:12px;padding:6px 10px;border-radius:0 5px 5px 0;margin-top:5px;display:none}"
     ].join("");
-    var s=document.createElement("style");
-    s.innerHTML=css;
-    document.head.appendChild(s);
+    var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);
 
     var salvo={};
     try{salvo=JSON.parse(sessionStorage.getItem("fd_dados"))||{};}catch(x){}
@@ -87,26 +75,22 @@
     var html=[
       '<div class="fd" id="fd-bloco">',
       '<h3>&#128140; Personalizar meu pedido</h3>',
-
       '<div class="fdc">',
       '<label>Nome de quem vai receber o presente</label>',
       '<input type="text" id="fd-nome" placeholder="Ex.: Maria da Silva" maxlength="80" value="'+(salvo.nome||"")+'"/>',
       '<div class="fd-msg-erro" id="fd-erro-nome">Por favor, informe o nome de quem vai receber.</div>',
       '</div>',
-
       '<div class="fdc">',
       '<label>Telefone de quem vai receber<small>Só usamos se não conseguirmos falar com você</small></label>',
       '<input type="tel" id="fd-tel" placeholder="Ex.: (11) 98765-4321" maxlength="20" value="'+(salvo.tel||"")+'"/>',
       '<div class="fd-msg-erro" id="fd-erro-tel">Por favor, informe o telefone de quem vai receber.</div>',
       '</div>',
-
       '<div class="fdc">',
       '<label>Mensagem para o cartãozinho<small>Até 8 linhas, sem emojis</small></label>',
       '<textarea id="fd-msg" placeholder="Digite aqui sua mensagem de coração..." maxlength="'+CFG.limite+'">'+(salvo.msg||"")+'</textarea>',
       '<div class="fdae" id="fd-ae">Por favor, remova os emojis. Nossos cartões são escritos à mão e emojis não ficam legíveis.</div>',
       '<div class="fdct"><span id="fd-cc">'+(salvo.msg?salvo.msg.length:0)+'</span>/'+CFG.limite+' caracteres</div>',
       '</div>',
-
       '</div>'
     ].join("");
 
@@ -133,13 +117,18 @@
     }
 
     function dados(){
+      // Lê agendamento salvo pelo fd-agendamento
+      var ag={};
+      try{ag=JSON.parse(sessionStorage.getItem("fd_dados"))||{};}catch(x){}
       return{
         nome:(document.getElementById("fd-nome")||{}).value||"",
         tel:(document.getElementById("fd-tel")||{}).value||"",
         msg:(document.getElementById("fd-msg")||{}).value||"",
         produto:nomeProd||document.title,
         pagina:window.location.href,
-        hora:new Date().toLocaleString("pt-BR")
+        hora:new Date().toLocaleString("pt-BR"),
+        data_entrega:ag.data_entrega||"(não informado)",
+        periodo_entrega:ag.periodo_entrega||"(não informado)"
       };
     }
 
@@ -148,27 +137,14 @@
       var inNome=document.getElementById("fd-nome");
       var erNome=document.getElementById("fd-erro-nome");
       if(!d.nome.trim()){
-        inNome.classList.add("fd-erro");
-        erNome.style.display="block";
-        ok=false;
-      }else{
-        inNome.classList.remove("fd-erro");
-        erNome.style.display="none";
-      }
+        inNome.classList.add("fd-erro");erNome.style.display="block";ok=false;
+      }else{inNome.classList.remove("fd-erro");erNome.style.display="none";}
       var inTel=document.getElementById("fd-tel");
       var erTel=document.getElementById("fd-erro-tel");
       if(!d.tel.trim()){
-        inTel.classList.add("fd-erro");
-        erTel.style.display="block";
-        ok=false;
-      }else{
-        inTel.classList.remove("fd-erro");
-        erTel.style.display="none";
-      }
-      if(er.test(d.msg)){
-        ae.style.display="block";
-        ok=false;
-      }
+        inTel.classList.add("fd-erro");erTel.style.display="block";ok=false;
+      }else{inTel.classList.remove("fd-erro");erTel.style.display="none";}
+      if(er.test(d.msg)){ae.style.display="block";ok=false;}
       return ok;
     }
 
@@ -176,12 +152,13 @@
       function send(){
         emailjs.init({publicKey:CFG.emailjs_public_key});
         emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,{
-          produto:d.produto,
           nome_presenteado:d.nome||"(não informado)",
           tel_presenteado:d.tel||"(não informado)",
           mensagem:d.msg||"(não informada)",
           data_hora:d.hora,
-          pagina:d.pagina
+          pagina:d.pagina,
+          data_entrega:d.data_entrega,
+          periodo_entrega:d.periodo_entrega
         }).then(function(){
           console.log("[FD] Email enviado.");
         },function(e){
@@ -191,8 +168,7 @@
       if(typeof emailjs==="undefined"){
         var sc=document.createElement("script");
         sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
-        sc.onload=send;
-        document.head.appendChild(sc);
+        sc.onload=send;document.head.appendChild(sc);
       }else{send();}
     }
 
@@ -206,7 +182,12 @@
       );
       if(!isC)return;
       var d=dados();
-      try{sessionStorage.setItem("fd_dados",JSON.stringify(d));}catch(x){}
+      // Salva personalização no sessionStorage mantendo agendamento
+      try{
+        var ag=JSON.parse(sessionStorage.getItem("fd_dados"))||{};
+        ag.nome=d.nome;ag.tel=d.tel;ag.msg=d.msg;
+        sessionStorage.setItem("fd_dados",JSON.stringify(ag));
+      }catch(x){}
       if(!validar(d)){
         e.preventDefault();e.stopPropagation();
         document.getElementById("fd-bloco").scrollIntoView({behavior:"smooth",block:"center"});
@@ -216,10 +197,7 @@
     },true);
   }
 
-  if(document.readyState==="complete"){
-    init();
-  }else{
-    window.addEventListener("load",init);
-  }
+  if(document.readyState==="complete"){init();}
+  else{window.addEventListener("load",init);}
 
 })();
