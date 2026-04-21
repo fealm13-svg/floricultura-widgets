@@ -1,6 +1,5 @@
 (function(){
 
-  // ── Só roda em /carrinho ─────────────────────────────────────────────
   if(window.location.pathname.indexOf("/carrinho")===-1)return;
 
   var CFG={
@@ -9,17 +8,9 @@
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
-  // ── Feriados bloqueados ──────────────────────────────────────────────
   var FERIADOS=[
-    "2026-05-01", // Dia do Trabalho
-    "2026-06-04", // Corpus Christi
-    "2026-07-09", // Revolução Constitucionalista
-    "2026-09-07", // Independência do Brasil
-    "2026-10-12", // Nossa Sra. Aparecida
-    "2026-11-02", // Finados
-    "2026-11-15", // Proclamação da República
-    "2026-11-20", // Consciência Negra
-    "2026-12-25", // Natal
+    "2026-05-01","2026-06-04","2026-07-09","2026-09-07",
+    "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
   ];
 
   function isFeriado(d){
@@ -27,7 +18,6 @@
     return FERIADOS.indexOf(str)!==-1;
   }
 
-  // ── Períodos ─────────────────────────────────────────────────────────
   var PERIODOS_ENTREGA=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,dias:[1,2,3,4,5]},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,dias:[1,2,3,4,5]},
@@ -43,7 +33,6 @@
     PERIODOS_RETIRADA.push({id:"rw"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,dias:[6,0]});
   });
 
-  // ── Termos ───────────────────────────────────────────────────────────
   var TERMOS={
     entrega:[
       "No momento do pagamento, preencha os dados de entrega de forma completa e correta. Informações incompletas ou incorretas podem comprometer a realização da entrega.",
@@ -68,6 +57,76 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
+  // ── SessionStorage ───────────────────────────────────────────────────
+  function salvarSessao(){
+    try{
+      var dados={
+        tipo:tipo,
+        nome:(document.getElementById("fdc-nome")||{}).value||"",
+        tel:(document.getElementById("fdc-tel")||{}).value||"",
+        msg:(document.getElementById("fdc-msg")||{}).value||"",
+        semMsg:semMensagem,
+        _dataSel:dataSel?dataSel.toISOString():null,
+        _periodoSel:periodoSel,
+        _agConfirmado:agConfirmado,
+        _termoAceito:termoAceito
+      };
+      sessionStorage.setItem("fdc_carrinho",JSON.stringify(dados));
+    }catch(x){}
+  }
+
+  function restaurarSessao(){
+    try{
+      var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
+      if(!dados)return;
+
+      if(dados.tipo&&dados.tipo!==tipo){
+        window.fdcSetTipo(dados.tipo);
+      }
+
+      if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
+      if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
+      if(dados.msg){var m=document.getElementById("fdc-msg");if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}}
+
+      if(dados.semMsg){
+        semMensagem=true;
+        var cb=document.getElementById("fdc-sem-msg");if(cb)cb.checked=true;
+        var txt=document.getElementById("fdc-msg");if(txt){txt.value="";txt.disabled=true;}
+      }
+
+      if(dados._dataSel&&dados._periodoSel){
+        var d=new Date(dados._dataSel);
+        if(temDisp(d)){
+          dataSel=d;
+          periodoSel=dados._periodoSel;
+          mesAtual=d.getMonth();
+          anoAtual=d.getFullYear();
+          agConfirmado=dados._agConfirmado||false;
+          if(agConfirmado){
+            var p=getPeriodos().find(function(x){return x.id===periodoSel;});
+            if(p){
+              document.getElementById("fdc-res-data").textContent=dataSel.toLocaleDateString("pt-BR");
+              document.getElementById("fdc-res-diasem").textContent=DIASLONG[dataSel.getDay()];
+              document.getElementById("fdc-res-per").textContent=p.nome;
+              document.getElementById("fdc-res-hora").textContent=p.hora;
+              document.getElementById("fdc-btn-ag").style.display="none";
+              document.getElementById("fdc-resumo-ag").style.display="block";
+            }
+          }
+        }
+      }
+
+      if(dados._termoAceito){
+        termoAceito=true;
+        var cb2=document.getElementById("fdc-termo");if(cb2)cb2.checked=true;
+        var wrap=document.getElementById("fdc-termo-wrap");if(wrap)wrap.className="fdc-termo-wrap verde";
+      }
+
+      fdcVerificar();
+    }catch(x){}
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
   function getPeriodos(){return tipo==="entrega"?PERIODOS_ENTREGA:PERIODOS_RETIRADA;}
@@ -82,10 +141,7 @@
 
   function minData(){
     var h=new Date().getHours()+new Date().getMinutes()/60;
-    if(isCesta()){
-      if(h>=18)return addDias(hoje(),2);
-      return addDias(hoje(),1);
-    }
+    if(isCesta()){if(h>=18)return addDias(hoje(),2);return addDias(hoje(),1);}
     return hoje();
   }
 
@@ -111,6 +167,16 @@
     if(dd<min||dd>addDias(hoje(),30))return false;
     if(isFeriado(dd))return false;
     return periodosParaDia(d).some(function(p){return p.ok;});
+  }
+
+  function tudo_valido(){
+    if(!agConfirmado||!termoAceito)return false;
+    if(tipo==="entrega"){
+      var nome=(document.getElementById("fdc-nome")||{}).value||"";
+      var tel=(document.getElementById("fdc-tel")||{}).value||"";
+      if(!nome.trim()||tel.trim().length<14)return false;
+    }
+    return true;
   }
 
   // ── CSS ──────────────────────────────────────────────────────────────
@@ -141,7 +207,6 @@
       ".fdc-resumo-ag-item span{font-size:11px;color:#888}",
       ".fdc-btn-alt{background:none;border:1px solid #a91537;color:#a91537;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
       ".fdc-btn-alt:hover{background:#fff0f3}",
-      // Termo
       ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s}",
       ".fdc-termo-wrap.vermelho{background:#dd3056}",
       ".fdc-termo-wrap.verde{background:#72cd41}",
@@ -150,21 +215,26 @@
       ".fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.7)}",
       ".fdc-termo-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#fff;cursor:pointer;font-weight:600}",
       ".fdc-termo-check input{margin-top:2px;accent-color:#fff;width:14px;height:14px;flex-shrink:0}",
-      // Status
       ".fdc-status{margin-top:14px;background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:10px 14px}",
       ".fdc-status p{font-size:12px;color:#888;margin-bottom:6px}",
       ".fdc-status-items{display:flex;flex-wrap:wrap;gap:6px}",
       ".fdc-st{font-size:11px;padding:3px 10px;border-radius:20px;background:#efefef;color:#999}",
       ".fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
-      // Box ok
       ".fdc-box-ok{display:none;background:#72cd41;border-radius:8px;padding:14px 16px;margin-top:14px}",
       ".fdc-box-ok-inner{display:flex;align-items:flex-start;gap:12px}",
       ".fdc-box-ok-icon{font-size:22px;flex-shrink:0;line-height:1.3}",
       ".fdc-box-ok-txt strong{font-size:14px;color:#fff;display:block;margin-bottom:4px}",
       ".fdc-box-ok-txt p{font-size:12px;color:#fff;line-height:1.5;opacity:.95}",
-      // Erro
-      ".fdc-erro-geral{color:#c0392b;font-size:12px;margin-top:8px;display:none;padding:8px 10px;background:#fde8e8;border-radius:6px;border-left:3px solid #c0392b}",
-      // Modal
+      // Popup de erro
+      ".fdc-popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999999;align-items:center;justify-content:center}",
+      ".fdc-popup-overlay.ativo{display:flex}",
+      ".fdc-popup{background:#fff;border-radius:12px;padding:28px 24px;width:90%;max-width:380px;text-align:center}",
+      ".fdc-popup-icon{font-size:36px;margin-bottom:12px}",
+      ".fdc-popup h3{font-size:16px;font-weight:700;color:#333;margin-bottom:8px}",
+      ".fdc-popup p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}",
+      ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}",
+      ".fdc-popup-btn:hover{background:#8a1029}",
+      // Modal agendamento
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
       ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -211,29 +281,24 @@
   function montarBloco(){
     var div=document.createElement("div");
     div.id="fdc-bloco";div.className="fdc-bloco";
-
     var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
-
     div.innerHTML=[
       '<div class="fdc-titulo">🌸 Dados do Pedido</div>',
       '<div class="fdc-toggle">',
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-
       '<div id="fdc-bloco-pres">',
         '<div class="fdc-sec">Presenteado</div>',
-        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcVerificar()"/></div>',
-        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcVerificar()"/></div>',
+        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
+        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
       '</div>',
-
       '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
       '<div class="fdc-campo">',
-        '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)"></textarea>',
+        '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
         '<div class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</div>',
       '</div>',
       '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-
       '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
@@ -243,13 +308,11 @@
         '</div>',
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
-
       '<div class="fdc-sec">Termos</div>',
       '<div class="fdc-termo-wrap vermelho" id="fdc-termo-wrap">',
         '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
         '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
       '</div>',
-
       '<div class="fdc-status">',
         '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
         '<div class="fdc-status-items">',
@@ -259,20 +322,29 @@
           '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
         '</div>',
       '</div>',
-
       '<div class="fdc-box-ok" id="fdc-box-ok">',
         '<div class="fdc-box-ok-inner">',
           '<div class="fdc-box-ok-icon">✅</div>',
-          '<div class="fdc-box-ok-txt">',
-            '<strong>Tudo certo!</strong>',
-            '<p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p>',
-          '</div>',
+          '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
         '</div>',
       '</div>',
-
-      '<div class="fdc-erro-geral" id="fdc-erro-geral">Por favor, preencha todos os campos obrigatórios antes de finalizar.</div>',
     ].join("");
     return div;
+  }
+
+  function montarPopup(){
+    var div=document.createElement("div");
+    div.id="fdc-popup-overlay";div.className="fdc-popup-overlay";
+    div.innerHTML=[
+      '<div class="fdc-popup">',
+        '<div class="fdc-popup-icon">⚠️</div>',
+        '<h3>Atenção!</h3>',
+        '<p>Preencha todos os campos obrigatórios antes de finalizar:<br>',
+        '<span id="fdc-popup-itens"></span></p>',
+        '<button class="fdc-popup-btn" onclick="fdcFecharPopup()">Voltar e preencher</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(div);
   }
 
   function montarModal(){
@@ -308,6 +380,8 @@
   }
 
   // ── Funções globais ──────────────────────────────────────────────────
+  window.fdcSalvar=function(){salvarSessao();};
+
   window.fdcSetTipo=function(t){
     tipo=t;
     document.getElementById("fdc-btn-ent").className="fdc-toggle-btn"+(t==="entrega"?" ativo":"");
@@ -321,11 +395,10 @@
     var wrap=document.getElementById("fdc-termo-wrap");
     wrap.className="fdc-termo-wrap vermelho";
     document.getElementById("fdc-termo").checked=false;
-    termoAceito=false;
-    dataSel=null;periodoSel=null;agConfirmado=false;
+    termoAceito=false;dataSel=null;periodoSel=null;agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
-    fdcVerificar();
+    salvarSessao();fdcVerificar();
   };
 
   window.fdcMascaraTel=function(el){
@@ -342,13 +415,14 @@
     var txt=document.getElementById("fdc-msg");
     if(semMensagem){txt.value="";txt.disabled=true;}
     else{txt.disabled=false;txt.focus();}
+    salvarSessao();
   };
 
   window.fdcToggleTermo=function(){
     termoAceito=document.getElementById("fdc-termo").checked;
     var wrap=document.getElementById("fdc-termo-wrap");
     wrap.className="fdc-termo-wrap "+(termoAceito?"verde":"vermelho");
-    fdcVerificar();
+    salvarSessao();fdcVerificar();
   };
 
   window.fdcVerificar=function(){
@@ -364,19 +438,7 @@
     st("fdc-st-ag",agConfirmado);
     st("fdc-st-termo",termoAceito);
     document.getElementById("fdc-box-ok").style.display=tudoOk?"block":"none";
-    var err=document.getElementById("fdc-erro-geral");
-    if(err&&tudoOk)err.style.display="none";
   };
-
-  function tudo_valido(){
-    if(!agConfirmado||!termoAceito)return false;
-    if(tipo==="entrega"){
-      var nome=(document.getElementById("fdc-nome")||{}).value||"";
-      var tel=(document.getElementById("fdc-tel")||{}).value||"";
-      if(!nome.trim()||tel.trim().length<14)return false;
-    }
-    return true;
-  }
 
   window.fdcAbrirModal=function(){
     document.getElementById("fdc-overlay").classList.add("ativo");
@@ -385,6 +447,11 @@
 
   window.fdcFecharModal=function(){
     document.getElementById("fdc-overlay").classList.remove("ativo");
+  };
+
+  window.fdcFecharPopup=function(){
+    document.getElementById("fdc-popup-overlay").classList.remove("ativo");
+    document.getElementById("fdc-bloco").scrollIntoView({behavior:"smooth",block:"start"});
   };
 
   window.fdcMudarMes=function(d){
@@ -404,15 +471,14 @@
     document.getElementById("fdc-res-hora").textContent=p.hora;
     document.getElementById("fdc-btn-ag").style.display="none";
     document.getElementById("fdc-resumo-ag").style.display="block";
-    fdcFecharModal();fdcVerificar();
+    fdcFecharModal();salvarSessao();fdcVerificar();
   };
 
   window.fdcAlterar=function(){
     agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
-    fdcVerificar();
-    fdcAbrirModal();
+    fdcVerificar();fdcAbrirModal();
   };
 
   function fdcRenderCal(){
@@ -459,7 +525,16 @@
     btn.disabled=!(dataSel&&periodoSel);
   }
 
-  function enviarEmail(){
+  // ── Email — carrega SDK antecipadamente ──────────────────────────────
+  function preCarregarEmailJS(){
+    if(typeof emailjs!=="undefined")return;
+    var sc=document.createElement("script");
+    sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
+    sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});};
+    document.head.appendChild(sc);
+  }
+
+  function enviarEmail(callback){
     var p=periodoSel?getPeriodos().find(function(x){return x.id===periodoSel;}):null;
     var agora=new Date();
     var dados={
@@ -475,31 +550,29 @@
     };
     function send(){
       emailjs.init({publicKey:CFG.emailjs_public_key});
-      emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(function(){
-        console.log("[FD] Email enviado.");
-      },function(e){
-        console.error("[FD] Erro:",e);
-      });
+      emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(
+        function(){console.log("[FD] Email enviado.");if(callback)callback();},
+        function(e){console.error("[FD] Erro:",e);if(callback)callback();}
+      );
     }
     if(typeof emailjs==="undefined"){
       var sc=document.createElement("script");
       sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
-      sc.onload=send;document.head.appendChild(sc);
+      sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});send();};
+      document.head.appendChild(sc);
     }else{send();}
   }
 
+  // ── Init ─────────────────────────────────────────────────────────────
   function init(){
     injetarCSS();
     var bloco=montarBloco();
+    montarPopup();
     montarModal();
 
     var alvos=[
-      ".carrinho-produtos",
-      "table.carrinho",
-      ".cart-table",
-      "#carrinho-produtos",
-      ".conteudo-carrinho",
-      ".secao-principal .row-fluid"
+      ".carrinho-produtos","table.carrinho",".cart-table",
+      "#carrinho-produtos",".conteudo-carrinho",".secao-principal .row-fluid"
     ];
     var ok=false;
     for(var i=0;i<alvos.length;i++){
@@ -513,9 +586,16 @@
 
     document.getElementById("fdc-msg").addEventListener("input",function(){
       document.getElementById("fdc-faltam").textContent=500-this.value.length;
+      salvarSessao();
     });
 
-    // Intercepta botão finalizar da Loja Integrada
+    // Pré-carrega o EmailJS assim que a página abre
+    preCarregarEmailJS();
+
+    // Restaura dados salvos anteriormente
+    restaurarSessao();
+
+    // Intercepta botão finalizar
     document.addEventListener("click",function(e){
       var el=e.target;
       while(el&&el!==document.body){
@@ -523,9 +603,7 @@
            el.classList.contains("botao")&&
            el.classList.contains("principal")&&
            el.classList.contains("grande")&&
-           el.closest&&el.closest(".finalizar-compra")){
-          break;
-        }
+           el.closest&&el.closest(".finalizar-compra"))break;
         el=el.parentNode;
       }
       if(!el||el===document.body)return;
@@ -534,12 +612,23 @@
 
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
-        var err=document.getElementById("fdc-erro-geral");
-        if(err)err.style.display="block";
-        document.getElementById("fdc-bloco").scrollIntoView({behavior:"smooth",block:"start"});
-        fdcVerificar();
+        // Monta lista de pendências para o popup
+        var pendencias=[];
+        if(tipo==="entrega"){
+          var nome=(document.getElementById("fdc-nome")||{}).value||"";
+          var tel=(document.getElementById("fdc-tel")||{}).value||"";
+          if(!nome.trim())pendencias.push("Nome do presenteado");
+          if(tel.trim().length<14)pendencias.push("Telefone WhatsApp");
+        }
+        if(!agConfirmado)pendencias.push("Agendamento de entrega");
+        if(!termoAceito)pendencias.push("Aceite dos termos");
+        var itensEl=document.getElementById("fdc-popup-itens");
+        if(itensEl)itensEl.innerHTML=pendencias.map(function(p){return "• "+p;}).join("<br>");
+        document.getElementById("fdc-popup-overlay").classList.add("ativo");
         return;
       }
+
+      // Tudo válido — envia email e deixa navegar
       enviarEmail();
     },true);
 
