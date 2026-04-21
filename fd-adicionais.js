@@ -109,10 +109,10 @@
     var s = document.createElement("style");
     s.id = "fd-adicionais-css";
     s.innerHTML = [
-      ".fd-tag{position:absolute;top:8px;left:8px;z-index:10;font-size:9px;font-weight:600;color:#fff;padding:2px 6px;border-radius:3px;cursor:default;white-space:nowrap;line-height:1.4;}",
-      ".fd-tag-wrap{position:relative;display:inline-block;}",
+      ".fd-tag-wrap{position:absolute;top:8px;left:8px;z-index:10;display:block;}",
       ".fd-tooltip{display:none;position:absolute;top:calc(100% + 5px);left:0;background:#222;color:#fff;font-size:11px;padding:5px 10px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.4;}",
       ".fd-tag-wrap:hover .fd-tooltip{display:block;}",
+      ".fd-tag{font-size:9px;font-weight:600;color:#fff;padding:2px 6px;border-radius:3px;cursor:default;white-space:nowrap;line-height:1.4;display:inline-block;}",
 
       /* Garante position relativa no container da imagem do produto */
       ".conteiner-imagem{position:relative!important;}",
