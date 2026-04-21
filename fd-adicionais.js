@@ -114,8 +114,11 @@
       ".fd-tooltip{display:none;position:absolute;top:calc(100% + 5px);left:0;background:#222;color:#fff;font-size:11px;padding:5px 10px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.4;}",
       ".fd-tag-wrap:hover .fd-tooltip{display:block;}",
 
-      /* Garante posição relativa nos cards de listagem */
-      ".produto-imagem,.item-imagem,.produto-item .imagem,.listagem-item .imagem{position:relative!important;}",
+      /* Garante position relativa no container da imagem do produto */
+      ".conteiner-imagem{position:relative!important;}",
+
+      /* Fix campo de busca mobile */
+      "@media(max-width:767px){.inferior.row-fluid{position:relative!important;z-index:1;min-height:50px;}.busca.borda-alpha{position:relative!important;width:100%!important;top:auto!important;left:auto!important;}}",
 
       /* ── Seção de complementos ── */
       "#fd-complementos{margin:28px 0 20px;font-family:inherit;}",
@@ -194,7 +197,8 @@
     var regra = getRegra(titulo);
     if (!regra) return;
 
-    // conteiner-imagem já tem position relativa no tema — não forçar
+    // Força position relative inline para garantir que o absolute da tag funcione
+    imgWrap.style.position = "relative";
     var wrap = document.createElement("span");
     wrap.className = "fd-tag-wrap";
     var tag = document.createElement("span");
