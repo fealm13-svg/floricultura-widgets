@@ -303,6 +303,17 @@
   }
 
   // ─────────────────────────────────────────────
+  // MÓDULO 4 — SUBSTITUIR "Frete Grátis"
+  // ─────────────────────────────────────────────
+  function corrigirFreteGratis() {
+    document.querySelectorAll("*").forEach(function (el) {
+      if (el.children.length === 0 && el.textContent.trim() === "Frete Grátis") {
+        el.textContent = "Entrega Grátis - Agendamento na tela de checkout";
+      }
+    });
+  }
+
+  // ─────────────────────────────────────────────
   // INIT
   // ─────────────────────────────────────────────
   function init() {
@@ -310,6 +321,7 @@
     aplicarTagsListagem();
     aplicarTagProduto();
     construirComplementos();
+    corrigirFreteGratis();
   }
 
   // Aguarda DOM pronto
@@ -328,6 +340,7 @@
         aplicarTagsListagem();
         aplicarTagProduto();
         construirComplementos();
+        corrigirFreteGratis();
       }, 400);
     });
     observer.observe(document.body, { childList: true, subtree: true });
