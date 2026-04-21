@@ -1,17 +1,33 @@
 (function(){
 
+  // ── Só roda em /carrinho ─────────────────────────────────────────────
+  if(window.location.pathname.indexOf("/carrinho")===-1)return;
+
   var CFG={
     emailjs_service_id:"service_8nyc25b",
     emailjs_template_id:"template_jaeoc5u",
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
-  // ── Só roda em /carrinho/index ───────────────────────────────────────
-  function isCarrinho(){
-    return window.location.pathname.indexOf("/carrinho")!==-1;
-  }
-  if(!isCarrinho())return;
+  // ── Feriados bloqueados ──────────────────────────────────────────────
+  var FERIADOS=[
+    "2026-05-01", // Dia do Trabalho
+    "2026-06-04", // Corpus Christi
+    "2026-07-09", // Revolução Constitucionalista
+    "2026-09-07", // Independência do Brasil
+    "2026-10-12", // Nossa Sra. Aparecida
+    "2026-11-02", // Finados
+    "2026-11-15", // Proclamação da República
+    "2026-11-20", // Consciência Negra
+    "2026-12-25", // Natal
+  ];
 
+  function isFeriado(d){
+    var str=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    return FERIADOS.indexOf(str)!==-1;
+  }
+
+  // ── Períodos ─────────────────────────────────────────────────────────
   var PERIODOS_ENTREGA=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,dias:[1,2,3,4,5]},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,dias:[1,2,3,4,5]},
@@ -27,9 +43,20 @@
     PERIODOS_RETIRADA.push({id:"rw"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,dias:[6,0]});
   });
 
+  // ── Termos ───────────────────────────────────────────────────────────
   var TERMOS={
-    entrega:"Seu pedido será entregue dentro do período selecionado no momento da compra. Acompanhe as atualizações enviadas por e-mail. Em caso de qualquer imprevisto, nossa equipe de atendimento entrará em contato via WhatsApp. O motorista permanecerá no local por até 10 (dez) minutos. Caso a entrega não seja concluída nesse período, o pedido retornará à loja. Para um novo envio, será necessária a cobrança de uma nova taxa de entrega.",
-    retirada:"Seu pedido estará disponível para retirada no período selecionado no momento da compra. Aguarde a confirmação enviada por e-mail ou WhatsApp. Em caso de qualquer imprevisto, nossa equipe de atendimento entrará em contato. A retirada deverá ser realizada dentro do período agendado. Recomendamos que compareça no horário escolhido para evitar espera. Caso o cliente não compareça para a retirada, o pedido permanecerá disponível na loja por tempo limitado, podendo haver perda da qualidade dos produtos perecíveis."
+    entrega:[
+      "No momento do pagamento, preencha os dados de entrega de forma completa e correta. Informações incompletas ou incorretas podem comprometer a realização da entrega.",
+      "Seu pedido será entregue dentro do período selecionado no momento da compra. Acompanhe as atualizações enviadas por e-mail.",
+      "O motorista permanecerá no local por até 10 (dez) minutos. Caso a entrega não seja concluída nesse período, o pedido retornará à loja.",
+      "Para um novo envio, será necessária a cobrança de uma nova taxa de entrega."
+    ],
+    retirada:[
+      "Seu pedido estará disponível para retirada no período selecionado no momento da compra. Aguarde a confirmação enviada por e-mail ou WhatsApp.",
+      "Em caso de qualquer imprevisto, nossa equipe de atendimento entrará em contato.",
+      "A retirada deverá ser realizada dentro do período agendado. Recomendamos que compareça no horário escolhido para evitar espera.",
+      "Caso o cliente não compareça para a retirada, o pedido permanecerá disponível na loja por tempo limitado, podendo haver perda da qualidade dos produtos perecíveis."
+    ]
   };
 
   var MESES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -37,17 +64,9 @@
   var DIASABREV=["dom","seg","ter","qua","qui","sex","sáb"];
 
   var tipo="entrega";
-  var dataSel=null,periodoSel=null,agConfirmado=false;
+  var dataSel=null,periodoSel=null,agConfirmado=false,termoAceito=false;
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
-
-  function isBotaoFinalizar(el){
-    if(!el||!el.classList)return false;
-    // Detecta especificamente o botão de finalizar da Loja Integrada
-    return el.classList.contains("finalizar")||
-           (el.classList.contains("botao")&&el.classList.contains("principal")&&
-            (el.getAttribute("href")||"").indexOf("finalizar")!==-1);
-  }
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -90,48 +109,62 @@
     var min=minData();min.setHours(0,0,0,0);
     var dd=new Date(d);dd.setHours(0,0,0,0);
     if(dd<min||dd>addDias(hoje(),30))return false;
+    if(isFeriado(dd))return false;
     return periodosParaDia(d).some(function(p){return p.ok;});
   }
 
+  // ── CSS ──────────────────────────────────────────────────────────────
   function injetarCSS(){
     var css=[
-      ".fdc-bloco{background:#f7f7f2;border:1.5px solid #e0d5c0;border-radius:10px;padding:20px 22px;margin:22px 0;font-family:inherit}",
+      ".fdc-bloco{background:#e8e8e8;border:1.5px solid #c8c8c8;border-radius:10px;padding:20px 22px;margin:22px 0;font-family:inherit}",
       ".fdc-titulo{color:#a91537;font-size:16px;font-weight:700;margin-bottom:16px}",
       ".fdc-toggle{display:flex;margin-bottom:18px;border:1.5px solid #95a37b;border-radius:8px;overflow:hidden}",
       ".fdc-toggle-btn{flex:1;padding:10px;background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#95a37b;transition:all .2s}",
       ".fdc-toggle-btn.ativo{background:#95a37b;color:#2d3a20}",
-      ".fdc-sec{font-size:13px;font-weight:700;color:#a91537;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid #e0d5c0}",
+      ".fdc-sec{font-size:13px;font-weight:700;color:#a91537;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid #c8c8c8}",
       ".fdc-campo{margin-bottom:12px}",
       ".fdc-campo label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:4px}",
       ".fdc-campo label small{font-weight:400;color:#888;font-size:11px;display:block;margin-top:1px}",
-      ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #e0d5c0;border-radius:7px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}",
+      ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #c8c8c8;border-radius:7px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}",
       ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
       ".fdc-campo textarea{resize:vertical;min-height:90px}",
       ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
-      ".fdc-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:12px}",
       ".fdc-contador{text-align:right;font-size:11px;color:#aaa;margin-top:3px}",
       ".fdc-sem-msg{display:flex;align-items:center;gap:8px;font-size:12px;color:#666;cursor:pointer;margin-top:6px;user-select:none}",
       ".fdc-sem-msg input{accent-color:#95a37b;width:14px;height:14px;flex-shrink:0;cursor:pointer}",
       ".fdc-btn-ag{width:100%;background:#a91537;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
       ".fdc-btn-ag:hover{background:#8a1029}",
-      ".fdc-resumo-ag{background:#fff;border:1.5px solid #e0d5c0;border-radius:8px;padding:12px 14px;margin-bottom:12px}",
+      ".fdc-resumo-ag{background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:12px 14px;margin-bottom:12px}",
       ".fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}",
       ".fdc-resumo-ag-item label{font-size:11px;color:#888;display:block;margin-bottom:2px}",
       ".fdc-resumo-ag-item strong{font-size:13px;color:#333;display:block}",
       ".fdc-resumo-ag-item span{font-size:11px;color:#888}",
       ".fdc-btn-alt{background:none;border:1px solid #a91537;color:#a91537;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
       ".fdc-btn-alt:hover{background:#fff0f3}",
-      ".fdc-aviso{background:#f0f7ff;border-left:3px solid #378add;color:#185fa5;font-size:12px;padding:8px 10px;border-radius:0 6px 6px 0;margin-bottom:14px;line-height:1.5}",
-      ".fdc-termo-wrap{background:#fff;border:1.5px solid #e0d5c0;border-radius:8px;padding:12px 14px}",
-      ".fdc-termo-txt{font-size:11px;color:#555;line-height:1.6;margin-bottom:10px;max-height:75px;overflow-y:auto}",
-      ".fdc-termo-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#444;cursor:pointer}",
-      ".fdc-termo-check input{margin-top:2px;accent-color:#a91537;width:14px;height:14px;flex-shrink:0}",
-      ".fdc-status{margin-top:14px;background:#fff;border:1.5px solid #e0d5c0;border-radius:8px;padding:10px 14px}",
+      // Termo
+      ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s}",
+      ".fdc-termo-wrap.vermelho{background:#dd3056}",
+      ".fdc-termo-wrap.verde{background:#72cd41}",
+      ".fdc-termo-lista{list-style:none;padding:0;margin-bottom:12px}",
+      ".fdc-termo-lista li{font-size:12px;color:#fff;line-height:1.6;padding:4px 0 4px 18px;position:relative}",
+      ".fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.7)}",
+      ".fdc-termo-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#fff;cursor:pointer;font-weight:600}",
+      ".fdc-termo-check input{margin-top:2px;accent-color:#fff;width:14px;height:14px;flex-shrink:0}",
+      // Status
+      ".fdc-status{margin-top:14px;background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:10px 14px}",
       ".fdc-status p{font-size:12px;color:#888;margin-bottom:6px}",
       ".fdc-status-items{display:flex;flex-wrap:wrap;gap:6px}",
       ".fdc-st{font-size:11px;padding:3px 10px;border-radius:20px;background:#efefef;color:#999}",
       ".fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
+      // Box ok
+      ".fdc-box-ok{display:none;background:#72cd41;border-radius:8px;padding:14px 16px;margin-top:14px}",
+      ".fdc-box-ok-inner{display:flex;align-items:flex-start;gap:12px}",
+      ".fdc-box-ok-icon{font-size:22px;flex-shrink:0;line-height:1.3}",
+      ".fdc-box-ok-txt strong{font-size:14px;color:#fff;display:block;margin-bottom:4px}",
+      ".fdc-box-ok-txt p{font-size:12px;color:#fff;line-height:1.5;opacity:.95}",
+      // Erro
       ".fdc-erro-geral{color:#c0392b;font-size:12px;margin-top:8px;display:none;padding:8px 10px;background:#fde8e8;border-radius:6px;border-left:3px solid #c0392b}",
+      // Modal
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
       ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -174,36 +207,33 @@
     var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);
   }
 
+  // ── HTML ─────────────────────────────────────────────────────────────
   function montarBloco(){
     var div=document.createElement("div");
     div.id="fdc-bloco";div.className="fdc-bloco";
+
+    var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
+
     div.innerHTML=[
       '<div class="fdc-titulo">🌸 Dados do Pedido</div>',
       '<div class="fdc-toggle">',
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
+
       '<div id="fdc-bloco-pres">',
         '<div class="fdc-sec">Presenteado</div>',
         '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcVerificar()"/></div>',
         '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcVerificar()"/></div>',
       '</div>',
+
       '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
       '<div class="fdc-campo">',
         '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)"></textarea>',
         '<div class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</div>',
       '</div>',
       '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-      '<div id="fdc-bloco-end">',
-        '<div class="fdc-sec">Endereço de Entrega</div>',
-        '<div class="fdc-campo"><label>Rua / Avenida</label><input type="text" id="fdc-rua" placeholder="Ex.: Al. Barão de Limeira" oninput="fdcVerificar()"/></div>',
-        '<div class="fdc-grid">',
-          '<div class="fdc-campo" style="margin-bottom:0"><label>Número</label><input type="text" id="fdc-num" placeholder="998" oninput="fdcVerificar()"/></div>',
-          '<div class="fdc-campo" style="margin-bottom:0"><label>Complemento</label><input type="text" id="fdc-comp" placeholder="Apto, sala..."/></div>',
-        '</div>',
-        '<div class="fdc-campo" style="margin-top:12px"><label>Departamento / Ramal<small>Opcional</small></label><input type="text" id="fdc-ramal" placeholder="Ex.: Depto. Financeiro, Ramal 204"/></div>',
-        '<div class="fdc-aviso">Consulte a disponibilidade de entrega para o seu bairro e o valor do frete no campo <strong>Calcule o frete</strong> abaixo.</div>',
-      '</div>',
+
       '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
@@ -213,21 +243,33 @@
         '</div>',
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
+
       '<div class="fdc-sec">Termos</div>',
-      '<div class="fdc-termo-wrap">',
-        '<div class="fdc-termo-txt" id="fdc-termo-txt">'+TERMOS.entrega+'</div>',
-        '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcVerificar()"/> Estou ciente dos termos</label>',
+      '<div class="fdc-termo-wrap vermelho" id="fdc-termo-wrap">',
+        '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
+        '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
       '</div>',
+
       '<div class="fdc-status">',
         '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
         '<div class="fdc-status-items">',
           '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
           '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
-          '<div class="fdc-st" id="fdc-st-end">Endereço</div>',
           '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
           '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
         '</div>',
       '</div>',
+
+      '<div class="fdc-box-ok" id="fdc-box-ok">',
+        '<div class="fdc-box-ok-inner">',
+          '<div class="fdc-box-ok-icon">✅</div>',
+          '<div class="fdc-box-ok-txt">',
+            '<strong>Tudo certo!</strong>',
+            '<p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p>',
+          '</div>',
+        '</div>',
+      '</div>',
+
       '<div class="fdc-erro-geral" id="fdc-erro-geral">Por favor, preencha todos os campos obrigatórios antes de finalizar.</div>',
     ].join("");
     return div;
@@ -265,18 +307,21 @@
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
   }
 
+  // ── Funções globais ──────────────────────────────────────────────────
   window.fdcSetTipo=function(t){
     tipo=t;
     document.getElementById("fdc-btn-ent").className="fdc-toggle-btn"+(t==="entrega"?" ativo":"");
     document.getElementById("fdc-btn-ret").className="fdc-toggle-btn"+(t==="retirada"?" ativo":"");
     document.getElementById("fdc-bloco-pres").style.display=t==="entrega"?"block":"none";
-    document.getElementById("fdc-bloco-end").style.display=t==="entrega"?"block":"none";
     document.getElementById("fdc-st-nome").style.display=t==="retirada"?"none":"inline-block";
     document.getElementById("fdc-st-tel").style.display=t==="retirada"?"none":"inline-block";
-    document.getElementById("fdc-st-end").style.display=t==="retirada"?"none":"inline-block";
     document.getElementById("fdc-modal-titulo").textContent=t==="entrega"?"Escolha a data e o período de entrega":"Escolha a data e o período de retirada";
-    document.getElementById("fdc-termo-txt").textContent=TERMOS[t];
+    var lista=document.getElementById("fdc-termo-lista");
+    lista.innerHTML=TERMOS[t].map(function(i){return '<li>'+i+'</li>';}).join("");
+    var wrap=document.getElementById("fdc-termo-wrap");
+    wrap.className="fdc-termo-wrap vermelho";
     document.getElementById("fdc-termo").checked=false;
+    termoAceito=false;
     dataSel=null;periodoSel=null;agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
@@ -299,30 +344,36 @@
     else{txt.disabled=false;txt.focus();}
   };
 
+  window.fdcToggleTermo=function(){
+    termoAceito=document.getElementById("fdc-termo").checked;
+    var wrap=document.getElementById("fdc-termo-wrap");
+    wrap.className="fdc-termo-wrap "+(termoAceito?"verde":"vermelho");
+    fdcVerificar();
+  };
+
   window.fdcVerificar=function(){
     function st(id,ok){var e=document.getElementById(id);if(e)e.className="fdc-st"+(ok?" ok":"");}
+    var tudoOk=agConfirmado&&termoAceito;
     if(tipo==="entrega"){
       var nome=(document.getElementById("fdc-nome")||{}).value||"";
       var tel=(document.getElementById("fdc-tel")||{}).value||"";
-      var rua=(document.getElementById("fdc-rua")||{}).value||"";
-      var num=(document.getElementById("fdc-num")||{}).value||"";
       st("fdc-st-nome",!!nome.trim());
       st("fdc-st-tel",tel.trim().length>=14);
-      st("fdc-st-end",!!(rua.trim()&&num.trim()));
+      tudoOk=tudoOk&&!!nome.trim()&&tel.trim().length>=14;
     }
     st("fdc-st-ag",agConfirmado);
-    st("fdc-st-termo",(document.getElementById("fdc-termo")||{}).checked);
+    st("fdc-st-termo",termoAceito);
+    document.getElementById("fdc-box-ok").style.display=tudoOk?"block":"none";
+    var err=document.getElementById("fdc-erro-geral");
+    if(err&&tudoOk)err.style.display="none";
   };
 
   function tudo_valido(){
-    var termo=(document.getElementById("fdc-termo")||{}).checked;
-    if(!agConfirmado||!termo)return false;
+    if(!agConfirmado||!termoAceito)return false;
     if(tipo==="entrega"){
       var nome=(document.getElementById("fdc-nome")||{}).value||"";
       var tel=(document.getElementById("fdc-tel")||{}).value||"";
-      var rua=(document.getElementById("fdc-rua")||{}).value||"";
-      var num=(document.getElementById("fdc-num")||{}).value||"";
-      if(!nome.trim()||tel.trim().length<14||!rua.trim()||!num.trim())return false;
+      if(!nome.trim()||tel.trim().length<14)return false;
     }
     return true;
   }
@@ -360,6 +411,7 @@
     agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
+    fdcVerificar();
     fdcAbrirModal();
   };
 
@@ -409,20 +461,16 @@
 
   function enviarEmail(){
     var p=periodoSel?getPeriodos().find(function(x){return x.id===periodoSel;}):null;
+    var agora=new Date();
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
       nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
       tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
-      endereco:tipo==="entrega"?[
-        (document.getElementById("fdc-rua")||{}).value||"",
-        (document.getElementById("fdc-num")||{}).value||"",
-        (document.getElementById("fdc-comp")||{}).value||"",
-        (document.getElementById("fdc-ramal")||{}).value||""
-      ].filter(Boolean).join(", "):"(retirada na loja)",
       data_entrega:dataSel?dataSel.toLocaleDateString("pt-BR"):"(não informado)",
       periodo_entrega:p?p.nome+" ("+p.hora+")":"(não informado)",
-      data_hora:new Date().toLocaleString("pt-BR"),
+      termos_aceitos:"Confirmado em "+agora.toLocaleDateString("pt-BR")+" às "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
+      data_hora:agora.toLocaleString("pt-BR"),
       pagina:window.location.href
     };
     function send(){
@@ -445,13 +493,13 @@
     var bloco=montarBloco();
     montarModal();
 
-    // Insere antes da tabela de produtos do carrinho
     var alvos=[
       ".carrinho-produtos",
       "table.carrinho",
       ".cart-table",
       "#carrinho-produtos",
-      ".conteudo-carrinho"
+      ".conteudo-carrinho",
+      ".secao-principal .row-fluid"
     ];
     var ok=false;
     for(var i=0;i<alvos.length;i++){
@@ -467,21 +515,22 @@
       document.getElementById("fdc-faltam").textContent=500-this.value.length;
     });
 
-    // Intercepta SOMENTE o botão finalizar — verifica href contém "finalizar"
+    // Intercepta botão finalizar da Loja Integrada
     document.addEventListener("click",function(e){
       var el=e.target;
       while(el&&el!==document.body){
-        var href=el.getAttribute&&el.getAttribute("href")||"";
-        var txt=(el.innerText||el.textContent||"").toLowerCase().trim();
-        if(href.indexOf("finalizar")!==-1||txt==="finalizar compra"||txt==="✓ finalizar compra"){
+        if(el.classList&&
+           el.classList.contains("botao")&&
+           el.classList.contains("principal")&&
+           el.classList.contains("grande")&&
+           el.closest&&el.closest(".finalizar-compra")){
           break;
         }
         el=el.parentNode;
       }
       if(!el||el===document.body)return;
-      var href=el.getAttribute&&el.getAttribute("href")||"";
-      var txt=(el.innerText||el.textContent||"").toLowerCase().trim();
-      if(href.indexOf("finalizar")===-1&&txt!=="finalizar compra"&&txt!=="✓ finalizar compra")return;
+      if(!el.classList||!el.classList.contains("botao")||!el.classList.contains("principal")||!el.classList.contains("grande"))return;
+      if(!el.closest||!el.closest(".finalizar-compra"))return;
 
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
