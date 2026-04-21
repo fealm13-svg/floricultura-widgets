@@ -57,6 +57,32 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
+  // ── Lê itens do carrinho ─────────────────────────────────────────────
+  function lerItensCarrinho(){
+    var itens=[];
+    // Tenta vários seletores comuns da Loja Integrada
+    var seletores=[
+      ".nome-produto",
+      ".cart-item-name",
+      ".product-name",
+      "td.nome a",
+      ".listagem-item .nome-produto"
+    ];
+    for(var i=0;i<seletores.length;i++){
+      var els=document.querySelectorAll(seletores[i]);
+      if(els.length>0){
+        els.forEach(function(el){
+          var txt=(el.innerText||el.textContent||"").trim();
+          if(txt&&txt.indexOf("--PRODUTO")===-1&&itens.indexOf(txt)===-1){
+            itens.push(txt);
+          }
+        });
+        if(itens.length>0)break;
+      }
+    }
+    return itens.length>0?itens.join("\n"):"(não identificado)";
+  }
+
   // ── SessionStorage ───────────────────────────────────────────────────
   function salvarSessao(){
     try{
@@ -79,28 +105,23 @@
     try{
       var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
       if(!dados)return;
-
-      if(dados.tipo&&dados.tipo!==tipo){
-        window.fdcSetTipo(dados.tipo);
-      }
-
+      if(dados.tipo&&dados.tipo!==tipo)window.fdcSetTipo(dados.tipo);
       if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
       if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
-      if(dados.msg){var m=document.getElementById("fdc-msg");if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}}
-
+      if(dados.msg){
+        var m=document.getElementById("fdc-msg");
+        if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}
+      }
       if(dados.semMsg){
         semMensagem=true;
         var cb=document.getElementById("fdc-sem-msg");if(cb)cb.checked=true;
         var txt=document.getElementById("fdc-msg");if(txt){txt.value="";txt.disabled=true;}
       }
-
       if(dados._dataSel&&dados._periodoSel){
         var d=new Date(dados._dataSel);
         if(temDisp(d)){
-          dataSel=d;
-          periodoSel=dados._periodoSel;
-          mesAtual=d.getMonth();
-          anoAtual=d.getFullYear();
+          dataSel=d;periodoSel=dados._periodoSel;
+          mesAtual=d.getMonth();anoAtual=d.getFullYear();
           agConfirmado=dados._agConfirmado||false;
           if(agConfirmado){
             var p=getPeriodos().find(function(x){return x.id===periodoSel;});
@@ -115,13 +136,11 @@
           }
         }
       }
-
       if(dados._termoAceito){
         termoAceito=true;
         var cb2=document.getElementById("fdc-termo");if(cb2)cb2.checked=true;
         var wrap=document.getElementById("fdc-termo-wrap");if(wrap)wrap.className="fdc-termo-wrap verde";
       }
-
       fdcVerificar();
     }catch(x){}
   }
@@ -225,7 +244,6 @@
       ".fdc-box-ok-icon{font-size:22px;flex-shrink:0;line-height:1.3}",
       ".fdc-box-ok-txt strong{font-size:14px;color:#fff;display:block;margin-bottom:4px}",
       ".fdc-box-ok-txt p{font-size:12px;color:#fff;line-height:1.5;opacity:.95}",
-      // Popup de erro
       ".fdc-popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999999;align-items:center;justify-content:center}",
       ".fdc-popup-overlay.ativo{display:flex}",
       ".fdc-popup{background:#fff;border-radius:12px;padding:28px 24px;width:90%;max-width:380px;text-align:center}",
@@ -234,7 +252,6 @@
       ".fdc-popup p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}",
       ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}",
       ".fdc-popup-btn:hover{background:#8a1029}",
-      // Modal agendamento
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
       ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -277,7 +294,6 @@
     var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);
   }
 
-  // ── HTML ─────────────────────────────────────────────────────────────
   function montarBloco(){
     var div=document.createElement("div");
     div.id="fdc-bloco";div.className="fdc-bloco";
@@ -339,8 +355,7 @@
       '<div class="fdc-popup">',
         '<div class="fdc-popup-icon">⚠️</div>',
         '<h3>Atenção!</h3>',
-        '<p>Preencha todos os campos obrigatórios antes de finalizar:<br>',
-        '<span id="fdc-popup-itens"></span></p>',
+        '<p>Preencha todos os campos obrigatórios antes de finalizar:<br><span id="fdc-popup-itens"></span></p>',
         '<button class="fdc-popup-btn" onclick="fdcFecharPopup()">Voltar e preencher</button>',
       '</div>'
     ].join("");
@@ -525,9 +540,12 @@
     btn.disabled=!(dataSel&&periodoSel);
   }
 
-  // ── Email — carrega SDK antecipadamente ──────────────────────────────
+  // ── Email ────────────────────────────────────────────────────────────
   function preCarregarEmailJS(){
-    if(typeof emailjs!=="undefined")return;
+    if(typeof emailjs!=="undefined"){
+      emailjs.init({publicKey:CFG.emailjs_public_key});
+      return;
+    }
     var sc=document.createElement("script");
     sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});};
@@ -539,6 +557,7 @@
     var agora=new Date();
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
+      itens_carrinho:lerItensCarrinho(),
       nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
       tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
@@ -548,19 +567,22 @@
       data_hora:agora.toLocaleString("pt-BR"),
       pagina:window.location.href
     };
+
     function send(){
-      emailjs.init({publicKey:CFG.emailjs_public_key});
       emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(
         function(){console.log("[FD] Email enviado.");if(callback)callback();},
         function(e){console.error("[FD] Erro:",e);if(callback)callback();}
       );
     }
-    if(typeof emailjs==="undefined"){
+
+    if(typeof emailjs==="undefined"||!emailjs.send){
       var sc=document.createElement("script");
       sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
       sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});send();};
       document.head.appendChild(sc);
-    }else{send();}
+    }else{
+      send();
+    }
   }
 
   // ── Init ─────────────────────────────────────────────────────────────
@@ -589,13 +611,9 @@
       salvarSessao();
     });
 
-    // Pré-carrega o EmailJS assim que a página abre
     preCarregarEmailJS();
-
-    // Restaura dados salvos anteriormente
     restaurarSessao();
 
-    // Intercepta botão finalizar
     document.addEventListener("click",function(e){
       var el=e.target;
       while(el&&el!==document.body){
@@ -612,7 +630,6 @@
 
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
-        // Monta lista de pendências para o popup
         var pendencias=[];
         if(tipo==="entrega"){
           var nome=(document.getElementById("fdc-nome")||{}).value||"";
@@ -628,8 +645,12 @@
         return;
       }
 
-      // Tudo válido — envia email e deixa navegar
-      enviarEmail();
+      // Tudo válido — bloqueia navegação, envia email, depois navega
+      e.preventDefault();e.stopPropagation();
+      var href=el.getAttribute("href")||"/checkout";
+      enviarEmail(function(){
+        window.location.href=href;
+      });
     },true);
 
     fdcVerificar();
