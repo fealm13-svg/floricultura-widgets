@@ -109,7 +109,7 @@
     var s = document.createElement("style");
     s.id = "fd-adicionais-css";
     s.innerHTML = [
-      ".fd-tag{position:absolute;top:8px;left:8px;z-index:10;font-size:11px;font-weight:600;color:#fff;padding:3px 9px;border-radius:4px;cursor:default;white-space:nowrap;line-height:1.4;}",
+      ".fd-tag{position:absolute;top:8px;left:8px;z-index:10;font-size:10px;font-weight:600;color:#fff;padding:2px 7px;border-radius:4px;cursor:default;white-space:nowrap;line-height:1.4;}",
       ".fd-tag-wrap{position:relative;display:inline-block;}",
       ".fd-tooltip{display:none;position:absolute;top:calc(100% + 5px);left:0;background:#222;color:#fff;font-size:11px;padding:5px 10px;border-radius:4px;white-space:nowrap;z-index:100;pointer-events:none;line-height:1.4;}",
       ".fd-tag-wrap:hover .fd-tooltip{display:block;}",
@@ -141,59 +141,26 @@
   // MÓDULO 1 — TAGS NOS CARDS DE LISTAGEM
   // ─────────────────────────────────────────────
   function aplicarTagsListagem() {
-    // Seletores comuns da Loja Integrada para cards de produto na listagem
-    var seletoresCard = [
-      ".produto-item",
-      ".listagem-item",
-      ".item-produto",
-      ".product-item"
-    ];
-    var seletoresNome = [
-      ".nome-produto",
-      ".produto-nome",
-      ".item-nome",
-      ".product-name",
-      "h2.nome",
-      "h3.nome",
-      ".nome a"
-    ];
-    var seletoresImagem = [
-      ".produto-imagem",
-      ".item-imagem",
-      ".imagem",
-      ".product-image",
-      ".foto-produto"
-    ];
-
-    var cards = [];
-    for (var i = 0; i < seletoresCard.length; i++) {
-      var found = document.querySelectorAll(seletoresCard[i]);
-      if (found.length > 0) { cards = Array.prototype.slice.call(found); break; }
-    }
+    // Seletor real do tema: div.listagem-item
+    var cards = Array.prototype.slice.call(document.querySelectorAll("div.listagem-item"));
     if (!cards.length) return;
 
     cards.forEach(function (card) {
-      if (card.querySelector(".fd-tag")) return; // já processado
+      if (card.querySelector(".fd-tag")) return;
 
-      var titulo = "";
-      for (var j = 0; j < seletoresNome.length; j++) {
-        var el = card.querySelector(seletoresNome[j]);
-        if (el) { titulo = (el.innerText || el.textContent || "").trim(); break; }
-      }
+      // Nome do produto: div.info-produto ou qualquer link/texto com nome
+      var nomeEl = card.querySelector(".info-produto .nome-produto, .nome-produto, .info-produto a");
+      var titulo = nomeEl ? (nomeEl.innerText || nomeEl.textContent || "").trim() : "";
       if (!titulo) return;
 
       var regra = getRegra(titulo);
       if (!regra) return;
 
-      var imgWrap = null;
-      for (var k = 0; k < seletoresImagem.length; k++) {
-        imgWrap = card.querySelector(seletoresImagem[k]);
-        if (imgWrap) break;
-      }
-      // fallback: primeiro elemento com posição relativa ou a própria âncora
-      if (!imgWrap) imgWrap = card.querySelector("a") || card;
-
+      // Container da imagem: div.imagem-produto (não forçar position — o tema já trata)
+      var imgWrap = card.querySelector(".imagem-produto");
+      if (!imgWrap) return;
       imgWrap.style.position = "relative";
+
       var wrap = document.createElement("span");
       wrap.className = "fd-tag-wrap";
       var tag = document.createElement("span");
@@ -213,39 +180,26 @@
   // MÓDULO 2 — TAG NA PÁGINA DO PRODUTO
   // ─────────────────────────────────────────────
   function aplicarTagProduto() {
-    // Pega o título do produto
-    var tituloEl = document.querySelector("h1.nome-produto,h1.product-name,h1.titulo-produto,.pagina-produto h1,.produto-detalhe h1");
+    // Seletor real do tema: div.conteiner-imagem
+    var imgWrap = document.querySelector(".conteiner-imagem");
+    if (!imgWrap) return;
+    if (imgWrap.querySelector(".fd-tag")) return;
+
+    // Título: h1 dentro de span12.produto
+    var tituloEl = document.querySelector(".span12.produto h1, .info-principal-produto h1, h1.titulo");
     if (!tituloEl) return;
     var titulo = (tituloEl.innerText || tituloEl.textContent || "").trim();
     var regra = getRegra(titulo);
     if (!regra) return;
 
-    // Tenta encontrar o container da imagem principal
-    var seletoresImg = [
-      ".foto-produto-principal",
-      ".produto-imagem-principal",
-      ".product-main-image",
-      ".imagem-principal",
-      "#imagem-produto",
-      ".galeria-produto .ativa",
-      ".produto-foto"
-    ];
-    var imgWrap = null;
-    for (var i = 0; i < seletoresImg.length; i++) {
-      imgWrap = document.querySelector(seletoresImg[i]);
-      if (imgWrap) break;
-    }
-    if (!imgWrap) return;
-    if (imgWrap.querySelector(".fd-tag")) return;
-
-    imgWrap.style.position = "relative";
+    // conteiner-imagem já tem position relativa no tema — não forçar
     var wrap = document.createElement("span");
     wrap.className = "fd-tag-wrap";
     var tag = document.createElement("span");
     tag.className = "fd-tag";
     tag.style.background = regra.cor;
-    tag.style.fontSize = "13px";
-    tag.style.padding = "5px 12px";
+    tag.style.fontSize = "11px";
+    tag.style.padding = "3px 9px";
     tag.textContent = regra.texto;
     var tip = document.createElement("span");
     tip.className = "fd-tooltip";
@@ -277,29 +231,13 @@
   }
 
   function construirComplementos() {
-    // Detecta página de produto
-    var isProduto = !!(
-      document.querySelector(".pagina-produto") ||
-      document.querySelector(".produto-detalhe") ||
-      document.querySelector(".product-detail") ||
-      document.querySelector("#produto-detalhe") ||
-      (window.location.pathname.indexOf("/produto") !== -1) ||
-      (window.location.pathname.replace(/\/$/, "").split("/").length === 2 &&
-       window.location.pathname.indexOf("/categoria") === -1 &&
-       window.location.pathname.indexOf("/busca") === -1 &&
-       window.location.pathname !== "/")
-    );
+    // Detecta página de produto pelo seletor real do tema
+    var isProduto = !!(document.querySelector(".abas-custom") || document.querySelector("div#descricao"));
     if (!isProduto) return;
     if (document.getElementById("fd-complementos")) return;
 
-    // Ponto de inserção: após a descrição do produto
-    var ancora = document.querySelector(
-      ".descricao-produto,.product-description,.produto-descricao,#descricao-produto,.description-product"
-    );
-    if (!ancora) {
-      // fallback: após o formulário de compra
-      ancora = document.querySelector("form.produto-compra,form.buy-form,.produto-form,#form-produto");
-    }
+    // Ponto de inserção: após div.abas-custom (bloco das abas Descrição/Avaliações)
+    var ancora = document.querySelector(".abas-custom");
     if (!ancora) return;
 
     var secao = document.createElement("div");
