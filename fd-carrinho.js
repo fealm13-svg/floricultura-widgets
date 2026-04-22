@@ -57,25 +57,97 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
+  // ── Detecta se há cesta no carrinho ──────────────────────────────────
+  function isCesta(){
+    var itens=document.querySelectorAll(".nome-produto,.product-name,.item-name");
+    for(var i=0;i<itens.length;i++){
+      if(itens[i].innerText&&itens[i].innerText.toLowerCase().indexOf("cesta")!==-1)return true;
+    }
+    return false;
+  }
+
+  // ── Regras de período mínimo para cestas ─────────────────────────────
+  // Retorna o id do primeiro período permitido no dia seguinte para cestas
+  function periodoMinimoCesta(){
+    var h=new Date().getHours()+new Date().getMinutes()/60;
+    if(h>=22)return "t1"; // 22:01-23:59 → a partir de Tarde I
+    if(h>=18)return "m1"; // 18:00-22:00 → a partir de Manhã I
+    return null;          // até 17:59 → todos os períodos
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────
+  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
+  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+  function getPeriodos(){return tipo==="entrega"?PERIODOS_ENTREGA:PERIODOS_RETIRADA;}
+
+  function minData(){
+    // Para cestas, mínimo é sempre o dia seguinte
+    if(isCesta())return addDias(hoje(),1);
+    return hoje();
+  }
+
+  function periodosParaDia(d){
+    var h=new Date().getHours()+new Date().getMinutes()/60;
+    var dd=new Date(d);dd.setHours(0,0,0,0);
+    var isHoje=dd.getTime()===hoje().getTime();
+    var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
+    var cesta=isCesta();
+    var ordemPeriodos=["m1","m2","t1","t2"];
+
+    return getPeriodos().map(function(p){
+      if(p.dias.indexOf(dd.getDay())===-1)return Object.assign({},p,{ok:false});
+
+      // Regra especial para cestas no dia seguinte
+      if(cesta&&isAmanha){
+        var minPer=periodoMinimoCesta();
+        if(minPer){
+          // Bloqueia períodos anteriores ao mínimo
+          var idxMin=ordemPeriodos.indexOf(minPer);
+          var idxP=ordemPeriodos.indexOf(p.id);
+          return Object.assign({},p,{ok:idxP>=idxMin});
+        }
+        // Sem restrição de período (pedido antes das 18h)
+        return Object.assign({},p,{ok:true});
+      }
+
+      // Regra normal para hoje (não cesta)
+      if(isHoje){
+        if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
+        return Object.assign({},p,{ok:(p.ini-h)>=1});
+      }
+
+      return Object.assign({},p,{ok:true});
+    });
+  }
+
+  function temDisp(d){
+    var min=minData();min.setHours(0,0,0,0);
+    var dd=new Date(d);dd.setHours(0,0,0,0);
+    if(dd<min||dd>addDias(hoje(),30))return false;
+    if(isFeriado(dd))return false;
+    return periodosParaDia(d).some(function(p){return p.ok;});
+  }
+
+  function tudo_valido(){
+    if(!agConfirmado||!termoAceito)return false;
+    if(tipo==="entrega"){
+      var nome=(document.getElementById("fdc-nome")||{}).value||"";
+      var tel=(document.getElementById("fdc-tel")||{}).value||"";
+      if(!nome.trim()||tel.trim().length<14)return false;
+    }
+    return true;
+  }
+
   // ── Lê itens do carrinho ─────────────────────────────────────────────
   function lerItensCarrinho(){
     var itens=[];
-    // Tenta vários seletores comuns da Loja Integrada
-    var seletores=[
-      ".nome-produto",
-      ".cart-item-name",
-      ".product-name",
-      "td.nome a",
-      ".listagem-item .nome-produto"
-    ];
+    var seletores=[".nome-produto",".cart-item-name",".product-name","td.nome a",".listagem-item .nome-produto"];
     for(var i=0;i<seletores.length;i++){
       var els=document.querySelectorAll(seletores[i]);
       if(els.length>0){
         els.forEach(function(el){
           var txt=(el.innerText||el.textContent||"").trim();
-          if(txt&&txt.indexOf("--PRODUTO")===-1&&itens.indexOf(txt)===-1){
-            itens.push(txt);
-          }
+          if(txt&&txt.indexOf("--PRODUTO")===-1&&itens.indexOf(txt)===-1)itens.push(txt);
         });
         if(itens.length>0)break;
       }
@@ -143,59 +215,6 @@
       }
       fdcVerificar();
     }catch(x){}
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────
-  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
-  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
-  function getPeriodos(){return tipo==="entrega"?PERIODOS_ENTREGA:PERIODOS_RETIRADA;}
-
-  function isCesta(){
-    var itens=document.querySelectorAll(".nome-produto,.product-name,.item-name");
-    for(var i=0;i<itens.length;i++){
-      if(itens[i].innerText&&itens[i].innerText.toLowerCase().indexOf("cesta")!==-1)return true;
-    }
-    return false;
-  }
-
-  function minData(){
-    var h=new Date().getHours()+new Date().getMinutes()/60;
-    if(isCesta()){if(h>=18)return addDias(hoje(),2);return addDias(hoje(),1);}
-    return hoje();
-  }
-
-  function periodosParaDia(d){
-    var h=new Date().getHours()+new Date().getMinutes()/60;
-    var dd=new Date(d);dd.setHours(0,0,0,0);
-    var isHoje=dd.getTime()===hoje().getTime();
-    var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
-    return getPeriodos().map(function(p){
-      if(p.dias.indexOf(dd.getDay())===-1)return Object.assign({},p,{ok:false});
-      if(isCesta()&&h>=18&&isAmanha)return Object.assign({},p,{ok:p.id==="m2"});
-      if(isHoje){
-        if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
-        return Object.assign({},p,{ok:(p.ini-h)>=1});
-      }
-      return Object.assign({},p,{ok:true});
-    });
-  }
-
-  function temDisp(d){
-    var min=minData();min.setHours(0,0,0,0);
-    var dd=new Date(d);dd.setHours(0,0,0,0);
-    if(dd<min||dd>addDias(hoje(),30))return false;
-    if(isFeriado(dd))return false;
-    return periodosParaDia(d).some(function(p){return p.ok;});
-  }
-
-  function tudo_valido(){
-    if(!agConfirmado||!termoAceito)return false;
-    if(tipo==="entrega"){
-      var nome=(document.getElementById("fdc-nome")||{}).value||"";
-      var tel=(document.getElementById("fdc-tel")||{}).value||"";
-      if(!nome.trim()||tel.trim().length<14)return false;
-    }
-    return true;
   }
 
   // ── CSS ──────────────────────────────────────────────────────────────
@@ -542,10 +561,7 @@
 
   // ── Email ────────────────────────────────────────────────────────────
   function preCarregarEmailJS(){
-    if(typeof emailjs!=="undefined"){
-      emailjs.init({publicKey:CFG.emailjs_public_key});
-      return;
-    }
+    if(typeof emailjs!=="undefined"){emailjs.init({publicKey:CFG.emailjs_public_key});return;}
     var sc=document.createElement("script");
     sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});};
@@ -564,25 +580,20 @@
       data_entrega:dataSel?dataSel.toLocaleDateString("pt-BR"):"(não informado)",
       periodo_entrega:p?p.nome+" ("+p.hora+")":"(não informado)",
       termos_aceitos:"Confirmado em "+agora.toLocaleDateString("pt-BR")+" às "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
-      data_hora:agora.toLocaleString("pt-BR"),
-      pagina:window.location.href
+      data_hora:agora.toLocaleString("pt-BR")
     };
-
     function send(){
       emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(
         function(){console.log("[FD] Email enviado.");if(callback)callback();},
         function(e){console.error("[FD] Erro:",e);if(callback)callback();}
       );
     }
-
     if(typeof emailjs==="undefined"||!emailjs.send){
       var sc=document.createElement("script");
       sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
       sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});send();};
       document.head.appendChild(sc);
-    }else{
-      send();
-    }
+    }else{send();}
   }
 
   // ── Init ─────────────────────────────────────────────────────────────
@@ -645,12 +656,9 @@
         return;
       }
 
-      // Tudo válido — bloqueia navegação, envia email, depois navega
       e.preventDefault();e.stopPropagation();
       var href=el.getAttribute("href")||"/checkout";
-      enviarEmail(function(){
-        window.location.href=href;
-      });
+      enviarEmail(function(){window.location.href=href;});
     },true);
 
     fdcVerificar();
