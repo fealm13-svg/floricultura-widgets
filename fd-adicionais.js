@@ -303,12 +303,18 @@
   }
 
   // ─────────────────────────────────────────────
-  // MÓDULO 4 — SUBSTITUIR "Frete Grátis"
+  // MÓDULO 4 — SUBSTITUIR MENSAGENS DE FRETE
   // ─────────────────────────────────────────────
-  function corrigirFreteGratis() {
+  function corrigirMensagensFrete() {
     document.querySelectorAll("*").forEach(function (el) {
-      if (el.children.length === 0 && el.textContent.trim() === "Frete Grátis") {
+      if (el.children.length > 0) return;
+      var txt = el.textContent.trim();
+      if (txt === "Frete Grátis") {
         el.textContent = "Entrega Grátis - Agendamento na tela de checkout";
+      } else if (txt === "Não foram encontradas formas de envio para o CEP informado.") {
+        el.textContent = "Desculpe, não realizamos entregas para este CEP. Entre em contato pelo WhatsApp caso queira comprar para retirar em nossa loja física.";
+      } else if (txt === "* Este prazo de entrega está considerando a disponibilidade do produto + prazo de entrega.") {
+        el.textContent = "Adicione o produto ao carrinho e escolha o melhor horário para entrega ou retirada.";
       }
     });
   }
@@ -321,7 +327,7 @@
     aplicarTagsListagem();
     aplicarTagProduto();
     construirComplementos();
-    corrigirFreteGratis();
+    corrigirMensagensFrete();
   }
 
   // Aguarda DOM pronto
@@ -340,7 +346,7 @@
         aplicarTagsListagem();
         aplicarTagProduto();
         construirComplementos();
-        corrigirFreteGratis();
+        corrigirMensagensFrete();
       }, 400);
     });
     observer.observe(document.body, { childList: true, subtree: true });
