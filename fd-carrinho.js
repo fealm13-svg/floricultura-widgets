@@ -18,19 +18,31 @@
     return FERIADOS.indexOf(str)!==-1;
   }
 
-  var PERIODOS_ENTREGA=[
-    {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,dias:[1,2,3,4,5]},
-    {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,dias:[1,2,3,4,5]},
-    {id:"t1",nome:"Tarde I",hora:"12:30 – 15:00",ini:12.5,dias:[1,2,3,4,5]},
-    {id:"t2",nome:"Tarde II",hora:"15:00 – 17:00",ini:15,dias:[1,2,3,4,5],tolerancia:0.5}
+  // ── Períodos de entrega ──────────────────────────────────────────────
+  var ENTREGA_SEMANA=[
+    {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
+    {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12},
+    {id:"t1",nome:"Tarde I",hora:"12:30 – 14:00",ini:12.5,fim:14},
+    {id:"t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
+    {id:"t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17,tolerancia:0.5}
+  ];
+  var ENTREGA_FDS=[
+    {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
+    {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12}
   ];
 
-  var PERIODOS_RETIRADA=[];
+  // ── Períodos de retirada ─────────────────────────────────────────────
+  var RETIRADA_SEMANA=[];
   [8,9,10,11,12,13,14,15,16,17,18].forEach(function(h){
-    PERIODOS_RETIRADA.push({id:"r"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,dias:[1,2,3,4,5]});
+    RETIRADA_SEMANA.push({id:"rs"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
   });
-  [10,11,12,13].forEach(function(h){
-    PERIODOS_RETIRADA.push({id:"rw"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,dias:[6,0]});
+  var RETIRADA_SAB=[];
+  [9,10,11,12,13,14,15].forEach(function(h){
+    RETIRADA_SAB.push({id:"rsab"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
+  });
+  var RETIRADA_DOM=[];
+  [9,10,11,12].forEach(function(h){
+    RETIRADA_DOM.push({id:"rdom"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
   });
 
   var TERMOS={
@@ -57,98 +69,15 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
-  // ── Lê itens do carrinho ─────────────────────────────────────────────
-  function lerItensCarrinho(){
-    var itens=[];
-    // Tenta vários seletores comuns da Loja Integrada
-    var seletores=[
-      ".nome-produto",
-      ".cart-item-name",
-      ".product-name",
-      "td.nome a",
-      ".listagem-item .nome-produto"
-    ];
-    for(var i=0;i<seletores.length;i++){
-      var els=document.querySelectorAll(seletores[i]);
-      if(els.length>0){
-        els.forEach(function(el){
-          var txt=(el.innerText||el.textContent||"").trim();
-          if(txt&&txt.indexOf("--PRODUTO")===-1&&itens.indexOf(txt)===-1){
-            itens.push(txt);
-          }
-        });
-        if(itens.length>0)break;
-      }
+  function getPeriodosParaDow(dow){
+    if(tipo==="entrega"){
+      return (dow===0||dow===6)?ENTREGA_FDS:ENTREGA_SEMANA;
+    }else{
+      if(dow===6)return RETIRADA_SAB;
+      if(dow===0)return RETIRADA_DOM;
+      return RETIRADA_SEMANA;
     }
-    return itens.length>0?itens.join("\n"):"(não identificado)";
   }
-
-  // ── SessionStorage ───────────────────────────────────────────────────
-  function salvarSessao(){
-    try{
-      var dados={
-        tipo:tipo,
-        nome:(document.getElementById("fdc-nome")||{}).value||"",
-        tel:(document.getElementById("fdc-tel")||{}).value||"",
-        msg:(document.getElementById("fdc-msg")||{}).value||"",
-        semMsg:semMensagem,
-        _dataSel:dataSel?dataSel.toISOString():null,
-        _periodoSel:periodoSel,
-        _agConfirmado:agConfirmado,
-        _termoAceito:termoAceito
-      };
-      sessionStorage.setItem("fdc_carrinho",JSON.stringify(dados));
-    }catch(x){}
-  }
-
-  function restaurarSessao(){
-    try{
-      var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
-      if(!dados)return;
-      if(dados.tipo&&dados.tipo!==tipo)window.fdcSetTipo(dados.tipo);
-      if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
-      if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
-      if(dados.msg){
-        var m=document.getElementById("fdc-msg");
-        if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}
-      }
-      if(dados.semMsg){
-        semMensagem=true;
-        var cb=document.getElementById("fdc-sem-msg");if(cb)cb.checked=true;
-        var txt=document.getElementById("fdc-msg");if(txt){txt.value="";txt.disabled=true;}
-      }
-      if(dados._dataSel&&dados._periodoSel){
-        var d=new Date(dados._dataSel);
-        if(temDisp(d)){
-          dataSel=d;periodoSel=dados._periodoSel;
-          mesAtual=d.getMonth();anoAtual=d.getFullYear();
-          agConfirmado=dados._agConfirmado||false;
-          if(agConfirmado){
-            var p=getPeriodos().find(function(x){return x.id===periodoSel;});
-            if(p){
-              document.getElementById("fdc-res-data").textContent=dataSel.toLocaleDateString("pt-BR");
-              document.getElementById("fdc-res-diasem").textContent=DIASLONG[dataSel.getDay()];
-              document.getElementById("fdc-res-per").textContent=p.nome;
-              document.getElementById("fdc-res-hora").textContent=p.hora;
-              document.getElementById("fdc-btn-ag").style.display="none";
-              document.getElementById("fdc-resumo-ag").style.display="block";
-            }
-          }
-        }
-      }
-      if(dados._termoAceito){
-        termoAceito=true;
-        var cb2=document.getElementById("fdc-termo");if(cb2)cb2.checked=true;
-        var wrap=document.getElementById("fdc-termo-wrap");if(wrap)wrap.className="fdc-termo-wrap verde";
-      }
-      fdcVerificar();
-    }catch(x){}
-  }
-
-  // ── Helpers ──────────────────────────────────────────────────────────
-  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
-  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
-  function getPeriodos(){return tipo==="entrega"?PERIODOS_ENTREGA:PERIODOS_RETIRADA;}
 
   function isCesta(){
     var itens=document.querySelectorAll(".nome-produto,.product-name,.item-name");
@@ -158,20 +87,49 @@
     return false;
   }
 
-  function minData(){
+  function periodoMinimoCesta(){
     var h=new Date().getHours()+new Date().getMinutes()/60;
-    if(isCesta()){if(h>=18)return addDias(hoje(),2);return addDias(hoje(),1);}
+    if(h>=22)return "t1";
+    if(h>=18)return "m1";
+    return null;
+  }
+
+  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
+  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+
+  function fdsDisponivel(){
+    var agora=new Date();
+    var dow=agora.getDay();
+    var h=agora.getHours()+agora.getMinutes()/60;
+    if(dow===5&&h>=17)return false;
+    if(dow===6||dow===0)return false;
+    return true;
+  }
+
+  function minData(){
+    if(isCesta())return addDias(hoje(),1);
     return hoje();
   }
 
   function periodosParaDia(d){
     var h=new Date().getHours()+new Date().getMinutes()/60;
     var dd=new Date(d);dd.setHours(0,0,0,0);
+    var dow=dd.getDay();
     var isHoje=dd.getTime()===hoje().getTime();
     var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
-    return getPeriodos().map(function(p){
-      if(p.dias.indexOf(dd.getDay())===-1)return Object.assign({},p,{ok:false});
-      if(isCesta()&&h>=18&&isAmanha)return Object.assign({},p,{ok:p.id==="m2"});
+    var cesta=isCesta();
+    var lista=getPeriodosParaDow(dow);
+    var ordemIds=["m1","m2","t1","t2","t3"];
+    return lista.map(function(p){
+      if(cesta&&isAmanha){
+        var minPer=periodoMinimoCesta();
+        if(minPer){
+          var idxMin=ordemIds.indexOf(minPer);
+          var idxP=ordemIds.indexOf(p.id);
+          return Object.assign({},p,{ok:idxP>=idxMin});
+        }
+        return Object.assign({},p,{ok:true});
+      }
       if(isHoje){
         if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
         return Object.assign({},p,{ok:(p.ini-h)>=1});
@@ -185,6 +143,8 @@
     var dd=new Date(d);dd.setHours(0,0,0,0);
     if(dd<min||dd>addDias(hoje(),30))return false;
     if(isFeriado(dd))return false;
+    var dow=dd.getDay();
+    if((dow===0||dow===6)&&!fdsDisponivel())return false;
     return periodosParaDia(d).some(function(p){return p.ok;});
   }
 
@@ -198,7 +158,80 @@
     return true;
   }
 
-  // ── CSS ──────────────────────────────────────────────────────────────
+  function lerItensCarrinho(){
+    var itens=[];
+    var seletores=[".nome-produto",".cart-item-name",".product-name","td.nome a"];
+    for(var i=0;i<seletores.length;i++){
+      var els=document.querySelectorAll(seletores[i]);
+      if(els.length>0){
+        els.forEach(function(el){
+          var txt=(el.innerText||el.textContent||"").trim();
+          if(txt&&txt.indexOf("--PRODUTO")===-1&&itens.indexOf(txt)===-1)itens.push(txt);
+        });
+        if(itens.length>0)break;
+      }
+    }
+    return itens.length>0?itens.join("\n"):"(não identificado)";
+  }
+
+  function salvarSessao(){
+    try{
+      sessionStorage.setItem("fdc_carrinho",JSON.stringify({
+        tipo:tipo,
+        nome:(document.getElementById("fdc-nome")||{}).value||"",
+        tel:(document.getElementById("fdc-tel")||{}).value||"",
+        msg:(document.getElementById("fdc-msg")||{}).value||"",
+        semMsg:semMensagem,
+        _dataSel:dataSel?dataSel.toISOString():null,
+        _periodoSel:periodoSel,
+        _agConfirmado:agConfirmado,
+        _termoAceito:termoAceito
+      }));
+    }catch(x){}
+  }
+
+  function restaurarSessao(){
+    try{
+      var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
+      if(!dados)return;
+      if(dados.tipo&&dados.tipo!==tipo)window.fdcSetTipo(dados.tipo);
+      if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
+      if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
+      if(dados.msg){var m=document.getElementById("fdc-msg");if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}}
+      if(dados.semMsg){
+        semMensagem=true;
+        var cb=document.getElementById("fdc-sem-msg");if(cb)cb.checked=true;
+        var txt=document.getElementById("fdc-msg");if(txt){txt.value="";txt.disabled=true;}
+      }
+      if(dados._dataSel&&dados._periodoSel){
+        var d=new Date(dados._dataSel);
+        if(temDisp(d)){
+          dataSel=d;periodoSel=dados._periodoSel;
+          mesAtual=d.getMonth();anoAtual=d.getFullYear();
+          agConfirmado=dados._agConfirmado||false;
+          if(agConfirmado){
+            var lista=getPeriodosParaDow(d.getDay());
+            var p=lista.find(function(x){return x.id===periodoSel;});
+            if(p){
+              document.getElementById("fdc-res-data").textContent=d.toLocaleDateString("pt-BR");
+              document.getElementById("fdc-res-diasem").textContent=DIASLONG[d.getDay()];
+              document.getElementById("fdc-res-per").textContent=p.nome;
+              document.getElementById("fdc-res-hora").textContent=p.hora;
+              document.getElementById("fdc-btn-ag").style.display="none";
+              document.getElementById("fdc-resumo-ag").style.display="block";
+            }
+          }
+        }
+      }
+      if(dados._termoAceito){
+        termoAceito=true;
+        var cb2=document.getElementById("fdc-termo");if(cb2)cb2.checked=true;
+        var wrap=document.getElementById("fdc-termo-wrap");if(wrap)wrap.className="fdc-termo-wrap aceito";
+      }
+      fdcVerificar();
+    }catch(x){}
+  }
+
   function injetarCSS(){
     var css=[
       ".fdc-bloco{background:#e8e8e8;border:1.5px solid #c8c8c8;border-radius:10px;padding:20px 22px;margin:22px 0;font-family:inherit}",
@@ -214,26 +247,26 @@
       ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
       ".fdc-campo textarea{resize:vertical;min-height:90px}",
       ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
-      ".fdc-contador{text-align:right;font-size:11px;color:#aaa;margin-top:3px}",
-      ".fdc-sem-msg{display:flex;align-items:center;gap:8px;font-size:12px;color:#666;cursor:pointer;margin-top:6px;user-select:none;line-height:1.2}",
-      ".fdc-sem-msg input{accent-color:#95a37b;width:14px;height:14px;flex-shrink:0;cursor:pointer}",
-      ".fdc-btn-ag{width:100%;background:#a91537;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
-      ".fdc-btn-ag:hover{background:#8a1029}",
+      ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
+      ".fdc-contador{font-size:11px;color:#aaa}",
+      ".fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;cursor:pointer;user-select:none}",
+      ".fdc-sem-msg input{accent-color:#95a37b;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
+      ".fdc-btn-ag{width:100%;background:#95a37b;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
+      ".fdc-btn-ag:hover{background:#7a8f64}",
       ".fdc-resumo-ag{background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:12px 14px;margin-bottom:12px}",
       ".fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}",
       ".fdc-resumo-ag-item label{font-size:11px;color:#888;display:block;margin-bottom:2px}",
       ".fdc-resumo-ag-item strong{font-size:13px;color:#333;display:block}",
       ".fdc-resumo-ag-item span{font-size:11px;color:#888}",
-      ".fdc-btn-alt{background:none;border:1px solid #a91537;color:#a91537;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
-      ".fdc-btn-alt:hover{background:#fff0f3}",
-      ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s}",
-      ".fdc-termo-wrap.vermelho{background:#dd3056}",
-      ".fdc-termo-wrap.verde{background:#72cd41}",
+      ".fdc-btn-alt{background:none;border:1px solid #95a37b;color:#95a37b;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
+      ".fdc-btn-alt:hover{background:#f0f5ec}",
+      ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s;background:#3a3a3a}",
+      ".fdc-termo-wrap.aceito{background:#72cd41}",
       ".fdc-termo-lista{list-style:none;padding:0;margin-bottom:12px}",
       ".fdc-termo-lista li{font-size:12px;color:#fff;line-height:1.6;padding:4px 0 4px 18px;position:relative}",
-      ".fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.7)}",
-      ".fdc-termo-check{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#fff;cursor:pointer;font-weight:600}",
-      ".fdc-termo-check input{margin-top:2px;accent-color:#fff;width:14px;height:14px;flex-shrink:0}",
+      ".fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.6)}",
+      ".fdc-termo-check{display:flex;align-items:center;gap:8px;font-size:12px;color:#fff;cursor:pointer;font-weight:600}",
+      ".fdc-termo-check input{accent-color:#fff;width:14px;height:14px;flex-shrink:0;vertical-align:middle}",
       ".fdc-status{margin-top:14px;background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:10px 14px}",
       ".fdc-status p{font-size:12px;color:#888;margin-bottom:6px}",
       ".fdc-status-items{display:flex;flex-wrap:wrap;gap:6px}",
@@ -304,7 +337,6 @@
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-      '<div class="fdc-sec">Agendamento</div>',
       '<div id="fdc-bloco-pres">',
         '<div class="fdc-sec">Presenteado</div>',
         '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
@@ -313,9 +345,12 @@
       '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
       '<div class="fdc-campo">',
         '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
-        '<div class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</div>',
+        '<div class="fdc-msg-footer">',
+          '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
+          '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
+        '</div>',
       '</div>',
-      '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
+      '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
         '<div class="fdc-resumo-ag-grid">',
@@ -325,7 +360,7 @@
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
       '<div class="fdc-sec">Termos</div>',
-      '<div class="fdc-termo-wrap vermelho" id="fdc-termo-wrap">',
+      '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
         '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
         '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
       '</div>',
@@ -394,7 +429,6 @@
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
   }
 
-  // ── Funções globais ──────────────────────────────────────────────────
   window.fdcSalvar=function(){salvarSessao();};
 
   window.fdcSetTipo=function(t){
@@ -407,8 +441,7 @@
     document.getElementById("fdc-modal-titulo").textContent=t==="entrega"?"Escolha a data e o período de entrega":"Escolha a data e o período de retirada";
     var lista=document.getElementById("fdc-termo-lista");
     lista.innerHTML=TERMOS[t].map(function(i){return '<li>'+i+'</li>';}).join("");
-    var wrap=document.getElementById("fdc-termo-wrap");
-    wrap.className="fdc-termo-wrap vermelho";
+    document.getElementById("fdc-termo-wrap").className="fdc-termo-wrap";
     document.getElementById("fdc-termo").checked=false;
     termoAceito=false;dataSel=null;periodoSel=null;agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
@@ -435,8 +468,7 @@
 
   window.fdcToggleTermo=function(){
     termoAceito=document.getElementById("fdc-termo").checked;
-    var wrap=document.getElementById("fdc-termo-wrap");
-    wrap.className="fdc-termo-wrap "+(termoAceito?"verde":"vermelho");
+    document.getElementById("fdc-termo-wrap").className="fdc-termo-wrap"+(termoAceito?" aceito":"");
     salvarSessao();fdcVerificar();
   };
 
@@ -479,7 +511,8 @@
   window.fdcConfirmar=function(){
     if(!dataSel||!periodoSel)return;
     agConfirmado=true;
-    var p=getPeriodos().find(function(x){return x.id===periodoSel;});
+    var lista=getPeriodosParaDow(dataSel.getDay());
+    var p=lista.find(function(x){return x.id===periodoSel;});
     document.getElementById("fdc-res-data").textContent=dataSel.toLocaleDateString("pt-BR");
     document.getElementById("fdc-res-diasem").textContent=DIASLONG[dataSel.getDay()];
     document.getElementById("fdc-res-per").textContent=p.nome;
@@ -534,18 +567,15 @@
     var btn=document.getElementById("fdc-btn-conf");
     document.getElementById("fdc-m-data").textContent=dataSel?dataSel.toLocaleDateString("pt-BR"):"—";
     document.getElementById("fdc-m-diasem").textContent=dataSel?DIASLONG[dataSel.getDay()]:"";
-    var p=periodoSel?getPeriodos().find(function(x){return x.id===periodoSel;}):null;
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay()):[];
+    var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     document.getElementById("fdc-m-per").textContent=p?p.nome:"—";
     document.getElementById("fdc-m-hora").textContent=p?p.hora:"";
     btn.disabled=!(dataSel&&periodoSel);
   }
 
-  // ── Email ────────────────────────────────────────────────────────────
   function preCarregarEmailJS(){
-    if(typeof emailjs!=="undefined"){
-      emailjs.init({publicKey:CFG.emailjs_public_key});
-      return;
-    }
+    if(typeof emailjs!=="undefined"){emailjs.init({publicKey:CFG.emailjs_public_key});return;}
     var sc=document.createElement("script");
     sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});};
@@ -553,7 +583,8 @@
   }
 
   function enviarEmail(callback){
-    var p=periodoSel?getPeriodos().find(function(x){return x.id===periodoSel;}):null;
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay()):[];
+    var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     var agora=new Date();
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
@@ -564,28 +595,22 @@
       data_entrega:dataSel?dataSel.toLocaleDateString("pt-BR"):"(não informado)",
       periodo_entrega:p?p.nome+" ("+p.hora+")":"(não informado)",
       termos_aceitos:"Confirmado em "+agora.toLocaleDateString("pt-BR")+" às "+agora.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"}),
-      data_hora:agora.toLocaleString("pt-BR"),
-      pagina:window.location.href
+      data_hora:agora.toLocaleString("pt-BR")
     };
-
     function send(){
       emailjs.send(CFG.emailjs_service_id,CFG.emailjs_template_id,dados).then(
         function(){console.log("[FD] Email enviado.");if(callback)callback();},
         function(e){console.error("[FD] Erro:",e);if(callback)callback();}
       );
     }
-
     if(typeof emailjs==="undefined"||!emailjs.send){
       var sc=document.createElement("script");
       sc.src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
       sc.onload=function(){emailjs.init({publicKey:CFG.emailjs_public_key});send();};
       document.head.appendChild(sc);
-    }else{
-      send();
-    }
+    }else{send();}
   }
 
-  // ── Init ─────────────────────────────────────────────────────────────
   function init(){
     injetarCSS();
     var bloco=montarBloco();
@@ -645,12 +670,9 @@
         return;
       }
 
-      // Tudo válido — bloqueia navegação, envia email, depois navega
       e.preventDefault();e.stopPropagation();
       var href=el.getAttribute("href")||"/checkout";
-      enviarEmail(function(){
-        window.location.href=href;
-      });
+      enviarEmail(function(){window.location.href=href;});
     },true);
 
     fdcVerificar();
