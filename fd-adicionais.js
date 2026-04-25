@@ -64,6 +64,11 @@
   // Ordem importa: regras mais específicas (duas palavras) vêm primeiro
   var REGRAS_TAGS = [
     {
+      teste: function (t) { return contemPalavra(t, "adicional"); },
+      cor: "#036bfc", texto: "Produto Adicional",
+      tooltip: "Esse produto não é vendido separadamente"
+    },
+    {
       teste: function (t) { return contemPalavra(t, "caneca") && contemPersonalizada(t); },
       cor: "#d72e4e", texto: "1 Dia Útil",
       tooltip: "Necessário pedir com 1 dia de antecedência"
