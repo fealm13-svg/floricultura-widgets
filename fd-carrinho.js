@@ -18,7 +18,6 @@
     return FERIADOS.indexOf(str)!==-1;
   }
 
-  // ── Períodos de entrega ──────────────────────────────────────────────
   var ENTREGA_SEMANA=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12},
@@ -31,7 +30,6 @@
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12}
   ];
 
-  // ── Períodos de retirada ─────────────────────────────────────────────
   var RETIRADA_SEMANA=[];
   [8,9,10,11,12,13,14,15,16,17,18].forEach(function(h){
     RETIRADA_SEMANA.push({id:"rs"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
@@ -114,11 +112,10 @@
   function periodosParaDia(d){
     var h=new Date().getHours()+new Date().getMinutes()/60;
     var dd=new Date(d);dd.setHours(0,0,0,0);
-    var dow=dd.getDay();
     var isHoje=dd.getTime()===hoje().getTime();
     var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
     var cesta=isCesta();
-    var lista=getPeriodosParaDow(dow);
+    var lista=getPeriodosParaDow(dd.getDay());
     var ordemIds=["m1","m2","t1","t2","t3"];
     return lista.map(function(p){
       if(cesta&&isAmanha){
@@ -332,24 +329,16 @@
     div.id="fdc-bloco";div.className="fdc-bloco";
     var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
     div.innerHTML=[
+      // ── 1. Título
       '<div class="fdc-titulo">🌸 Dados do Pedido</div>',
+
+      // ── 2. Toggle Entrega / Retirada
       '<div class="fdc-toggle">',
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-      '<div id="fdc-bloco-pres">',
-        '<div class="fdc-sec">Presenteado</div>',
-        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
-        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
-      '</div>',
-      '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
-      '<div class="fdc-campo">',
-        '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
-        '<div class="fdc-msg-footer">',
-          '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-          '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
-        '</div>',
-      '</div>',
+
+      // ── 3. Agendamento
       '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
@@ -359,17 +348,38 @@
         '</div>',
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
+
+      // ── 4. Presenteado
+      '<div id="fdc-bloco-pres">',
+        '<div class="fdc-sec">Presenteado</div>',
+        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
+        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
+      '</div>',
+
+      // ── 5. Mensagem do cartãozinho
+      '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
+      '<div class="fdc-campo">',
+        '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
+        '<div class="fdc-msg-footer">',
+          '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
+          '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
+        '</div>',
+      '</div>',
+
+      // ── 6. Termos
       '<div class="fdc-sec">Termos</div>',
       '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
         '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
         '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
       '</div>',
+
+      // ── 7. Status + Box OK
       '<div class="fdc-status">',
         '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
         '<div class="fdc-status-items">',
+          '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
           '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
           '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
-          '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
           '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
         '</div>',
       '</div>',
@@ -656,13 +666,13 @@
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
         var pendencias=[];
+        if(!agConfirmado)pendencias.push("Agendamento de entrega");
         if(tipo==="entrega"){
           var nome=(document.getElementById("fdc-nome")||{}).value||"";
           var tel=(document.getElementById("fdc-tel")||{}).value||"";
           if(!nome.trim())pendencias.push("Nome do presenteado");
           if(tel.trim().length<14)pendencias.push("Telefone WhatsApp");
         }
-        if(!agConfirmado)pendencias.push("Agendamento de entrega");
         if(!termoAceito)pendencias.push("Aceite dos termos");
         var itensEl=document.getElementById("fdc-popup-itens");
         if(itensEl)itensEl.innerHTML=pendencias.map(function(p){return "• "+p;}).join("<br>");
