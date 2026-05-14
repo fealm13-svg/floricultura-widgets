@@ -18,18 +18,33 @@
     return FERIADOS.indexOf(str)!==-1;
   }
 
-  var ENTREGA_SEMANA=[
+  // ── Entrega HOJE (períodos atuais) ───────────────────────────────────
+  var ENTREGA_HOJE=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12},
     {id:"t1",nome:"Tarde I",hora:"12:30 – 14:00",ini:12.5,fim:14},
     {id:"t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
     {id:"t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17,tolerancia:0.5}
   ];
+
+  // ── Entrega AMANHÃ EM DIANTE (intervalos de 1h, sem 12h-13h) ─────────
+  var ENTREGA_FUTURO=[
+    {id:"e9",nome:"Entre 9h – 10h",hora:"9:00 – 10:00",ini:9,fim:10},
+    {id:"e10",nome:"Entre 10h – 11h",hora:"10:00 – 11:00",ini:10,fim:11},
+    {id:"e11",nome:"Entre 11h – 12h",hora:"11:00 – 12:00",ini:11,fim:12},
+    {id:"e13",nome:"Entre 13h – 14h",hora:"13:00 – 14:00",ini:13,fim:14},
+    {id:"e14",nome:"Entre 14h – 15h",hora:"14:00 – 15:00",ini:14,fim:15},
+    {id:"e15",nome:"Entre 15h – 16h",hora:"15:00 – 16:00",ini:15,fim:16},
+    {id:"e16",nome:"Entre 16h – 17h",hora:"16:00 – 17:00",ini:16,fim:17}
+  ];
+
+  // ── Entrega sábado/domingo (somente manhã) ───────────────────────────
   var ENTREGA_FDS=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12}
   ];
 
+  // ── Períodos de retirada (mantém intervalos atuais com 12h-13h) ──────
   var RETIRADA_SEMANA=[];
   [8,9,10,11,12,13,14,15,16,17,18].forEach(function(h){
     RETIRADA_SEMANA.push({id:"rs"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
@@ -67,9 +82,21 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
 
-  function getPeriodosParaDow(dow){
+  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
+  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
+
+  // ── Retorna a lista de períodos para um dia específico ───────────────
+  function getPeriodosParaDow(dow, dt){
     if(tipo==="entrega"){
-      return (dow===0||dow===6)?ENTREGA_FDS:ENTREGA_SEMANA;
+      // Fim de semana
+      if(dow===0||dow===6)return ENTREGA_FDS;
+      // Hoje (apenas se dt for fornecido e for hoje)
+      if(dt){
+        var dd=new Date(dt);dd.setHours(0,0,0,0);
+        if(dd.getTime()===hoje().getTime())return ENTREGA_HOJE;
+      }
+      // Amanhã em diante (dias úteis)
+      return ENTREGA_FUTURO;
     }else{
       if(dow===6)return RETIRADA_SAB;
       if(dow===0)return RETIRADA_DOM;
@@ -87,20 +114,45 @@
 
   function periodoMinimoCesta(){
     var h=new Date().getHours()+new Date().getMinutes()/60;
-    if(h>=22)return "t1";
-    if(h>=18)return "m1";
+    // Para entrega amanhã (intervalos de 1h)
+    if(tipo==="entrega"){
+      if(h>=22)return "e13"; // após 22h → a partir de 13h-14h
+      if(h>=18)return "e9";  // após 18h → a partir de 9h-10h
+      return null;
+    }
+    // Para retirada amanhã
+    if(h>=22)return "rs13";
+    if(h>=18)return "rs9";
     return null;
   }
 
-  function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
-  function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
-
-  function fdsDisponivel(){
+  // ── Bloqueio de fim de semana (apenas o fds corrente) ────────────────
+  // Sáb/Dom só ficam disponíveis se cliente acessar até sexta às 17h
+  function fdsDisponivel(dataAlvo){
     var agora=new Date();
     var dow=agora.getDay();
     var h=agora.getHours()+agora.getMinutes()/60;
-    if(dow===5&&h>=17)return false;
-    if(dow===6||dow===0)return false;
+
+    // Calcula em qual semana está a data alvo
+    // Acha o sábado da semana corrente (semana onde estamos agora)
+    var hj=hoje();
+    var diasParaSabado=(6-hj.getDay()+7)%7;
+    if(hj.getDay()===6)diasParaSabado=0; // já é sábado
+    var sabadoCorrente=addDias(hj,diasParaSabado);
+    var domingoCorrente=addDias(sabadoCorrente,1);
+
+    var ddAlvo=new Date(dataAlvo);ddAlvo.setHours(0,0,0,0);
+
+    // Se a data alvo é o sábado ou domingo CORRENTE
+    var isFdsCorrente=(ddAlvo.getTime()===sabadoCorrente.getTime()||ddAlvo.getTime()===domingoCorrente.getTime());
+
+    if(isFdsCorrente){
+      // Acessou sexta após 17h → bloqueia o fds corrente
+      if(dow===5&&h>=17)return false;
+      // Acessou no sábado ou domingo → bloqueia o fds corrente
+      if(dow===6||dow===0)return false;
+    }
+    // Fim de semana de semanas posteriores → sempre liberado
     return true;
   }
 
@@ -115,18 +167,29 @@
     var isHoje=dd.getTime()===hoje().getTime();
     var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
     var cesta=isCesta();
-    var lista=getPeriodosParaDow(dd.getDay());
-    var ordemIds=["m1","m2","t1","t2","t3"];
+    var lista=getPeriodosParaDow(dd.getDay(), dd);
+
+    // Ordem para regra de cesta — depende da lista usada
+    var ordemHoje=["m1","m2","t1","t2","t3"];
+    var ordemFuturo=["e9","e10","e11","e13","e14","e15","e16"];
+    var ordemRetirada=["rs8","rs9","rs10","rs11","rs12","rs13","rs14","rs15","rs16","rs17","rs18"];
+
     return lista.map(function(p){
+      // Regra de cesta para amanhã
       if(cesta&&isAmanha){
         var minPer=periodoMinimoCesta();
         if(minPer){
-          var idxMin=ordemIds.indexOf(minPer);
-          var idxP=ordemIds.indexOf(p.id);
+          var ordem;
+          if(tipo==="entrega")ordem=ordemFuturo;
+          else ordem=ordemRetirada;
+          var idxMin=ordem.indexOf(minPer);
+          var idxP=ordem.indexOf(p.id);
+          if(idxMin===-1||idxP===-1)return Object.assign({},p,{ok:true});
           return Object.assign({},p,{ok:idxP>=idxMin});
         }
         return Object.assign({},p,{ok:true});
       }
+      // Regra normal para hoje
       if(isHoje){
         if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
         return Object.assign({},p,{ok:(p.ini-h)>=1});
@@ -141,7 +204,10 @@
     if(dd<min||dd>addDias(hoje(),30))return false;
     if(isFeriado(dd))return false;
     var dow=dd.getDay();
-    if((dow===0||dow===6)&&!fdsDisponivel())return false;
+    // Bloqueia apenas o fds corrente se for sábado/domingo
+    if(dow===0||dow===6){
+      if(!fdsDisponivel(dd))return false;
+    }
     return periodosParaDia(d).some(function(p){return p.ok;});
   }
 
@@ -207,7 +273,7 @@
           mesAtual=d.getMonth();anoAtual=d.getFullYear();
           agConfirmado=dados._agConfirmado||false;
           if(agConfirmado){
-            var lista=getPeriodosParaDow(d.getDay());
+            var lista=getPeriodosParaDow(d.getDay(), d);
             var p=lista.find(function(x){return x.id===periodoSel;});
             if(p){
               document.getElementById("fdc-res-data").textContent=d.toLocaleDateString("pt-BR");
@@ -233,9 +299,9 @@
     var css=[
       ".fdc-bloco{background:#e8e8e8;border:1.5px solid #c8c8c8;border-radius:10px;padding:20px 22px;margin:22px 0;font-family:inherit}",
       ".fdc-titulo{color:#a91537;font-size:16px;font-weight:700;margin-bottom:16px}",
-      ".fdc-toggle{display:flex;margin-bottom:18px;border:1.5px solid #95a37b;border-radius:8px;overflow:hidden}",
-      ".fdc-toggle-btn{flex:1;padding:10px;background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#95a37b;transition:all .2s}",
-      ".fdc-toggle-btn.ativo{background:#95a37b;color:#2d3a20}",
+      ".fdc-toggle{display:flex;margin-bottom:18px;border:1.5px solid #5a8966;border-radius:8px;overflow:hidden}",
+      ".fdc-toggle-btn{flex:1;padding:10px;background:none;border:none;font-size:13px;font-weight:600;cursor:pointer;color:#5a8966;transition:all .2s}",
+      ".fdc-toggle-btn.ativo{background:#5a8966;color:#fff}",
       ".fdc-sec{font-size:13px;font-weight:700;color:#a91537;margin:16px 0 10px;padding-bottom:6px;border-bottom:1px solid #c8c8c8}",
       ".fdc-campo{margin-bottom:12px}",
       ".fdc-campo label{display:block;font-size:13px;font-weight:600;color:#444;margin-bottom:4px}",
@@ -247,16 +313,16 @@
       ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
       ".fdc-contador{font-size:11px;color:#aaa}",
       ".fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;cursor:pointer;user-select:none}",
-      ".fdc-sem-msg input{accent-color:#95a37b;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
-      ".fdc-btn-ag{width:100%;background:#95a37b;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
-      ".fdc-btn-ag:hover{background:#7a8f64}",
+      ".fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
+      ".fdc-btn-ag{width:100%;background:#5a8966;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
+      ".fdc-btn-ag:hover{background:#46714f}",
       ".fdc-resumo-ag{background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:12px 14px;margin-bottom:12px}",
       ".fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}",
       ".fdc-resumo-ag-item label{font-size:11px;color:#888;display:block;margin-bottom:2px}",
       ".fdc-resumo-ag-item strong{font-size:13px;color:#333;display:block}",
       ".fdc-resumo-ag-item span{font-size:11px;color:#888}",
-      ".fdc-btn-alt{background:none;border:1px solid #95a37b;color:#95a37b;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
-      ".fdc-btn-alt:hover{background:#f0f5ec}",
+      ".fdc-btn-alt{background:none;border:1px solid #5a8966;color:#5a8966;border-radius:6px;padding:5px 12px;font-size:12px;cursor:pointer}",
+      ".fdc-btn-alt:hover{background:#eef3ed}",
       ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s;background:#3a3a3a}",
       ".fdc-termo-wrap.aceito{background:#72cd41}",
       ".fdc-termo-lista{list-style:none;padding:0;margin-bottom:12px}",
@@ -329,16 +395,11 @@
     div.id="fdc-bloco";div.className="fdc-bloco";
     var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
     div.innerHTML=[
-      // ── 1. Título
       '<div class="fdc-titulo">🌸 Dados do Pedido</div>',
-
-      // ── 2. Toggle Entrega / Retirada
       '<div class="fdc-toggle">',
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-
-      // ── 3. Agendamento
       '<div class="fdc-sec">Agendamento</div>',
       '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
       '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
@@ -348,15 +409,11 @@
         '</div>',
         '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
       '</div>',
-
-      // ── 4. Presenteado
       '<div id="fdc-bloco-pres">',
         '<div class="fdc-sec">Presenteado</div>',
         '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
         '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
       '</div>',
-
-      // ── 5. Mensagem do cartãozinho
       '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
       '<div class="fdc-campo">',
         '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
@@ -365,15 +422,11 @@
           '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
         '</div>',
       '</div>',
-
-      // ── 6. Termos
       '<div class="fdc-sec">Termos</div>',
       '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
         '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
         '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
       '</div>',
-
-      // ── 7. Status + Box OK
       '<div class="fdc-status">',
         '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
         '<div class="fdc-status-items">',
@@ -521,7 +574,7 @@
   window.fdcConfirmar=function(){
     if(!dataSel||!periodoSel)return;
     agConfirmado=true;
-    var lista=getPeriodosParaDow(dataSel.getDay());
+    var lista=getPeriodosParaDow(dataSel.getDay(), dataSel);
     var p=lista.find(function(x){return x.id===periodoSel;});
     document.getElementById("fdc-res-data").textContent=dataSel.toLocaleDateString("pt-BR");
     document.getElementById("fdc-res-diasem").textContent=DIASLONG[dataSel.getDay()];
@@ -577,7 +630,7 @@
     var btn=document.getElementById("fdc-btn-conf");
     document.getElementById("fdc-m-data").textContent=dataSel?dataSel.toLocaleDateString("pt-BR"):"—";
     document.getElementById("fdc-m-diasem").textContent=dataSel?DIASLONG[dataSel.getDay()]:"";
-    var lista=dataSel?getPeriodosParaDow(dataSel.getDay()):[];
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay(), dataSel):[];
     var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     document.getElementById("fdc-m-per").textContent=p?p.nome:"—";
     document.getElementById("fdc-m-hora").textContent=p?p.hora:"";
@@ -593,7 +646,7 @@
   }
 
   function enviarEmail(callback){
-    var lista=dataSel?getPeriodosParaDow(dataSel.getDay()):[];
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay(), dataSel):[];
     var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     var agora=new Date();
     var dados={
