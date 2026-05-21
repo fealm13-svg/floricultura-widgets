@@ -8,17 +8,55 @@
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
-  var FERIADOS=[
+  // ── Faixas de CEP atendidas ──────────────────────────────────────────
+  // Cada faixa = [cep_inicial, cep_final] como números (sem hífen)
+  var FAIXAS_CEP=[
+    [1032000,1033050],
+    [1036000,1048000],
+    [1100000,1109999],
+    [1110000,1135050],
+    [1135050,1136050],
+    [1137000,1138800],
+    [1139000,1150010],
+    [1150011,1153050],
+    [1154000,1160000],
+    [1200000,1206010],
+    [1207000,1213010],
+    [1214000,1217020],
+    [1218000,1218999],
+    [1219000,1233070],
+    [1234000,1244030],
+    [2500000,2517999],
+    [5000000,5001099],
+    [5001150,5020000]
+  ];
+
+  function cepNoFormato(cep){
+    // Remove tudo que não é número, retorna como número
+    var n=parseInt(cep.replace(/\D/g,""),10);
+    return isNaN(n)?0:n;
+  }
+
+  function cepValido(cep){
+    var n=cepNoFormato(cep);
+    if(String(n).length<7)return false; // CEP incompleto
+    for(var i=0;i<FAIXAS_CEP.length;i++){
+      if(n>=FAIXAS_CEP[i][0]&&n<=FAIXAS_CEP[i][1])return true;
+    }
+    return false;
+  }
+
+  function FERIADOS_CHECK(){return [
     "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-07-09","2026-09-07",
     "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
-  ];
+  ];}
+  var FERIADOS=FERIADOS_CHECK();
 
   function isFeriado(d){
     var str=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     return FERIADOS.indexOf(str)!==-1;
   }
 
-  // ── Entrega HOJE (períodos atuais) ───────────────────────────────────
   var ENTREGA_HOJE=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12},
@@ -27,7 +65,6 @@
     {id:"t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17,tolerancia:0.5}
   ];
 
-  // ── Entrega AMANHÃ EM DIANTE (intervalos de 1h, sem 12h-13h) ─────────
   var ENTREGA_FUTURO=[
     {id:"e9",nome:"Entre 9h – 10h",hora:"9:00 – 10:00",ini:9,fim:10},
     {id:"e10",nome:"Entre 10h – 11h",hora:"10:00 – 11:00",ini:10,fim:11},
@@ -38,13 +75,11 @@
     {id:"e16",nome:"Entre 16h – 17h",hora:"16:00 – 17:00",ini:16,fim:17}
   ];
 
-  // ── Entrega sábado/domingo (somente manhã) ───────────────────────────
   var ENTREGA_FDS=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
     {id:"m2",nome:"Manhã II",hora:"10:30 – 12:00",ini:10.5,fim:12}
   ];
 
-  // ── Períodos de retirada (mantém intervalos atuais com 12h-13h) ──────
   var RETIRADA_SEMANA=[];
   [8,9,10,11,12,13,14,15,16,17,18].forEach(function(h){
     RETIRADA_SEMANA.push({id:"rs"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
@@ -81,21 +116,18 @@
   var dataSel=null,periodoSel=null,agConfirmado=false,termoAceito=false;
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
+  var cepOk=false;
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
 
-  // ── Retorna a lista de períodos para um dia específico ───────────────
   function getPeriodosParaDow(dow, dt){
     if(tipo==="entrega"){
-      // Fim de semana
       if(dow===0||dow===6)return ENTREGA_FDS;
-      // Hoje (apenas se dt for fornecido e for hoje)
       if(dt){
         var dd=new Date(dt);dd.setHours(0,0,0,0);
         if(dd.getTime()===hoje().getTime())return ENTREGA_HOJE;
       }
-      // Amanhã em diante (dias úteis)
       return ENTREGA_FUTURO;
     }else{
       if(dow===6)return RETIRADA_SAB;
@@ -114,45 +146,31 @@
 
   function periodoMinimoCesta(){
     var h=new Date().getHours()+new Date().getMinutes()/60;
-    // Para entrega amanhã (intervalos de 1h)
     if(tipo==="entrega"){
-      if(h>=22)return "e13"; // após 22h → a partir de 13h-14h
-      if(h>=18)return "e9";  // após 18h → a partir de 9h-10h
+      if(h>=22)return "e13";
+      if(h>=18)return "e9";
       return null;
     }
-    // Para retirada amanhã
     if(h>=22)return "rs13";
     if(h>=18)return "rs9";
     return null;
   }
 
-  // ── Bloqueio de fim de semana (apenas o fds corrente) ────────────────
-  // Sáb/Dom só ficam disponíveis se cliente acessar até sexta às 17h
   function fdsDisponivel(dataAlvo){
     var agora=new Date();
     var dow=agora.getDay();
     var h=agora.getHours()+agora.getMinutes()/60;
-
-    // Calcula em qual semana está a data alvo
-    // Acha o sábado da semana corrente (semana onde estamos agora)
     var hj=hoje();
     var diasParaSabado=(6-hj.getDay()+7)%7;
-    if(hj.getDay()===6)diasParaSabado=0; // já é sábado
+    if(hj.getDay()===6)diasParaSabado=0;
     var sabadoCorrente=addDias(hj,diasParaSabado);
     var domingoCorrente=addDias(sabadoCorrente,1);
-
     var ddAlvo=new Date(dataAlvo);ddAlvo.setHours(0,0,0,0);
-
-    // Se a data alvo é o sábado ou domingo CORRENTE
     var isFdsCorrente=(ddAlvo.getTime()===sabadoCorrente.getTime()||ddAlvo.getTime()===domingoCorrente.getTime());
-
     if(isFdsCorrente){
-      // Acessou sexta após 17h → bloqueia o fds corrente
       if(dow===5&&h>=17)return false;
-      // Acessou no sábado ou domingo → bloqueia o fds corrente
       if(dow===6||dow===0)return false;
     }
-    // Fim de semana de semanas posteriores → sempre liberado
     return true;
   }
 
@@ -168,14 +186,10 @@
     var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
     var cesta=isCesta();
     var lista=getPeriodosParaDow(dd.getDay(), dd);
-
-    // Ordem para regra de cesta — depende da lista usada
-    var ordemHoje=["m1","m2","t1","t2","t3"];
     var ordemFuturo=["e9","e10","e11","e13","e14","e15","e16"];
     var ordemRetirada=["rs8","rs9","rs10","rs11","rs12","rs13","rs14","rs15","rs16","rs17","rs18"];
 
     return lista.map(function(p){
-      // Regra de cesta para amanhã
       if(cesta&&isAmanha){
         var minPer=periodoMinimoCesta();
         if(minPer){
@@ -189,7 +203,6 @@
         }
         return Object.assign({},p,{ok:true});
       }
-      // Regra normal para hoje
       if(isHoje){
         if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
         return Object.assign({},p,{ok:(p.ini-h)>=1});
@@ -204,7 +217,6 @@
     if(dd<min||dd>addDias(hoje(),30))return false;
     if(isFeriado(dd))return false;
     var dow=dd.getDay();
-    // Bloqueia apenas o fds corrente se for sábado/domingo
     if(dow===0||dow===6){
       if(!fdsDisponivel(dd))return false;
     }
@@ -214,6 +226,7 @@
   function tudo_valido(){
     if(!agConfirmado||!termoAceito)return false;
     if(tipo==="entrega"){
+      if(!cepOk)return false;
       var nome=(document.getElementById("fdc-nome")||{}).value||"";
       var tel=(document.getElementById("fdc-tel")||{}).value||"";
       if(!nome.trim()||tel.trim().length<14)return false;
@@ -241,6 +254,7 @@
     try{
       sessionStorage.setItem("fdc_carrinho",JSON.stringify({
         tipo:tipo,
+        cep:(document.getElementById("fdc-cep")||{}).value||"",
         nome:(document.getElementById("fdc-nome")||{}).value||"",
         tel:(document.getElementById("fdc-tel")||{}).value||"",
         msg:(document.getElementById("fdc-msg")||{}).value||"",
@@ -258,6 +272,10 @@
       var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
       if(!dados)return;
       if(dados.tipo&&dados.tipo!==tipo)window.fdcSetTipo(dados.tipo);
+      if(dados.cep){
+        var cepEl=document.getElementById("fdc-cep");
+        if(cepEl){cepEl.value=dados.cep;fdcValidarCep();}
+      }
       if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
       if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
       if(dados.msg){var m=document.getElementById("fdc-msg");if(m){m.value=dados.msg;document.getElementById("fdc-faltam").textContent=500-dados.msg.length;}}
@@ -310,12 +328,20 @@
       ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
       ".fdc-campo textarea{resize:vertical;min-height:90px}",
       ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
+      // CEP
+      ".fdc-cep-wrap{position:relative}",
+      ".fdc-cep-status{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px}",
+      ".fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}",
+      ".fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
+      ".fdc-bloco-trava{position:relative}",
+      ".fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.5}",
       ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
       ".fdc-contador{font-size:11px;color:#aaa}",
       ".fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;cursor:pointer;user-select:none}",
       ".fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
       ".fdc-btn-ag{width:100%;background:#5a8966;color:#fff;border:none;padding:11px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}",
       ".fdc-btn-ag:hover{background:#46714f}",
+      ".fdc-btn-ag:disabled{background:#aaa;cursor:not-allowed}",
       ".fdc-resumo-ag{background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:12px 14px;margin-bottom:12px}",
       ".fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}",
       ".fdc-resumo-ag-item label{font-size:11px;color:#888;display:block;margin-bottom:2px}",
@@ -342,12 +368,15 @@
       ".fdc-box-ok-txt p{font-size:12px;color:#fff;line-height:1.5;opacity:.95}",
       ".fdc-popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999999;align-items:center;justify-content:center}",
       ".fdc-popup-overlay.ativo{display:flex}",
-      ".fdc-popup{background:#fff;border-radius:12px;padding:28px 24px;width:90%;max-width:380px;text-align:center}",
+      ".fdc-popup{background:#fff;border-radius:12px;padding:28px 24px;width:90%;max-width:420px;text-align:center}",
       ".fdc-popup-icon{font-size:36px;margin-bottom:12px}",
       ".fdc-popup h3{font-size:16px;font-weight:700;color:#333;margin-bottom:8px}",
       ".fdc-popup p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}",
-      ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer}",
+      ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px}",
       ".fdc-popup-btn:hover{background:#8a1029}",
+      ".fdc-popup-btn-sec{background:#5a8966}",
+      ".fdc-popup-btn-sec:hover{background:#46714f}",
+      ".fdc-popup-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}",
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
       ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
@@ -400,46 +429,61 @@
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-      '<div class="fdc-sec">Agendamento</div>',
-      '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
-      '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
-        '<div class="fdc-resumo-ag-grid">',
-          '<div class="fdc-resumo-ag-item"><label>📅 Data</label><strong id="fdc-res-data">—</strong><span id="fdc-res-diasem"></span></div>',
-          '<div class="fdc-resumo-ag-item"><label>🕐 Período</label><strong id="fdc-res-per">—</strong><span id="fdc-res-hora"></span></div>',
-        '</div>',
-        '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
-      '</div>',
-      '<div id="fdc-bloco-pres">',
-        '<div class="fdc-sec">Presenteado</div>',
-        '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
-        '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
-      '</div>',
-      '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
-      '<div class="fdc-campo">',
-        '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
-        '<div class="fdc-msg-footer">',
-          '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-          '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
+
+      // ── Campo CEP (só aparece em entrega) ─────────────────────────
+      '<div id="fdc-bloco-cep">',
+        '<div class="fdc-sec">CEP de Entrega</div>',
+        '<div class="fdc-campo fdc-cep-wrap">',
+          '<label>Informe o CEP de destino<small>Validaremos se atendemos seu endereço</small></label>',
+          '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
+          '<span id="fdc-cep-status"></span>',
         '</div>',
       '</div>',
-      '<div class="fdc-sec">Termos</div>',
-      '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
-        '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
-        '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
-      '</div>',
-      '<div class="fdc-status">',
-        '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
-        '<div class="fdc-status-items">',
-          '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
-          '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
-          '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
-          '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
+
+      // ── Daqui em diante: bloco que pode ficar bloqueado ───────────
+      '<div id="fdc-bloco-trava" class="fdc-bloco-trava">',
+        '<div class="fdc-sec">Agendamento</div>',
+        '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
+        '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
+          '<div class="fdc-resumo-ag-grid">',
+            '<div class="fdc-resumo-ag-item"><label>📅 Data</label><strong id="fdc-res-data">—</strong><span id="fdc-res-diasem"></span></div>',
+            '<div class="fdc-resumo-ag-item"><label>🕐 Período</label><strong id="fdc-res-per">—</strong><span id="fdc-res-hora"></span></div>',
+          '</div>',
+          '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
         '</div>',
-      '</div>',
-      '<div class="fdc-box-ok" id="fdc-box-ok">',
-        '<div class="fdc-box-ok-inner">',
-          '<div class="fdc-box-ok-icon">✅</div>',
-          '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
+        '<div id="fdc-bloco-pres">',
+          '<div class="fdc-sec">Presenteado</div>',
+          '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
+          '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
+        '</div>',
+        '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
+        '<div class="fdc-campo">',
+          '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
+          '<div class="fdc-msg-footer">',
+            '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
+            '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
+          '</div>',
+        '</div>',
+        '<div class="fdc-sec">Termos</div>',
+        '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
+          '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
+          '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
+        '</div>',
+        '<div class="fdc-status">',
+          '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
+          '<div class="fdc-status-items">',
+            '<div class="fdc-st" id="fdc-st-cep">CEP</div>',
+            '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
+            '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
+            '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
+            '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
+          '</div>',
+        '</div>',
+        '<div class="fdc-box-ok" id="fdc-box-ok">',
+          '<div class="fdc-box-ok-inner">',
+            '<div class="fdc-box-ok-icon">✅</div>',
+            '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
+          '</div>',
         '</div>',
       '</div>',
     ].join("");
@@ -458,6 +502,22 @@
       '</div>'
     ].join("");
     document.body.appendChild(div);
+
+    // Popup CEP fora de área
+    var divCep=document.createElement("div");
+    divCep.id="fdc-popup-cep-overlay";divCep.className="fdc-popup-overlay";
+    divCep.innerHTML=[
+      '<div class="fdc-popup">',
+        '<div class="fdc-popup-icon">📍</div>',
+        '<h3>Endereço fora da área de entrega</h3>',
+        '<p>Não realizamos entregas no CEP informado.<br><br>Você pode retirar seu pedido em nossa loja física em <strong>Alameda Barão de Limeira, 998 – Campos Elíseos</strong>.</p>',
+        '<div class="fdc-popup-btns">',
+          '<button class="fdc-popup-btn fdc-popup-btn-sec" onclick="fdcOptarRetirada()">Optar por Retirada</button>',
+          '<button class="fdc-popup-btn" onclick="fdcFecharPopupCep()">Fechar</button>',
+        '</div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(divCep);
   }
 
   function montarModal(){
@@ -492,13 +552,92 @@
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
   }
 
+  // ── CEP ──────────────────────────────────────────────────────────────
+  window.fdcMascaraCep=function(el){
+    var v=el.value.replace(/\D/g,"").substring(0,8);
+    if(v.length>5)v=v.substring(0,5)+"-"+v.substring(5);
+    el.value=v;
+  };
+
+  window.fdcValidarCep=function(){
+    var el=document.getElementById("fdc-cep");
+    var status=document.getElementById("fdc-cep-status");
+    var cep=el.value.replace(/\D/g,"");
+
+    if(cep.length<8){
+      cepOk=false;
+      status.textContent="";
+      status.className="";
+      atualizarTrava();
+      fdcVerificar();
+      return;
+    }
+
+    if(cepValido(cep)){
+      cepOk=true;
+      status.textContent="✓ Atendemos seu endereço";
+      status.className="fdc-cep-status ok";
+      // Preenche o campo da plataforma e dispara cálculo
+      preencherCepPlataforma(el.value);
+    }else{
+      cepOk=false;
+      status.textContent="✗ Não atendemos este CEP";
+      status.className="fdc-cep-status erro";
+      // Abre popup
+      document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
+    }
+    atualizarTrava();
+    fdcVerificar();
+  };
+
+  function preencherCepPlataforma(cep){
+    try{
+      var campo=document.getElementById("calcularFrete");
+      if(campo){
+        // Define o valor
+        var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set;
+        setter.call(campo,cep);
+        // Dispara evento de input e change
+        campo.dispatchEvent(new Event("input",{bubbles:true}));
+        campo.dispatchEvent(new Event("change",{bubbles:true}));
+        // Clica no botão calcular
+        var btn=document.getElementById("btn-frete");
+        if(btn){
+          setTimeout(function(){btn.click();},150);
+        }
+      }
+    }catch(x){console.error("[FD] Erro ao preencher CEP plataforma:",x);}
+  }
+
+  window.fdcFecharPopupCep=function(){
+    document.getElementById("fdc-popup-cep-overlay").classList.remove("ativo");
+  };
+
+  window.fdcOptarRetirada=function(){
+    document.getElementById("fdc-popup-cep-overlay").classList.remove("ativo");
+    window.fdcSetTipo("retirada");
+  };
+
+  function atualizarTrava(){
+    var trava=document.getElementById("fdc-bloco-trava");
+    if(!trava)return;
+    if(tipo==="entrega"&&!cepOk){
+      trava.classList.add("bloqueado");
+    }else{
+      trava.classList.remove("bloqueado");
+    }
+  }
+
+  // ── Funções globais ──────────────────────────────────────────────────
   window.fdcSalvar=function(){salvarSessao();};
 
   window.fdcSetTipo=function(t){
     tipo=t;
     document.getElementById("fdc-btn-ent").className="fdc-toggle-btn"+(t==="entrega"?" ativo":"");
     document.getElementById("fdc-btn-ret").className="fdc-toggle-btn"+(t==="retirada"?" ativo":"");
+    document.getElementById("fdc-bloco-cep").style.display=t==="entrega"?"block":"none";
     document.getElementById("fdc-bloco-pres").style.display=t==="entrega"?"block":"none";
+    document.getElementById("fdc-st-cep").style.display=t==="retirada"?"none":"inline-block";
     document.getElementById("fdc-st-nome").style.display=t==="retirada"?"none":"inline-block";
     document.getElementById("fdc-st-tel").style.display=t==="retirada"?"none":"inline-block";
     document.getElementById("fdc-modal-titulo").textContent=t==="entrega"?"Escolha a data e o período de entrega":"Escolha a data e o período de retirada";
@@ -509,6 +648,7 @@
     termoAceito=false;dataSel=null;periodoSel=null;agConfirmado=false;
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
+    atualizarTrava();
     salvarSessao();fdcVerificar();
   };
 
@@ -539,11 +679,12 @@
     function st(id,ok){var e=document.getElementById(id);if(e)e.className="fdc-st"+(ok?" ok":"");}
     var tudoOk=agConfirmado&&termoAceito;
     if(tipo==="entrega"){
+      st("fdc-st-cep",cepOk);
       var nome=(document.getElementById("fdc-nome")||{}).value||"";
       var tel=(document.getElementById("fdc-tel")||{}).value||"";
       st("fdc-st-nome",!!nome.trim());
       st("fdc-st-tel",tel.trim().length>=14);
-      tudoOk=tudoOk&&!!nome.trim()&&tel.trim().length>=14;
+      tudoOk=tudoOk&&cepOk&&!!nome.trim()&&tel.trim().length>=14;
     }
     st("fdc-st-ag",agConfirmado);
     st("fdc-st-termo",termoAceito);
@@ -701,6 +842,7 @@
 
     preCarregarEmailJS();
     restaurarSessao();
+    atualizarTrava();
 
     document.addEventListener("click",function(e){
       var el=e.target;
@@ -719,6 +861,7 @@
       if(!tudo_valido()){
         e.preventDefault();e.stopPropagation();
         var pendencias=[];
+        if(tipo==="entrega"&&!cepOk)pendencias.push("CEP de entrega válido");
         if(!agConfirmado)pendencias.push("Agendamento de entrega");
         if(tipo==="entrega"){
           var nome=(document.getElementById("fdc-nome")||{}).value||"";
