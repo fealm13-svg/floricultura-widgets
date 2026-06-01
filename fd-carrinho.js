@@ -8,53 +8,69 @@
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
-  // ── Faixas de CEP atendidas ──────────────────────────────────────────
-  // Cada faixa = [cep_inicial, cep_final] como números (sem hífen)
+  // ── Dia dos Namorados (12/06/2026) ───────────────────────────────────
+  var DATA_NAMORADOS="2026-06-12";
+  // Limite para agendar ENTREGA no dia 12 → até 23:59 do dia 10/06
+  var LIMITE_ENTREGA_NAMORADOS=new Date(2026,5,10,23,59,59);
+  // Limite para agendar RETIRADA no dia 12 → até 14:59 do dia 11/06
+  var LIMITE_RETIRADA_NAMORADOS=new Date(2026,5,11,14,59,59);
+
+  // Períodos especiais para o dia 12 (entrega)
+  var ENTREGA_NAMORADOS=[
+    {id:"n_m1",nome:"Manhã I",hora:"8:00 – 10:00",ini:8,fim:10},
+    {id:"n_m2",nome:"Manhã II",hora:"10:00 – 12:00",ini:10,fim:12},
+    {id:"n_t1",nome:"Tarde I",hora:"12:30 – 14:00",ini:12.5,fim:14},
+    {id:"n_t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
+    {id:"n_t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17}
+  ];
+
   var FAIXAS_CEP=[
-    [1032000,1033050],
-    [1036000,1048000],
-    [1100000,1109999],
-    [1110000,1135050],
-    [1135050,1136050],
-    [1137000,1138800],
-    [1139000,1150010],
-    [1150011,1153050],
-    [1154000,1160000],
-    [1200000,1206010],
-    [1207000,1213010],
-    [1214000,1217020],
-    [1218000,1218999],
-    [1219000,1233070],
-    [1234000,1244030],
-    [2500000,2517999],
-    [5000000,5001099],
-    [5001150,5020000]
+    [1032000,1033050],[1036000,1048000],[1100000,1109999],[1110000,1135050],
+    [1135050,1136050],[1137000,1138800],[1139000,1150010],[1150011,1153050],
+    [1154000,1160000],[1200000,1206010],[1207000,1213010],[1214000,1217020],
+    [1218000,1218999],[1219000,1233070],[1234000,1244030],[2500000,2517999],
+    [5000000,5001099],[5001150,5020000]
   ];
 
   function cepNoFormato(cep){
-    // Remove tudo que não é número, retorna como número
     var n=parseInt(cep.replace(/\D/g,""),10);
     return isNaN(n)?0:n;
   }
 
   function cepValido(cep){
     var n=cepNoFormato(cep);
-    if(String(n).length<7)return false; // CEP incompleto
+    if(String(n).length<7)return false;
     for(var i=0;i<FAIXAS_CEP.length;i++){
       if(n>=FAIXAS_CEP[i][0]&&n<=FAIXAS_CEP[i][1])return true;
     }
     return false;
   }
 
-  function FERIADOS_CHECK(){return [
+  var FERIADOS=[
     "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-07-09","2026-09-07",
     "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
-  ];}
-  var FERIADOS=FERIADOS_CHECK();
+  ];
+
+  function dateToStr(d){
+    return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+  }
 
   function isFeriado(d){
-    var str=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
-    return FERIADOS.indexOf(str)!==-1;
+    return FERIADOS.indexOf(dateToStr(d))!==-1;
+  }
+
+  function isDiaNamorados(d){
+    return dateToStr(d)===DATA_NAMORADOS;
+  }
+
+  // ── Verifica se entrega no dia 12 ainda é possível ───────────────────
+  function entregaNamoradosDisponivel(){
+    return new Date()<=LIMITE_ENTREGA_NAMORADOS;
+  }
+
+  // ── Verifica se retirada no dia 12 ainda é possível ──────────────────
+  function retiradaNamoradosDisponivel(){
+    return new Date()<=LIMITE_RETIRADA_NAMORADOS;
   }
 
   var ENTREGA_HOJE=[
@@ -122,6 +138,12 @@
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
 
   function getPeriodosParaDow(dow, dt){
+    if(dt&&isDiaNamorados(dt)){
+      // Dia 12/06 → períodos especiais
+      if(tipo==="entrega")return ENTREGA_NAMORADOS;
+      // Retirada no dia 12 → usa retirada de sexta (RETIRADA_SEMANA)
+      return RETIRADA_SEMANA;
+    }
     if(tipo==="entrega"){
       if(dow===0||dow===6)return ENTREGA_FDS;
       if(dt){
@@ -220,6 +242,11 @@
     if(dow===0||dow===6){
       if(!fdsDisponivel(dd))return false;
     }
+    // Dia dos namorados: aparece disponível até o limite (mesmo após, mostra popup ao clicar)
+    if(isDiaNamorados(dd)){
+      if(tipo==="entrega"&&!entregaNamoradosDisponivel())return false;
+      if(tipo==="retirada"&&!retiradaNamoradosDisponivel())return false;
+    }
     return periodosParaDia(d).some(function(p){return p.ok;});
   }
 
@@ -274,7 +301,7 @@
       if(dados.tipo&&dados.tipo!==tipo)window.fdcSetTipo(dados.tipo);
       if(dados.cep){
         var cepEl=document.getElementById("fdc-cep");
-        if(cepEl){cepEl.value=dados.cep;fdcValidarCep();}
+        if(cepEl){cepEl.value=dados.cep;fdcValidarCep(true);}
       }
       if(dados.nome){var n=document.getElementById("fdc-nome");if(n)n.value=dados.nome;}
       if(dados.tel){var t=document.getElementById("fdc-tel");if(t)t.value=dados.tel;}
@@ -328,7 +355,6 @@
       ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
       ".fdc-campo textarea{resize:vertical;min-height:90px}",
       ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
-      // CEP
       ".fdc-cep-wrap{position:relative}",
       ".fdc-cep-status{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px}",
       ".fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}",
@@ -397,6 +423,9 @@
       ".fdc-day.disp:hover{background:#c5e8d8}",
       ".fdc-day.sel{background:#a91537;color:#fff}",
       ".fdc-day.hj{outline:1.5px solid #a91537;outline-offset:-1px}",
+      // Dia dos namorados esgotado — clicável mas mostra popup
+      ".fdc-day.namorados-esgotado{background:#ffe0e0;color:#c0392b;cursor:pointer;font-weight:600}",
+      ".fdc-day.namorados-esgotado:hover{background:#ffcccc}",
       ".fdc-legenda{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}",
       ".fdc-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#888}",
       ".fdc-leg-dot{width:10px;height:10px;border-radius:3px}",
@@ -429,8 +458,6 @@
         '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
         '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
       '</div>',
-
-      // ── Campo CEP (só aparece em entrega) ─────────────────────────
       '<div id="fdc-bloco-cep">',
         '<div class="fdc-sec">CEP de Entrega</div>',
         '<div class="fdc-campo fdc-cep-wrap">',
@@ -439,8 +466,6 @@
           '<span id="fdc-cep-status"></span>',
         '</div>',
       '</div>',
-
-      // ── Daqui em diante: bloco que pode ficar bloqueado ───────────
       '<div id="fdc-bloco-trava" class="fdc-bloco-trava">',
         '<div class="fdc-sec">Agendamento</div>',
         '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
@@ -503,7 +528,6 @@
     ].join("");
     document.body.appendChild(div);
 
-    // Popup CEP fora de área
     var divCep=document.createElement("div");
     divCep.id="fdc-popup-cep-overlay";divCep.className="fdc-popup-overlay";
     divCep.innerHTML=[
@@ -518,6 +542,19 @@
       '</div>'
     ].join("");
     document.body.appendChild(divCep);
+
+    // Popup dia dos namorados esgotado
+    var divNam=document.createElement("div");
+    divNam.id="fdc-popup-namorados-overlay";divNam.className="fdc-popup-overlay";
+    divNam.innerHTML=[
+      '<div class="fdc-popup">',
+        '<div class="fdc-popup-icon">💔</div>',
+        '<h3 id="fdc-popup-nam-titulo">Dia dos Namorados</h3>',
+        '<p id="fdc-popup-nam-msg">—</p>',
+        '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Entendi</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(divNam);
   }
 
   function montarModal(){
@@ -552,14 +589,13 @@
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
   }
 
-  // ── CEP ──────────────────────────────────────────────────────────────
   window.fdcMascaraCep=function(el){
     var v=el.value.replace(/\D/g,"").substring(0,8);
     if(v.length>5)v=v.substring(0,5)+"-"+v.substring(5);
     el.value=v;
   };
 
-  window.fdcValidarCep=function(){
+  window.fdcValidarCep=function(silencioso){
     var el=document.getElementById("fdc-cep");
     var status=document.getElementById("fdc-cep-status");
     var cep=el.value.replace(/\D/g,"");
@@ -577,14 +613,14 @@
       cepOk=true;
       status.textContent="✓ Atendemos seu endereço";
       status.className="fdc-cep-status ok";
-      // Preenche o campo da plataforma e dispara cálculo
       preencherCepPlataforma(el.value);
     }else{
       cepOk=false;
       status.textContent="✗ Não atendemos este CEP";
       status.className="fdc-cep-status erro";
-      // Abre popup
-      document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
+      if(!silencioso){
+        document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
+      }
     }
     atualizarTrava();
     fdcVerificar();
@@ -594,17 +630,12 @@
     try{
       var campo=document.getElementById("calcularFrete");
       if(campo){
-        // Define o valor
         var setter=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,"value").set;
         setter.call(campo,cep);
-        // Dispara evento de input e change
         campo.dispatchEvent(new Event("input",{bubbles:true}));
         campo.dispatchEvent(new Event("change",{bubbles:true}));
-        // Clica no botão calcular
         var btn=document.getElementById("btn-frete");
-        if(btn){
-          setTimeout(function(){btn.click();},150);
-        }
+        if(btn){setTimeout(function(){btn.click();},150);}
       }
     }catch(x){console.error("[FD] Erro ao preencher CEP plataforma:",x);}
   }
@@ -618,6 +649,23 @@
     window.fdcSetTipo("retirada");
   };
 
+  window.fdcFecharPopupNamorados=function(){
+    document.getElementById("fdc-popup-namorados-overlay").classList.remove("ativo");
+  };
+
+  function mostrarPopupNamorados(){
+    var titulo=document.getElementById("fdc-popup-nam-titulo");
+    var msg=document.getElementById("fdc-popup-nam-msg");
+    if(tipo==="entrega"){
+      titulo.textContent="Entregas esgotadas";
+      msg.innerHTML="Todos os nossos horários de entrega para o Dia dos Namorados estão esgotados.";
+    }else{
+      titulo.textContent="Retiradas esgotadas";
+      msg.innerHTML="Nossos pedidos online estão esgotados. Agora só temos disponibilidade para compras presenciais em nossa loja física, na <strong>Alameda Barão de Limeira, 998 — Campos Elíseos</strong>.";
+    }
+    document.getElementById("fdc-popup-namorados-overlay").classList.add("ativo");
+  }
+
   function atualizarTrava(){
     var trava=document.getElementById("fdc-bloco-trava");
     if(!trava)return;
@@ -628,7 +676,6 @@
     }
   }
 
-  // ── Funções globais ──────────────────────────────────────────────────
   window.fdcSalvar=function(){salvarSessao();};
 
   window.fdcSetTipo=function(t){
@@ -746,9 +793,27 @@
       var b=document.createElement("button");b.textContent=d;
       var isSel=dataSel&&dataSel.getDate()===d&&dataSel.getMonth()===mesAtual&&dataSel.getFullYear()===anoAtual;
       var isHj=dt.getTime()===hj.getTime();
-      b.className=isSel?"fdc-day sel":temDisp(dt)?"fdc-day disp":"fdc-day";
+      var ehNamorados=isDiaNamorados(dt);
+      var namoradosEsgotado=false;
+
+      if(ehNamorados){
+        if(tipo==="entrega"&&!entregaNamoradosDisponivel())namoradosEsgotado=true;
+        if(tipo==="retirada"&&!retiradaNamoradosDisponivel())namoradosEsgotado=true;
+      }
+
+      if(namoradosEsgotado){
+        // Dia 12 esgotado → clicável mas só mostra popup
+        b.className="fdc-day namorados-esgotado";
+        (function(){b.onclick=function(){mostrarPopupNamorados();};})();
+      }else if(isSel){
+        b.className="fdc-day sel";
+      }else if(temDisp(dt)){
+        b.className="fdc-day disp";
+        (function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
+      }else{
+        b.className="fdc-day";
+      }
       if(isHj&&!isSel)b.classList.add("hj");
-      if(temDisp(dt)&&!isSel)(function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
       grid.appendChild(b);
     }
   }
