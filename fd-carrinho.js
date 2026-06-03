@@ -8,21 +8,89 @@
     emailjs_public_key:"LZISdXcU2KCrtNwVd"
   };
 
-  // ── Dia dos Namorados (12/06/2026) ───────────────────────────────────
+  // ── Dia dos Namorados ────────────────────────────────────────────────
   var DATA_NAMORADOS="2026-06-12";
-  // Limite para agendar ENTREGA no dia 12 → até 23:59 do dia 10/06
+  var URL_NAMORADOS="https://www.floriculturadias.com/dia-dos-namorados-2026";
   var LIMITE_ENTREGA_NAMORADOS=new Date(2026,5,10,23,59,59);
-  // Limite para agendar RETIRADA no dia 12 → até 14:59 do dia 11/06
   var LIMITE_RETIRADA_NAMORADOS=new Date(2026,5,11,14,59,59);
 
-  // Períodos especiais para o dia 12 (entrega)
-  var ENTREGA_NAMORADOS=[
-    {id:"n_m1",nome:"Manhã I",hora:"8:00 – 10:00",ini:8,fim:10},
-    {id:"n_m2",nome:"Manhã II",hora:"10:00 – 12:00",ini:10,fim:12},
-    {id:"n_t1",nome:"Tarde I",hora:"12:30 – 14:00",ini:12.5,fim:14},
-    {id:"n_t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
-    {id:"n_t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17}
+  // Lista de produtos liberados para o dia 12 (Dia dos Namorados)
+  var PRODUTOS_NAMORADOS=[
+    "ADICIONAL - Lata Coração Lindt 50g",
+    "Arranjo Corvelle - 6 Rosas IMPORTADAS + Vaso de Vidro",
+    "Arranjo Elysée",
+    "Arranjo Loures",
+    "Arranjo Rougelle - 24 Rosas Nacionais",
+    "Buquê Abrantes M",
+    "Buquê Abrantes P",
+    "Buquê Alverca",
+    "Buquê Ardens - 15 Rosas Nacionais",
+    "Buquê Aruna - Rosas IMPORTADAS e Astromelias",
+    "Buquê Auraviva",
+    "Buquê Aveiro - 12 Rosas Nacionais",
+    "Buquê Belladore - 9 Rosas Nacionais",
+    "Buquê Carmora - 9 Rosas IMPORTADAS",
+    "Buquê Floravelle",
+    "Buquê Gandra",
+    "Buquê Higienópolis",
+    "Buquê Mini Aveiro - 6 Rosas Nacionais",
+    "Buquê Mini Carmora - 6 Rosas IMPORTADAS",
+    "Buquê Raiara",
+    "Buquê Ravenna - 24 Rosas IMPORTADAS",
+    "Buquê Vértice - 3 Rosas IMPORTADAS e Astromelias",
+    "Buquê Volcania - 12 Rosas IMPORTADAS",
+    "Cesta Bellarouge - Queijo e Vinho",
+    "Kit Alenquer",
+    "Kit Alentejo",
+    "Kit Alvalade",
+    "Kit Amália",
+    "Kit Amarielle - Buquê 12 Rosas Nacionais + Ferrero Rocher",
+    "Kit Aurora",
+    "Kit Blue & Gold - Buquê Mix Azul + Ferrero Rocher 100g",
+    "Kit Bom Retiro - Rosas IMPORTADAS + Urso Articulado com Laço",
+    "Kit Cartagena - Rosas IMPORTADAS + Ferrero Rocher 100g",
+    "Kit Delavie - 9 Rosas IMPORTADAS + Ferrero Rocher 100g",
+    "Kit Dolce Passione",
+    "Kit Faro",
+    "Kit Grand Allure",
+    "Kit Itacolomi",
+    "Kit Lancaster",
+    "Kit Lovelle",
+    "Kit Mariza - Rosas IMPORTADAS + Ferrero Rocher 100g",
+    "Kit Mirandela",
+    "Kit Noely - Buquê 9 Rosas Nacionais + Urso de Pelúcia",
+    "Kit Noêmia",
+    "Kit Paredes - Buquê com 6 Rosas Nacionais + Chocolate Ferrero Rocher",
+    "Kit Petit d'Élise",
+    "Kit Portalegre - Buquê de 6 Rosas IMPORTADAS + Chococard Te Amo",
+    "Kit Valadares",
+    "Kit Viana do Castelo",
+    "Mini Orquídea Phalaenopsis (Cor Aleatória)",
+    "Orquídea Phalaenopsis Cascata",
+    "Orquídea Phalaenopsis Cascata - 2 unidades no cesto",
+    "Orquídea Phalaenopsis Cascata - Vaso de Vidro",
+    "Orquídea Phalaenopsis Cascata 2 Hastes - Rosa e Branca",
+    "Orquídea Phalaenopsis Cascata em Aquário"
   ];
+
+  // ── Verifica se carrinho está 100% com produtos do dia dos namorados ─
+  // Adicionais (qualquer item começando com "ADICIONAL -") são sempre permitidos
+  function carrinhoEhNamorados(){
+    var itens=lerItensCarrinhoArray();
+    if(itens.length===0)return false; // carrinho vazio = não libera
+    for(var i=0;i<itens.length;i++){
+      var nome=itens[i].trim();
+      // Adicional sempre permitido
+      if(nome.toUpperCase().indexOf("ADICIONAL -")===0)continue;
+      // Verifica se está na lista de produtos do dia dos namorados
+      var ok=false;
+      for(var j=0;j<PRODUTOS_NAMORADOS.length;j++){
+        if(nome===PRODUTOS_NAMORADOS[j]){ok=true;break;}
+      }
+      if(!ok)return false;
+    }
+    return true;
+  }
 
   var FAIXAS_CEP=[
     [1032000,1033050],[1036000,1048000],[1100000,1109999],[1110000,1135050],
@@ -63,15 +131,21 @@
     return dateToStr(d)===DATA_NAMORADOS;
   }
 
-  // ── Verifica se entrega no dia 12 ainda é possível ───────────────────
   function entregaNamoradosDisponivel(){
     return new Date()<=LIMITE_ENTREGA_NAMORADOS;
   }
 
-  // ── Verifica se retirada no dia 12 ainda é possível ──────────────────
   function retiradaNamoradosDisponivel(){
     return new Date()<=LIMITE_RETIRADA_NAMORADOS;
   }
+
+  var ENTREGA_NAMORADOS=[
+    {id:"n_m1",nome:"Manhã I",hora:"8:00 – 10:00",ini:8,fim:10},
+    {id:"n_m2",nome:"Manhã II",hora:"10:00 – 12:00",ini:10,fim:12},
+    {id:"n_t1",nome:"Tarde I",hora:"12:30 – 14:00",ini:12.5,fim:14},
+    {id:"n_t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
+    {id:"n_t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17}
+  ];
 
   var ENTREGA_HOJE=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
@@ -139,9 +213,7 @@
 
   function getPeriodosParaDow(dow, dt){
     if(dt&&isDiaNamorados(dt)){
-      // Dia 12/06 → períodos especiais
       if(tipo==="entrega")return ENTREGA_NAMORADOS;
-      // Retirada no dia 12 → usa retirada de sexta (RETIRADA_SEMANA)
       return RETIRADA_SEMANA;
     }
     if(tipo==="entrega"){
@@ -242,7 +314,6 @@
     if(dow===0||dow===6){
       if(!fdsDisponivel(dd))return false;
     }
-    // Dia dos namorados: aparece disponível até o limite (mesmo após, mostra popup ao clicar)
     if(isDiaNamorados(dd)){
       if(tipo==="entrega"&&!entregaNamoradosDisponivel())return false;
       if(tipo==="retirada"&&!retiradaNamoradosDisponivel())return false;
@@ -261,7 +332,7 @@
     return true;
   }
 
-  function lerItensCarrinho(){
+  function lerItensCarrinhoArray(){
     var itens=[];
     var seletores=[".nome-produto",".cart-item-name",".product-name","td.nome a"];
     for(var i=0;i<seletores.length;i++){
@@ -274,6 +345,11 @@
         if(itens.length>0)break;
       }
     }
+    return itens;
+  }
+
+  function lerItensCarrinho(){
+    var itens=lerItensCarrinhoArray();
     return itens.length>0?itens.join("\n"):"(não identificado)";
   }
 
@@ -423,9 +499,10 @@
       ".fdc-day.disp:hover{background:#c5e8d8}",
       ".fdc-day.sel{background:#a91537;color:#fff}",
       ".fdc-day.hj{outline:1.5px solid #a91537;outline-offset:-1px}",
-      // Dia dos namorados esgotado — clicável mas mostra popup
       ".fdc-day.namorados-esgotado{background:#ffe0e0;color:#c0392b;cursor:pointer;font-weight:600}",
       ".fdc-day.namorados-esgotado:hover{background:#ffcccc}",
+      ".fdc-day.namorados-produto{background:#ffeaea;color:#a91537;cursor:pointer;font-weight:600}",
+      ".fdc-day.namorados-produto:hover{background:#ffd6d6}",
       ".fdc-legenda{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}",
       ".fdc-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#888}",
       ".fdc-leg-dot{width:10px;height:10px;border-radius:3px}",
@@ -543,7 +620,6 @@
     ].join("");
     document.body.appendChild(divCep);
 
-    // Popup dia dos namorados esgotado
     var divNam=document.createElement("div");
     divNam.id="fdc-popup-namorados-overlay";divNam.className="fdc-popup-overlay";
     divNam.innerHTML=[
@@ -551,7 +627,9 @@
         '<div class="fdc-popup-icon">💔</div>',
         '<h3 id="fdc-popup-nam-titulo">Dia dos Namorados</h3>',
         '<p id="fdc-popup-nam-msg">—</p>',
-        '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Entendi</button>',
+        '<div class="fdc-popup-btns" id="fdc-popup-nam-btns">',
+          '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Entendi</button>',
+        '</div>',
       '</div>'
     ].join("");
     document.body.appendChild(divNam);
@@ -653,15 +731,32 @@
     document.getElementById("fdc-popup-namorados-overlay").classList.remove("ativo");
   };
 
-  function mostrarPopupNamorados(){
+  window.fdcVerColecaoNamorados=function(){
+    window.open(URL_NAMORADOS,"_blank");
+  };
+
+  // motivo: "esgotado" ou "produto"
+  function mostrarPopupNamorados(motivo){
     var titulo=document.getElementById("fdc-popup-nam-titulo");
     var msg=document.getElementById("fdc-popup-nam-msg");
-    if(tipo==="entrega"){
-      titulo.textContent="Entregas esgotadas";
-      msg.innerHTML="Todos os nossos horários de entrega para o Dia dos Namorados estão esgotados.";
+    var btns=document.getElementById("fdc-popup-nam-btns");
+
+    if(motivo==="produto"){
+      titulo.textContent="Data exclusiva para Dia dos Namorados";
+      msg.innerHTML="O dia <strong>12/06</strong> está reservado para produtos da nossa coleção especial do Dia dos Namorados.<br><br>Confira nossa coleção completa e escolha um presente especial!";
+      btns.innerHTML=
+        '<button class="fdc-popup-btn fdc-popup-btn-sec" onclick="fdcVerColecaoNamorados()">Ver coleção</button>'+
+        '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Escolher outra data</button>';
     }else{
-      titulo.textContent="Retiradas esgotadas";
-      msg.innerHTML="Nossos pedidos online estão esgotados. Agora só temos disponibilidade para compras presenciais em nossa loja física, na <strong>Alameda Barão de Limeira, 998 — Campos Elíseos</strong>.";
+      // esgotado
+      if(tipo==="entrega"){
+        titulo.textContent="Entregas esgotadas";
+        msg.innerHTML="Todos os nossos horários de entrega para o Dia dos Namorados estão esgotados.";
+      }else{
+        titulo.textContent="Retiradas esgotadas";
+        msg.innerHTML="Nossos pedidos online estão esgotados. Agora só temos disponibilidade para compras presenciais em nossa loja física, na <strong>Alameda Barão de Limeira, 998 — Campos Elíseos</strong>.";
+      }
+      btns.innerHTML='<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Entendi</button>';
     }
     document.getElementById("fdc-popup-namorados-overlay").classList.add("ativo");
   }
@@ -788,6 +883,8 @@
     for(var i=0;i<p;i++){var e=document.createElement("button");e.className="fdc-day";grid.appendChild(e);}
     var tot=new Date(anoAtual,mesAtual+1,0).getDate();
     var hj=hoje();
+    var carrinhoNamorados=carrinhoEhNamorados();
+
     for(var d=1;d<=tot;d++){
       var dt=new Date(anoAtual,mesAtual,d);
       var b=document.createElement("button");b.textContent=d;
@@ -795,16 +892,22 @@
       var isHj=dt.getTime()===hj.getTime();
       var ehNamorados=isDiaNamorados(dt);
       var namoradosEsgotado=false;
+      var namoradosProduto=false;
 
       if(ehNamorados){
+        // Verifica se já esgotou
         if(tipo==="entrega"&&!entregaNamoradosDisponivel())namoradosEsgotado=true;
         if(tipo==="retirada"&&!retiradaNamoradosDisponivel())namoradosEsgotado=true;
+        // Se não esgotou mas carrinho tem produtos não-namorados
+        if(!namoradosEsgotado&&!carrinhoNamorados)namoradosProduto=true;
       }
 
       if(namoradosEsgotado){
-        // Dia 12 esgotado → clicável mas só mostra popup
         b.className="fdc-day namorados-esgotado";
-        (function(){b.onclick=function(){mostrarPopupNamorados();};})();
+        (function(){b.onclick=function(){mostrarPopupNamorados("esgotado");};})();
+      }else if(namoradosProduto){
+        b.className="fdc-day namorados-produto";
+        (function(){b.onclick=function(){mostrarPopupNamorados("produto");};})();
       }else if(isSel){
         b.className="fdc-day sel";
       }else if(temDisp(dt)){
@@ -855,9 +958,11 @@
     var lista=dataSel?getPeriodosParaDow(dataSel.getDay(), dataSel):[];
     var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     var agora=new Date();
+    var cepDigitado=(document.getElementById("fdc-cep")||{}).value||"";
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
       itens_carrinho:lerItensCarrinho(),
+      cep_entrega:tipo==="entrega"?(cepDigitado||"(não informado)"):"(retirada na loja)",
       nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
       tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
