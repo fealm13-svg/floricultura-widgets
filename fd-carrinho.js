@@ -14,6 +14,14 @@
   var LIMITE_ENTREGA_NAMORADOS=new Date(2026,5,10,23,59,59);
   var LIMITE_RETIRADA_NAMORADOS=new Date(2026,5,11,14,59,59);
 
+  // Faixas de CEP para entrega no DIA 12/06 (restrita)
+  var FAIXAS_CEP_NAMORADOS=[
+    [1100000,1109999],[1110000,1135050],[1135050,1136050],
+    [1150011,1153050],[1154000,1160000],
+    [1200000,1206010],[1207000,1213010],[1214000,1217020],
+    [1218000,1218999],[1219000,1233070],[1234000,1244030]
+  ];
+
   // Lista de produtos liberados para o dia 12 (Dia dos Namorados)
   var PRODUTOS_NAMORADOS=[
     "ADICIONAL - Lata Coração Lindt 50g",
@@ -73,16 +81,12 @@
     "Orquídea Phalaenopsis Cascata em Aquário"
   ];
 
-  // ── Verifica se carrinho está 100% com produtos do dia dos namorados ─
-  // Adicionais (qualquer item começando com "ADICIONAL -") são sempre permitidos
   function carrinhoEhNamorados(){
     var itens=lerItensCarrinhoArray();
-    if(itens.length===0)return false; // carrinho vazio = não libera
+    if(itens.length===0)return false;
     for(var i=0;i<itens.length;i++){
       var nome=itens[i].trim();
-      // Adicional sempre permitido
       if(nome.toUpperCase().indexOf("ADICIONAL -")===0)continue;
-      // Verifica se está na lista de produtos do dia dos namorados
       var ok=false;
       for(var j=0;j<PRODUTOS_NAMORADOS.length;j++){
         if(nome===PRODUTOS_NAMORADOS[j]){ok=true;break;}
@@ -110,6 +114,16 @@
     if(String(n).length<7)return false;
     for(var i=0;i<FAIXAS_CEP.length;i++){
       if(n>=FAIXAS_CEP[i][0]&&n<=FAIXAS_CEP[i][1])return true;
+    }
+    return false;
+  }
+
+  // Verifica se o CEP é atendido especificamente no dia 12
+  function cepValidoNamorados(cep){
+    var n=cepNoFormato(cep);
+    if(String(n).length<7)return false;
+    for(var i=0;i<FAIXAS_CEP_NAMORADOS.length;i++){
+      if(n>=FAIXAS_CEP_NAMORADOS[i][0]&&n<=FAIXAS_CEP_NAMORADOS[i][1])return true;
     }
     return false;
   }
@@ -207,6 +221,7 @@
   var mesAtual=new Date().getMonth(),anoAtual=new Date().getFullYear();
   var semMensagem=false;
   var cepOk=false;
+  var cepValidoDia12=false; // se o CEP atual também é válido no dia 12
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -435,6 +450,8 @@
       ".fdc-cep-status{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px}",
       ".fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}",
       ".fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
+      ".fdc-cep-aviso{display:none;margin-top:8px;padding:8px 12px;background:#fff4e0;border-left:3px solid #e8a33d;border-radius:4px;font-size:12px;color:#7a5a1f;line-height:1.4}",
+      ".fdc-cep-aviso.ativo{display:block}",
       ".fdc-bloco-trava{position:relative}",
       ".fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.5}",
       ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
@@ -503,6 +520,8 @@
       ".fdc-day.namorados-esgotado:hover{background:#ffcccc}",
       ".fdc-day.namorados-produto{background:#ffeaea;color:#a91537;cursor:pointer;font-weight:600}",
       ".fdc-day.namorados-produto:hover{background:#ffd6d6}",
+      ".fdc-day.namorados-cep{background:#ffe0e0;color:#c0392b;cursor:pointer;font-weight:600}",
+      ".fdc-day.namorados-cep:hover{background:#ffcccc}",
       ".fdc-legenda{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}",
       ".fdc-leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#888}",
       ".fdc-leg-dot{width:10px;height:10px;border-radius:3px}",
@@ -541,6 +560,7 @@
           '<label>Informe o CEP de destino<small>Validaremos se atendemos seu endereço</small></label>',
           '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
           '<span id="fdc-cep-status"></span>',
+          '<div id="fdc-cep-aviso" class="fdc-cep-aviso">⚠️ <strong>Atenção:</strong> este CEP não está incluído na nossa área de entrega para o Dia dos Namorados (12/06).</div>',
         '</div>',
       '</div>',
       '<div id="fdc-bloco-trava" class="fdc-bloco-trava">',
@@ -676,12 +696,15 @@
   window.fdcValidarCep=function(silencioso){
     var el=document.getElementById("fdc-cep");
     var status=document.getElementById("fdc-cep-status");
+    var aviso=document.getElementById("fdc-cep-aviso");
     var cep=el.value.replace(/\D/g,"");
 
     if(cep.length<8){
       cepOk=false;
+      cepValidoDia12=false;
       status.textContent="";
       status.className="";
+      aviso.classList.remove("ativo");
       atualizarTrava();
       fdcVerificar();
       return;
@@ -691,11 +714,20 @@
       cepOk=true;
       status.textContent="✓ Atendemos seu endereço";
       status.className="fdc-cep-status ok";
+      // Verifica também o dia 12
+      cepValidoDia12=cepValidoNamorados(cep);
+      if(!cepValidoDia12){
+        aviso.classList.add("ativo");
+      }else{
+        aviso.classList.remove("ativo");
+      }
       preencherCepPlataforma(el.value);
     }else{
       cepOk=false;
+      cepValidoDia12=false;
       status.textContent="✗ Não atendemos este CEP";
       status.className="fdc-cep-status erro";
+      aviso.classList.remove("ativo");
       if(!silencioso){
         document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
       }
@@ -724,6 +756,7 @@
 
   window.fdcOptarRetirada=function(){
     document.getElementById("fdc-popup-cep-overlay").classList.remove("ativo");
+    document.getElementById("fdc-popup-namorados-overlay").classList.remove("ativo");
     window.fdcSetTipo("retirada");
   };
 
@@ -735,7 +768,7 @@
     window.open(URL_NAMORADOS,"_blank");
   };
 
-  // motivo: "esgotado" ou "produto"
+  // motivo: "esgotado" | "produto" | "cep"
   function mostrarPopupNamorados(motivo){
     var titulo=document.getElementById("fdc-popup-nam-titulo");
     var msg=document.getElementById("fdc-popup-nam-msg");
@@ -746,6 +779,12 @@
       msg.innerHTML="O dia <strong>12/06</strong> está reservado para produtos da nossa coleção especial do Dia dos Namorados.<br><br>Confira nossa coleção completa e escolha um presente especial!";
       btns.innerHTML=
         '<button class="fdc-popup-btn fdc-popup-btn-sec" onclick="fdcVerColecaoNamorados()">Ver coleção</button>'+
+        '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Escolher outra data</button>';
+    }else if(motivo==="cep"){
+      titulo.textContent="CEP fora da área de entrega especial";
+      msg.innerHTML="Não realizamos entregas neste CEP no Dia dos Namorados (12/06).<br><br>Por favor, escolha outra data ou opte pela retirada em nossa loja.";
+      btns.innerHTML=
+        '<button class="fdc-popup-btn fdc-popup-btn-sec" onclick="fdcOptarRetirada()">Optar por Retirada</button>'+
         '<button class="fdc-popup-btn" onclick="fdcFecharPopupNamorados()">Escolher outra data</button>';
     }else{
       // esgotado
@@ -893,18 +932,28 @@
       var ehNamorados=isDiaNamorados(dt);
       var namoradosEsgotado=false;
       var namoradosProduto=false;
+      var namoradosCep=false;
 
       if(ehNamorados){
-        // Verifica se já esgotou
+        // 1ª prioridade: verifica se já esgotou (prazo limite)
         if(tipo==="entrega"&&!entregaNamoradosDisponivel())namoradosEsgotado=true;
         if(tipo==="retirada"&&!retiradaNamoradosDisponivel())namoradosEsgotado=true;
-        // Se não esgotou mas carrinho tem produtos não-namorados
-        if(!namoradosEsgotado&&!carrinhoNamorados)namoradosProduto=true;
+        // 2ª prioridade: se não esgotou, verifica CEP (só em entrega)
+        if(!namoradosEsgotado&&tipo==="entrega"&&cepOk&&!cepValidoDia12){
+          namoradosCep=true;
+        }
+        // 3ª prioridade: se não esgotou e CEP ok, verifica produto
+        if(!namoradosEsgotado&&!namoradosCep&&!carrinhoNamorados){
+          namoradosProduto=true;
+        }
       }
 
       if(namoradosEsgotado){
         b.className="fdc-day namorados-esgotado";
         (function(){b.onclick=function(){mostrarPopupNamorados("esgotado");};})();
+      }else if(namoradosCep){
+        b.className="fdc-day namorados-cep";
+        (function(){b.onclick=function(){mostrarPopupNamorados("cep");};})();
       }else if(namoradosProduto){
         b.className="fdc-day namorados-produto";
         (function(){b.onclick=function(){mostrarPopupNamorados("produto");};})();
