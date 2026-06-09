@@ -86,7 +86,7 @@
     if(itens.length===0)return false;
     for(var i=0;i<itens.length;i++){
       var nome=itens[i].trim();
-      if(nome.toUpperCase().indexOf("ADICIONAL -")===0)continue;
+      if(nome.toUpperCase().indexOf("ADICIONAL")!==-1)continue;
       var ok=false;
       for(var j=0;j<PRODUTOS_NAMORADOS.length;j++){
         if(nome===PRODUTOS_NAMORADOS[j]){ok=true;break;}
