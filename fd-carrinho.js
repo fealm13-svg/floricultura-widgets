@@ -129,9 +129,15 @@
   }
 
   var FERIADOS=[
-    "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-07-09","2026-09-07",
+    "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-06-13","2026-06-14","2026-07-09","2026-09-07",
     "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
   ];
+
+  // Data com bloqueio parcial pela manhã
+  var DATA_BLOQUEIO_MANHA="2026-06-10";
+  // Hora a partir da qual libera no dia 10
+  var HORA_LIBERA_ENTREGA_DIA10=13;  // entrega: a partir de 13h
+  var HORA_LIBERA_RETIRADA_DIA10=11; // retirada: a partir de 11h
 
   function dateToStr(d){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -146,7 +152,7 @@
   }
 
   function entregaNamoradosDisponivel(){
-    return new Date()<=LIMITE_ENTREGA_NAMORADOS;
+    return false; // Entrega no dia 12 totalmente esgotada
   }
 
   function retiradaNamoradosDisponivel(){
@@ -160,6 +166,12 @@
     {id:"n_t2",nome:"Tarde II",hora:"14:00 – 15:30",ini:14,fim:15.5},
     {id:"n_t3",nome:"Tarde III",hora:"15:30 – 17:00",ini:15.5,fim:17}
   ];
+
+  // Retirada específica para o dia 12 (sem 8-9h, 13-14h e 16-17h)
+  var RETIRADA_NAMORADOS=[];
+  [9,10,11,12,14,15,17,18].forEach(function(h){
+    RETIRADA_NAMORADOS.push({id:"rn"+h,nome:"Entre "+h+"h – "+(h+1)+"h",hora:h+":00 – "+(h+1)+":00",ini:h,fim:h+1});
+  });
 
   var ENTREGA_HOJE=[
     {id:"m1",nome:"Manhã I",hora:"9:00 – 10:30",ini:9,fim:10.5},
@@ -229,7 +241,7 @@
   function getPeriodosParaDow(dow, dt){
     if(dt&&isDiaNamorados(dt)){
       if(tipo==="entrega")return ENTREGA_NAMORADOS;
-      return RETIRADA_SEMANA;
+      return RETIRADA_NAMORADOS;
     }
     if(tipo==="entrega"){
       if(dow===0||dow===6)return ENTREGA_FDS;
@@ -293,12 +305,18 @@
     var dd=new Date(d);dd.setHours(0,0,0,0);
     var isHoje=dd.getTime()===hoje().getTime();
     var isAmanha=dd.getTime()===addDias(hoje(),1).getTime();
+    var isBloqueioManha=(dateToStr(dd)===DATA_BLOQUEIO_MANHA);
     var cesta=isCesta();
     var lista=getPeriodosParaDow(dd.getDay(), dd);
     var ordemFuturo=["e9","e10","e11","e13","e14","e15","e16"];
     var ordemRetirada=["rs8","rs9","rs10","rs11","rs12","rs13","rs14","rs15","rs16","rs17","rs18"];
 
     return lista.map(function(p){
+      // Bloqueio da manhã no dia 10/06
+      if(isBloqueioManha){
+        var horaLimite=tipo==="entrega"?HORA_LIBERA_ENTREGA_DIA10:HORA_LIBERA_RETIRADA_DIA10;
+        if(p.ini<horaLimite)return Object.assign({},p,{ok:false});
+      }
       if(cesta&&isAmanha){
         var minPer=periodoMinimoCesta();
         if(minPer){
@@ -714,13 +732,9 @@
       cepOk=true;
       status.textContent="✓ Atendemos seu endereço";
       status.className="fdc-cep-status ok";
-      // Verifica também o dia 12
+      // Aviso amarelo desativado: entrega no dia 12 está esgotada para todos
       cepValidoDia12=cepValidoNamorados(cep);
-      if(!cepValidoDia12){
-        aviso.classList.add("ativo");
-      }else{
-        aviso.classList.remove("ativo");
-      }
+      aviso.classList.remove("ativo");
       preencherCepPlataforma(el.value);
     }else{
       cepOk=false;
@@ -790,7 +804,7 @@
       // esgotado
       if(tipo==="entrega"){
         titulo.textContent="Entregas esgotadas";
-        msg.innerHTML="Todos os nossos horários de entrega para o Dia dos Namorados estão esgotados.";
+        msg.innerHTML="Agenda de entregas para o dia 12 completamente esgotada, desculpe.";
       }else{
         titulo.textContent="Retiradas esgotadas";
         msg.innerHTML="Nossos pedidos online estão esgotados. Agora só temos disponibilidade para compras presenciais em nossa loja física, na <strong>Alameda Barão de Limeira, 998 — Campos Elíseos</strong>.";
