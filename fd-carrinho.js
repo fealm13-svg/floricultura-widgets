@@ -139,6 +139,12 @@
   var HORA_LIBERA_ENTREGA_DIA10=13;  // entrega: a partir de 13h
   var HORA_LIBERA_RETIRADA_DIA10=11; // retirada: a partir de 11h
 
+  // Períodos específicos esgotados por data (formato: {data: ["id_periodo", ...]})
+  // Aplica-se apenas a entrega
+  var PERIODOS_ESGOTADOS_ENTREGA={
+    "2026-06-11":["t2","t3","e14","e15","e16"] // Tarde II e Tarde III (engloba intervalos 14h-17h)
+  };
+
   function dateToStr(d){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
   }
@@ -312,6 +318,13 @@
     var ordemRetirada=["rs8","rs9","rs10","rs11","rs12","rs13","rs14","rs15","rs16","rs17","rs18"];
 
     return lista.map(function(p){
+      // Períodos específicos esgotados em data definida (só entrega)
+      if(tipo==="entrega"){
+        var esgotados=PERIODOS_ESGOTADOS_ENTREGA[dateToStr(dd)];
+        if(esgotados&&esgotados.indexOf(p.id)!==-1){
+          return Object.assign({},p,{ok:false});
+        }
+      }
       // Bloqueio da manhã no dia 10/06
       if(isBloqueioManha){
         var horaLimite=tipo==="entrega"?HORA_LIBERA_ENTREGA_DIA10:HORA_LIBERA_RETIRADA_DIA10;
