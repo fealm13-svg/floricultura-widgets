@@ -9,8 +9,11 @@
   };
 
   // ── Dia dos Namorados ────────────────────────────────────────────────
-  var DATA_NAMORADOS="2026-06-12";
+  var _nam=(typeof window.FD_CONFIG==="object"&&window.FD_CONFIG&&window.FD_CONFIG.namorados)||{};
+  var DATA_NAMORADOS=_nam.data||"2026-06-12";
   var URL_NAMORADOS="https://www.floriculturadias.com/dia-dos-namorados-2026";
+  var _NAM_ENTREGA_OK=_nam.entrega_disponivel!==undefined?_nam.entrega_disponivel:true;
+  var _NAM_RETIRADA_OK=_nam.retirada_disponivel!==undefined?_nam.retirada_disponivel:true;
   var LIMITE_ENTREGA_NAMORADOS=new Date(2026,5,10,23,59,59);
   var LIMITE_RETIRADA_NAMORADOS=new Date(2026,5,11,14,59,59);
 
@@ -96,7 +99,7 @@
     return true;
   }
 
-  var FAIXAS_CEP=[
+  var FAIXAS_CEP=_CFG.faixas_cep||[
     [1032000,1033050],[1036000,1048000],[1100000,1109999],[1110000,1135050],
     [1135050,1136050],[1137000,1138800],[1139000,1150010],[1150011,1153050],
     [1154000,1160000],[1200000,1206010],[1207000,1213010],[1214000,1217020],
@@ -128,22 +131,17 @@
     return false;
   }
 
-  var FERIADOS=[
-    "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-06-13","2026-06-14","2026-07-09","2026-09-07",
-    "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
-  ];
+  // ── Carrega configuração do FD_CONFIG (definida no painel da Loja Integrada) ──
+  var _CFG=(typeof window.FD_CONFIG==="object"&&window.FD_CONFIG)||{};
 
-  // Data com bloqueio parcial pela manhã
-  var DATA_BLOQUEIO_MANHA="2026-06-10";
-  // Hora a partir da qual libera no dia 10
-  var HORA_LIBERA_ENTREGA_DIA10=13;  // entrega: a partir de 13h
-  var HORA_LIBERA_RETIRADA_DIA10=11; // retirada: a partir de 11h
+  var FERIADOS=_CFG.feriados||["2026-12-25"];
 
-  // Períodos específicos esgotados por data (formato: {data: ["id_periodo", ...]})
-  // Aplica-se apenas a entrega
-  var PERIODOS_ESGOTADOS_ENTREGA={
-    "2026-06-11":["t2","t3","e14","e15","e16"] // Tarde II e Tarde III (engloba intervalos 14h-17h)
-  };
+  var _bloqM=_CFG.bloqueio_manha||{data:null,hora_libera_entrega:13,hora_libera_retirada:11};
+  var DATA_BLOQUEIO_MANHA=_bloqM.data;
+  var HORA_LIBERA_ENTREGA_DIA10=_bloqM.hora_libera_entrega;
+  var HORA_LIBERA_RETIRADA_DIA10=_bloqM.hora_libera_retirada;
+
+  var PERIODOS_ESGOTADOS_ENTREGA=_CFG.periodos_esgotados||{};
 
   function dateToStr(d){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -158,11 +156,11 @@
   }
 
   function entregaNamoradosDisponivel(){
-    return false; // Entrega no dia 12 totalmente esgotada
+    return _NAM_ENTREGA_OK;
   }
 
   function retiradaNamoradosDisponivel(){
-    return new Date()<=LIMITE_RETIRADA_NAMORADOS;
+    return _NAM_RETIRADA_OK;
   }
 
   var ENTREGA_NAMORADOS=[
