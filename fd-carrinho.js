@@ -107,6 +107,21 @@
     [5000000,5001099],[5001150,5020000]
   ];
 
+  // Faixas de CEP com trânsito intenso após as 15h
+  // (Tarde III bloqueada para estes CEPs quando o cliente acessar após esse horário)
+  var FAIXAS_CEP_TRANSITO=[
+    [1100000,1109999],   // 3
+    [1110000,1135050],   // 4
+    [1135050,1136050],   // 5
+    [1137000,1138800],   // 6
+    [1139000,1150010],   // 7
+    [1234000,1244030],   // 15
+    [2500000,2517999],   // 16
+    [5000000,5001099],   // 17
+    [5001150,5020000]    // 18
+  ];
+  var HORA_BLOQUEIO_TRANSITO=15; // hora a partir da qual bloqueia Tarde III
+
   function cepNoFormato(cep){
     var n=parseInt(cep.replace(/\D/g,""),10);
     return isNaN(n)?0:n;
@@ -127,6 +142,16 @@
     if(String(n).length<7)return false;
     for(var i=0;i<FAIXAS_CEP_NAMORADOS.length;i++){
       if(n>=FAIXAS_CEP_NAMORADOS[i][0]&&n<=FAIXAS_CEP_NAMORADOS[i][1])return true;
+    }
+    return false;
+  }
+
+  // Verifica se o CEP está em região com trânsito intenso
+  function cepComTransito(cep){
+    var n=cepNoFormato(cep);
+    if(String(n).length<7)return false;
+    for(var i=0;i<FAIXAS_CEP_TRANSITO.length;i++){
+      if(n>=FAIXAS_CEP_TRANSITO[i][0]&&n<=FAIXAS_CEP_TRANSITO[i][1])return true;
     }
     return false;
   }
@@ -320,6 +345,13 @@
       if(tipo==="entrega"){
         var esgotados=PERIODOS_ESGOTADOS_ENTREGA[dateToStr(dd)];
         if(esgotados&&esgotados.indexOf(p.id)!==-1){
+          return Object.assign({},p,{ok:false});
+        }
+      }
+      // Trânsito intenso: bloqueia Tarde III (t3) hoje após 15h se CEP problemático
+      if(isHoje&&tipo==="entrega"&&p.id==="t3"&&h>=HORA_BLOQUEIO_TRANSITO){
+        var cepAtual=(document.getElementById("fdc-cep")||{}).value||"";
+        if(cepAtual&&cepComTransito(cepAtual)){
           return Object.assign({},p,{ok:false});
         }
       }
@@ -755,6 +787,20 @@
       aviso.classList.remove("ativo");
       if(!silencioso){
         document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
+      }
+    }
+    // Se já havia um período selecionado e ele se tornou inválido com o novo CEP, reseta
+    if(agConfirmado&&dataSel&&periodoSel){
+      var periodosAtuais=periodosParaDia(dataSel);
+      var pAtual=periodosAtuais.find(function(x){return x.id===periodoSel;});
+      if(!pAtual||!pAtual.ok){
+        agConfirmado=false;
+        dataSel=null;
+        periodoSel=null;
+        var btnAg=document.getElementById("fdc-btn-ag");
+        var resAg=document.getElementById("fdc-resumo-ag");
+        if(btnAg)btnAg.style.display="block";
+        if(resAg)resAg.style.display="none";
       }
     }
     atualizarTrava();
