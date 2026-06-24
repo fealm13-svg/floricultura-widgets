@@ -166,7 +166,9 @@
   var HORA_LIBERA_ENTREGA_DIA10=_bloqM.hora_libera_entrega;
   var HORA_LIBERA_RETIRADA_DIA10=_bloqM.hora_libera_retirada;
 
-  var PERIODOS_ESGOTADOS_ENTREGA=_CFG.periodos_esgotados||{};
+  var PERIODOS_ESGOTADOS_ENTREGA=_CFG.periodos_esgotados||{
+    "2026-06-24":["t3","e15","e16"] // Tarde III bloqueada (chuva/trânsito)
+  };
 
   function dateToStr(d){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
@@ -556,6 +558,18 @@
       ".fdc-popup-btn:hover{background:#8a1029}",
       ".fdc-popup-btn-sec{background:#5a8966}",
       ".fdc-popup-btn-sec:hover{background:#46714f}",
+      ".fdc-popup-conf{max-width:460px;text-align:left}",
+      ".fdc-popup-conf h3{text-align:center}",
+      ".fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:14px 16px;margin-bottom:14px}",
+      ".fdc-conf-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}",
+      ".fdc-conf-item:last-child{margin-bottom:0}",
+      ".fdc-conf-icon{font-size:16px;line-height:1.4;flex-shrink:0}",
+      ".fdc-conf-label{font-size:11px;color:#888;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}",
+      ".fdc-conf-valor{font-size:14px;color:#333;font-weight:600}",
+      ".fdc-conf-sub{font-size:12px;color:#666;font-weight:400;margin-top:1px}",
+      ".fdc-conf-msg-txt{font-size:13px;color:#333;font-style:italic;line-height:1.5;font-weight:400}",
+      ".fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:11px 13px;font-size:12.5px;color:#444;line-height:1.55;text-align:left}",
+      ".fdc-conf-aviso strong{font-weight:600;color:#333}",
       ".fdc-popup-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}",
       ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
       ".fdc-overlay.ativo{display:flex}",
@@ -714,6 +728,25 @@
       '</div>'
     ].join("");
     document.body.appendChild(divNam);
+
+    // Modal de confirmação final (após clicar em Finalizar)
+    var divConf=document.createElement("div");
+    divConf.id="fdc-popup-conf-overlay";divConf.className="fdc-popup-overlay";
+    divConf.innerHTML=[
+      '<div class="fdc-popup fdc-popup-conf">',
+        '<div style="text-align:center;margin-bottom:18px">',
+          '<div style="font-size:42px;line-height:1;margin-bottom:6px">✅</div>',
+          '<h3>Recebemos seus dados com sucesso!</h3>',
+          '<p style="font-size:12px;color:#888;margin:6px 0 0">Protocolo: <span id="fdc-conf-protocolo" style="font-family:monospace;color:#444">—</span></p>',
+        '</div>',
+        '<div class="fdc-conf-bloco" id="fdc-conf-bloco"></div>',
+        '<div class="fdc-conf-aviso">',
+          '<strong>Tudo certo por aqui!</strong> Os dados que você preencheu já estão devidamente registrados em nosso sistema interno e já temos tudo o que precisamos para preparar seu pedido. Resta apenas concluir o pagamento.',
+        '</div>',
+        '<button id="fdc-conf-btn" class="fdc-popup-btn" style="width:100%;margin-top:14px">Continuar para o pagamento →</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(divConf);
   }
 
   function montarModal(){
@@ -1105,6 +1138,88 @@
     }else{send();}
   }
 
+  function gerarProtocolo(){
+    var d=new Date();
+    var data=d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+    var hora=String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");
+    return "FD-"+data+"-"+hora;
+  }
+
+  function mostrarModalConfirmacao(href){
+    var bloco=document.getElementById("fdc-conf-bloco");
+    var protocolo=gerarProtocolo();
+    document.getElementById("fdc-conf-protocolo").textContent=protocolo;
+
+    var html="";
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay(), dataSel):[];
+    var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
+
+    if(tipo==="entrega"){
+      var nome=(document.getElementById("fdc-nome")||{}).value||"";
+      var tel=(document.getElementById("fdc-tel")||{}).value||"";
+      var cep=(document.getElementById("fdc-cep")||{}).value||"";
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">🎁</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">Destinatário</div>'+
+          '<div class="fdc-conf-valor">'+nome+'</div>'+
+          '<div class="fdc-conf-sub">'+tel+'</div>'+
+        '</div>'+
+      '</div>';
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">📍</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">CEP de entrega</div>'+
+          '<div class="fdc-conf-valor">'+cep+'</div>'+
+        '</div>'+
+      '</div>';
+    }else{
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">🏪</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">Tipo de pedido</div>'+
+          '<div class="fdc-conf-valor">Retirada na loja</div>'+
+          '<div class="fdc-conf-sub">Al. Barão de Limeira, 998 – Campos Elíseos</div>'+
+        '</div>'+
+      '</div>';
+    }
+
+    if(dataSel&&p){
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">📅</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">Agendamento</div>'+
+          '<div class="fdc-conf-valor">'+DIASLONG[dataSel.getDay()].charAt(0).toUpperCase()+DIASLONG[dataSel.getDay()].slice(1)+', '+dataSel.toLocaleDateString("pt-BR")+'</div>'+
+          '<div class="fdc-conf-sub">'+p.nome+' ('+p.hora+')</div>'+
+        '</div>'+
+      '</div>';
+    }
+
+    var mensagem=(document.getElementById("fdc-msg")||{}).value||"";
+    if(!semMensagem&&mensagem.trim()){
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">💌</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">Mensagem do cartão</div>'+
+          '<div class="fdc-conf-msg-txt">"'+mensagem.replace(/"/g,'&quot;')+'"</div>'+
+        '</div>'+
+      '</div>';
+    }
+
+    bloco.innerHTML=html;
+
+    var btn=document.getElementById("fdc-conf-btn");
+    btn.disabled=false;
+    btn.textContent="Continuar para o pagamento →";
+    btn.onclick=function(){
+      btn.disabled=true;
+      btn.textContent="Enviando…";
+      enviarEmail(function(){window.location.href=href;});
+    };
+
+    document.getElementById("fdc-popup-conf-overlay").classList.add("ativo");
+  }
+
   function init(){
     injetarCSS();
     var bloco=montarBloco();
@@ -1168,7 +1283,7 @@
 
       e.preventDefault();e.stopPropagation();
       var href=el.getAttribute("href")||"/checkout";
-      enviarEmail(function(){window.location.href=href;});
+      mostrarModalConfirmacao(href);
     },true);
 
     fdcVerificar();
