@@ -1138,10 +1138,12 @@
     var c=document.getElementById("fdc-periodos"),t=document.getElementById("fdc-per-titulo");
     c.innerHTML="";
     if(!dataSel){t.textContent="Selecione uma data";return;}
-    var periodos=periodosParaDia(dataSel);
-    var temAlgum=periodos.some(function(p){return p.ok;});
-    if(!temAlgum){
-      // Nenhum horário disponível para esta data — mostra aviso
+
+    // Verifica disponibilidade real do dia (mesma regra do calendário)
+    var temDisponibilidade=temDisp(dataSel);
+
+    if(!temDisponibilidade){
+      // Sem disponibilidade — mostra aviso
       t.textContent="Sem horários disponíveis";
       var ddSel=new Date(dataSel);ddSel.setHours(0,0,0,0);
       var dowSel=ddSel.getDay();
@@ -1161,8 +1163,9 @@
       c.appendChild(aviso);
       return;
     }
+
     t.textContent="Períodos disponíveis";
-    periodos.forEach(function(p){
+    periodosParaDia(dataSel).forEach(function(p){
       var d=document.createElement("div");
       d.className="fdc-periodo"+(periodoSel===p.id?" sel":"")+(p.ok?"":" bloq");
       d.innerHTML='<input type="radio" name="fdc-per"'+(periodoSel===p.id?" checked":"")+'/><div><div class="fdc-per-nome">'+p.nome+'</div><div class="fdc-per-hora">'+p.hora+'</div></div>';
