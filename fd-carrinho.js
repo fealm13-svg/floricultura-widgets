@@ -122,6 +122,36 @@
   ];
   var HORA_BLOQUEIO_TRANSITO=15; // hora a partir da qual bloqueia Tarde III
 
+  // Faixas de CEP com antecedência reduzida (entregas no mesmo dia)
+  var FAIXAS_CEP_15MIN=[
+    [1150011,1153050],
+    [1200000,1206010],
+    [1207000,1213010]
+  ];
+  var FAIXAS_CEP_30MIN=[
+    [1154000,1160000],
+    [1214000,1217020],
+    [1218000,1218999],
+    [1219000,1233070],
+    [1234000,1244030]
+  ];
+
+  // Retorna a antecedência (em minutos) baseada no CEP atual
+  function antecedenciaMinutosCep(){
+    var cepEl=document.getElementById("fdc-cep");
+    if(!cepEl||!cepEl.value)return 60;
+    var n=cepNoFormato(cepEl.value);
+    if(String(n).length<7)return 60;
+    var i;
+    for(i=0;i<FAIXAS_CEP_15MIN.length;i++){
+      if(n>=FAIXAS_CEP_15MIN[i][0]&&n<=FAIXAS_CEP_15MIN[i][1])return 15;
+    }
+    for(i=0;i<FAIXAS_CEP_30MIN.length;i++){
+      if(n>=FAIXAS_CEP_30MIN[i][0]&&n<=FAIXAS_CEP_30MIN[i][1])return 30;
+    }
+    return 60;
+  }
+
   function cepNoFormato(cep){
     var n=parseInt(cep.replace(/\D/g,""),10);
     return isNaN(n)?0:n;
@@ -168,6 +198,12 @@
 
   var PERIODOS_ESGOTADOS_ENTREGA=_CFG.periodos_esgotados||{
     "2026-06-24":["t3","e15","e16"] // Tarde III bloqueada (chuva/trânsito)
+  };
+
+  // Dias com fechamento antecipado (funcionamento até hora especificada)
+  // Bloqueia entregas/retiradas após a hora informada
+  var FECHAMENTO_ANTECIPADO={
+    "2026-06-29":13 // segunda-feira, jogo do Brasil — funciona até 13h
   };
 
   function dateToStr(d){
@@ -244,12 +280,14 @@
     entrega:[
       "No momento do pagamento, preencha os dados de entrega de forma completa e correta. Informações incompletas ou incorretas podem comprometer a realização da entrega.",
       "Seu pedido será entregue dentro do período selecionado no momento da compra. Acompanhe as atualizações enviadas por e-mail.",
+      "Para garantir o cumprimento do horário escolhido, pedimos que o pagamento seja efetivado em até 15 minutos após o agendamento. Caso o pagamento ocorra depois desse prazo, o horário de entrega poderá ser reagendado pelo mesmo intervalo de atraso, já que a produção só inicia após a confirmação.",
       "O motorista permanecerá no local por até 10 (dez) minutos. Caso a entrega não seja concluída nesse período, o pedido retornará à loja.",
       "Para um novo envio, será necessária a cobrança de uma nova taxa de entrega."
     ],
     retirada:[
       "Seu pedido estará disponível para retirada no período selecionado no momento da compra. Aguarde a confirmação enviada por e-mail ou WhatsApp.",
       "Em caso de qualquer imprevisto, nossa equipe de atendimento entrará em contato.",
+      "Para garantir o cumprimento do horário escolhido, pedimos que o pagamento seja efetivado em até 15 minutos após o agendamento. Caso o pagamento ocorra depois desse prazo, o horário de retirada poderá ser reagendado pelo mesmo intervalo de atraso, já que a produção só inicia após a confirmação.",
       "A retirada deverá ser realizada dentro do período agendado. Recomendamos que compareça no horário escolhido para evitar espera.",
       "Caso o cliente não compareça para a retirada, o pedido permanecerá disponível na loja por tempo limitado, podendo haver perda da qualidade dos produtos perecíveis."
     ]
@@ -350,6 +388,11 @@
           return Object.assign({},p,{ok:false});
         }
       }
+      // Fechamento antecipado: bloqueia períodos que terminem após a hora limite
+      var horaFechamento=FECHAMENTO_ANTECIPADO[dateToStr(dd)];
+      if(horaFechamento&&p.fim>horaFechamento){
+        return Object.assign({},p,{ok:false});
+      }
       // Trânsito intenso: bloqueia Tarde III (t3) hoje após 15h se CEP problemático
       if(isHoje&&tipo==="entrega"&&p.id==="t3"&&h>=HORA_BLOQUEIO_TRANSITO){
         var cepAtual=(document.getElementById("fdc-cep")||{}).value||"";
@@ -377,7 +420,12 @@
       }
       if(isHoje){
         if(p.tolerancia)return Object.assign({},p,{ok:h<=p.ini+p.tolerancia});
-        return Object.assign({},p,{ok:(p.ini-h)>=1});
+        // Antecedência variável por CEP (só em entrega)
+        var antecHoras=1;
+        if(tipo==="entrega"){
+          antecHoras=antecedenciaMinutosCep()/60;
+        }
+        return Object.assign({},p,{ok:(p.ini-h)>=antecHoras});
       }
       return Object.assign({},p,{ok:true});
     });
@@ -557,6 +605,8 @@
       ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px}",
       ".fdc-popup-btn:hover{background:#8a1029}",
       ".fdc-popup-btn-sec{background:#5a8966}",
+      ".fdc-day.indisp-clicavel{cursor:pointer}",
+      ".fdc-day.indisp-clicavel:hover{background:#f5f5f5}",
       ".fdc-popup-btn-sec:hover{background:#46714f}",
       ".fdc-popup-conf{max-width:460px;text-align:left}",
       ".fdc-popup-conf h3{text-align:center}",
@@ -736,12 +786,13 @@
       '<div class="fdc-popup fdc-popup-conf">',
         '<div style="text-align:center;margin-bottom:18px">',
           '<div style="font-size:42px;line-height:1;margin-bottom:6px">✅</div>',
-          '<h3>Recebemos seus dados com sucesso!</h3>',
+          '<h3>Dados registrados com sucesso!</h3>',
           '<p style="font-size:12px;color:#888;margin:6px 0 0">Protocolo: <span id="fdc-conf-protocolo" style="font-family:monospace;color:#444">—</span></p>',
         '</div>',
         '<div class="fdc-conf-bloco" id="fdc-conf-bloco"></div>',
         '<div class="fdc-conf-aviso">',
-          '<strong>Tudo certo por aqui!</strong> Os dados que você preencheu já estão devidamente registrados em nosso sistema interno e já temos tudo o que precisamos para preparar seu pedido. Resta apenas concluir o pagamento.',
+          'Já temos as informações de agendamento, destinatário e mensagem do cartão.<br><br>',
+          '<strong>❗ Importante:</strong> Após a efetivação do pagamento, o pedido gerado pela plataforma <strong>não exibirá esses dados</strong> — eles ficam registrados apenas no nosso sistema interno. Pode ficar despreocupado, está tudo conosco!',
         '</div>',
         '<button id="fdc-conf-btn" class="fdc-popup-btn" style="width:100%;margin-top:14px">Continuar para o pagamento →</button>',
       '</div>'
@@ -1067,7 +1118,16 @@
         b.className="fdc-day disp";
         (function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
       }else{
+        // Dias sem disponibilidade mas dentro do range válido — clicável para mostrar aviso
         b.className="fdc-day";
+        var ddCheck=new Date(dt);ddCheck.setHours(0,0,0,0);
+        var minD=minData();minD.setHours(0,0,0,0);
+        var maxD=addDias(hoje(),30);maxD.setHours(0,0,0,0);
+        if(ddCheck>=minD&&ddCheck<=maxD&&!isFeriado(dt)){
+          // Não é feriado e está dentro do range — habilita clique
+          b.classList.add("indisp-clicavel");
+          (function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
+        }
       }
       if(isHj&&!isSel)b.classList.add("hj");
       grid.appendChild(b);
@@ -1078,8 +1138,31 @@
     var c=document.getElementById("fdc-periodos"),t=document.getElementById("fdc-per-titulo");
     c.innerHTML="";
     if(!dataSel){t.textContent="Selecione uma data";return;}
+    var periodos=periodosParaDia(dataSel);
+    var temAlgum=periodos.some(function(p){return p.ok;});
+    if(!temAlgum){
+      // Nenhum horário disponível para esta data — mostra aviso
+      t.textContent="Sem horários disponíveis";
+      var ddSel=new Date(dataSel);ddSel.setHours(0,0,0,0);
+      var dowSel=ddSel.getDay();
+      var ehHoje=ddSel.getTime()===hoje().getTime();
+      var ehFds=(dowSel===0||dowSel===6);
+      var msg;
+      if(ehHoje){
+        msg="Não há mais horários disponíveis para hoje. Confira a partir de amanhã.";
+      }else if(ehFds){
+        msg="Não há mais horários disponíveis para esta data. Confira a partir de segunda-feira.";
+      }else{
+        msg="Não há mais horários disponíveis para esta data. Tente outra data.";
+      }
+      var aviso=document.createElement("div");
+      aviso.style.cssText="background:#fff4e0;border-left:3px solid #e8a33d;border-radius:6px;padding:12px 14px;font-size:13px;color:#7a5a1f;line-height:1.5";
+      aviso.innerHTML="ℹ️ "+msg;
+      c.appendChild(aviso);
+      return;
+    }
     t.textContent="Períodos disponíveis";
-    periodosParaDia(dataSel).forEach(function(p){
+    periodos.forEach(function(p){
       var d=document.createElement("div");
       d.className="fdc-periodo"+(periodoSel===p.id?" sel":"")+(p.ok?"":" bloq");
       d.innerHTML='<input type="radio" name="fdc-per"'+(periodoSel===p.id?" checked":"")+'/><div><div class="fdc-per-nome">'+p.nome+'</div><div class="fdc-per-hora">'+p.hora+'</div></div>';
