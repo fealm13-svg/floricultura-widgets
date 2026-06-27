@@ -381,6 +381,23 @@
     var ordemRetirada=["rs8","rs9","rs10","rs11","rs12","rs13","rs14","rs15","rs16","rs17","rs18"];
 
     return lista.map(function(p){
+      // Bloqueios globais que afetam a data inteira
+      // 1. Data fora do range válido (passado ou além de 30 dias)
+      var minD=minData();minD.setHours(0,0,0,0);
+      var maxD=addDias(hoje(),30);maxD.setHours(0,0,0,0);
+      if(dd<minD||dd>maxD)return Object.assign({},p,{ok:false});
+      // 2. Feriado
+      if(isFeriado(dd))return Object.assign({},p,{ok:false});
+      // 3. Fim de semana corrente bloqueado (sexta após 17h ou sáb/dom)
+      var dow=dd.getDay();
+      if((dow===0||dow===6)&&!fdsDisponivel(dd)){
+        return Object.assign({},p,{ok:false});
+      }
+      // 4. Dia dos Namorados — bloqueios específicos
+      if(isDiaNamorados(dd)){
+        if(tipo==="entrega"&&!entregaNamoradosDisponivel())return Object.assign({},p,{ok:false});
+        if(tipo==="retirada"&&!retiradaNamoradosDisponivel())return Object.assign({},p,{ok:false});
+      }
       // Períodos específicos esgotados em data definida (só entrega)
       if(tipo==="entrega"){
         var esgotados=PERIODOS_ESGOTADOS_ENTREGA[dateToStr(dd)];
