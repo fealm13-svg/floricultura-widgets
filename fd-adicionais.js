@@ -64,6 +64,12 @@
   // Ordem importa: regras mais específicas (duas palavras) vêm primeiro
   var REGRAS_TAGS = [
     {
+      teste: function (t) { return contemPalavra(t, "importadas"); },
+      cor: "#d4af37", corTexto: "#a91537", borda: "#a91537",
+      texto: "Rosas Importadas",
+      tooltip: "Rosas Colombianas Premium"
+    },
+    {
       teste: function (t) { return contemPalavra(t, "adicional"); },
       cor: "#036bfc", texto: "Produto Adicional",
       tooltip: "Esse produto não é vendido separadamente"
@@ -147,6 +153,14 @@
     document.head.appendChild(s);
   }
 
+  // Aplica cor de fundo, cor de texto e borda opcional na tag
+  function aplicarEstiloTag(tag, regra) {
+    tag.style.background = regra.cor;
+    if (regra.corTexto) tag.style.color = regra.corTexto;
+    if (regra.borda) tag.style.border = "1px solid " + regra.borda;
+    tag.textContent = regra.texto;
+  }
+
   // ─────────────────────────────────────────────
   // MÓDULO 1 — TAGS NOS CARDS DE LISTAGEM
   // ─────────────────────────────────────────────
@@ -175,8 +189,7 @@
       wrap.className = "fd-tag-wrap";
       var tag = document.createElement("span");
       tag.className = "fd-tag";
-      tag.style.background = regra.cor;
-      tag.textContent = regra.texto;
+      aplicarEstiloTag(tag, regra);
       var tip = document.createElement("span");
       tip.className = "fd-tooltip";
       tip.textContent = regra.tooltip;
@@ -208,10 +221,9 @@
     wrap.className = "fd-tag-wrap";
     var tag = document.createElement("span");
     tag.className = "fd-tag";
-    tag.style.background = regra.cor;
+    aplicarEstiloTag(tag, regra);
     tag.style.fontSize = "11px";
     tag.style.padding = "3px 9px";
-    tag.textContent = regra.texto;
     var tip = document.createElement("span");
     tip.className = "fd-tooltip";
     tip.textContent = regra.tooltip;
