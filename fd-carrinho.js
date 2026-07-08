@@ -186,28 +186,20 @@
     return false;
   }
 
-  // ── Carrega configuração do FD_CONFIG (definida no painel da Loja Integrada) ──
-  var _CFG=(typeof window.FD_CONFIG==="object"&&window.FD_CONFIG)||{};
-
-  var FERIADOS=_CFG.feriados||[
+  var FERIADOS=[
     "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-06-13","2026-06-14","2026-07-09","2026-09-07",
     "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
   ];
 
-  var _bloqM=_CFG.bloqueio_manha||{data:null,hora_libera_entrega:13,hora_libera_retirada:11};
-  var DATA_BLOQUEIO_MANHA=_bloqM.data;
-  var HORA_LIBERA_ENTREGA_DIA10=_bloqM.hora_libera_entrega;
-  var HORA_LIBERA_RETIRADA_DIA10=_bloqM.hora_libera_retirada;
+  var DATA_BLOQUEIO_MANHA=null;
+  var HORA_LIBERA_ENTREGA_DIA10=13;
+  var HORA_LIBERA_RETIRADA_DIA10=11;
 
-  var PERIODOS_ESGOTADOS_ENTREGA=_CFG.periodos_esgotados||{
-    "2026-06-24":["t3","e15","e16"] // Tarde III bloqueada (chuva/trânsito)
-  };
+  var PERIODOS_ESGOTADOS_ENTREGA={};
 
   // Dias com fechamento antecipado (funcionamento até hora especificada)
   // Bloqueia entregas/retiradas após a hora informada
-  var FECHAMENTO_ANTECIPADO={
-    "2026-06-29":13 // segunda-feira, jogo do Brasil — funciona até 13h
-  };
+  var FECHAMENTO_ANTECIPADO={};
 
   function dateToStr(d){
     return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
