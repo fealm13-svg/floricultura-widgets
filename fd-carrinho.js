@@ -189,7 +189,10 @@
   // ── Carrega configuração do FD_CONFIG (definida no painel da Loja Integrada) ──
   var _CFG=(typeof window.FD_CONFIG==="object"&&window.FD_CONFIG)||{};
 
-  var FERIADOS=_CFG.feriados||["2026-12-25"];
+  var FERIADOS=_CFG.feriados||[
+    "2026-05-01","2026-05-09","2026-05-10","2026-06-04","2026-06-13","2026-06-14","2026-07-09","2026-09-07",
+    "2026-10-12","2026-11-02","2026-11-15","2026-11-20","2026-12-25"
+  ];
 
   var _bloqM=_CFG.bloqueio_manha||{data:null,hora_libera_entrega:13,hora_libera_retirada:11};
   var DATA_BLOQUEIO_MANHA=_bloqM.data;
