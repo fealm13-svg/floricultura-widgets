@@ -84,6 +84,65 @@
     "Orquídea Phalaenopsis Cascata em Aquário"
   ];
 
+  // ── Pick Decorativa ─────────────────────────────────────────────────
+  var PICKS=[
+    {codigo:"PKD00",frase:"SEM PICK DECORATIVA"},
+    {codigo:"PKD01",frase:"Com Carinho Pra Você"},
+    {codigo:"PKD02",frase:"Para uma Pessoa muito Especial"},
+    {codigo:"PKD03",frase:"Seja Bem-Vinda"},
+    {codigo:"PKD04",frase:"Vai ficar tudo bem"},
+    {codigo:"PKD05",frase:"Parabéns pela Conquista"},
+    {codigo:"PKD06",frase:"Você faz do mundo um excelente lugar"},
+    {codigo:"PKD07",frase:"Sorria a felicidade ainda vem"},
+    {codigo:"PKD08",frase:"Brilhe a luz que te ilumina vem lá de cima"},
+    {codigo:"PKD09",frase:"Pra lembrar que você é especial"},
+    {codigo:"PKD10",frase:"Um mimo pro seu buchinho ficar feliz!"},
+    {codigo:"PKD11",frase:"Muito Obrigado de coração"},
+    {codigo:"PKD12",frase:"Que sorte a minha ter uma amizade como a sua"},
+    {codigo:"PKD13",frase:"O mundo precisa de pessoas incríveis como você"},
+    {codigo:"PKD14",frase:"Felicidade é sonho, meta e realidade"},
+    {codigo:"PKD15",frase:"Eu Te Amo"},
+    {codigo:"PKD16",frase:"Eu Te Amo (colorida)"},
+    {codigo:"PKD17",frase:"Você me faz tão bem"},
+    {codigo:"PKD18",frase:"Tem sido maravilhoso compartilhar a vida com você"},
+    {codigo:"PKD19",frase:"Amo Tu!"},
+    {codigo:"PKD20",frase:"Obrigado por me fazer feliz"},
+    {codigo:"PKD21",frase:"Feliz Aniversário Especial"},
+    {codigo:"PKD22",frase:"Parabéns!"},
+    {codigo:"PKD23",frase:"Feliz Aniversário"},
+    {codigo:"PKD24",frase:"Parabéns! Que a felicidade faça morada em seu sorriso."},
+    {codigo:"PKD25",frase:"Que seu dia seja lindo e leve e feliz"},
+    {codigo:"PKD26",frase:"Que Deus te ilumine, te guarde, te proteja e te abençoe"}
+  ];
+
+  // Produtos que dão direito a pick decorativa (busca case-insensitive por qualquer parte do nome)
+  var PRODUTOS_COM_PICK=[
+    "CASA VERDE","CORVELLE","VALENÇA","MOURA","VEREDA","ALCOBAÇA","AUREN","BUARCOS",
+    "DINO BUENO","MONSANTO","VILA PAIVA","BELÉM I","BELLAROUGE","CHARMELLE","CIOCCOLATO",
+    "DOCERE","MAFRA","MANSORES","ODEMIRA","SARAMAGO","LANCASTER","CÂLIN","ACTIVEBOX",
+    "DOLCE CAMPO","VIANA DO CASTELO","VILA REAL","VILA FLOR","VALADARES","MIRANDELA",
+    "SANTA CECÍLIA","AROEIRA","ALENQUER","TRENTO BOX","LOVELLE","VITTA","GRAND ALLURE",
+    "ROYAL GRAND BOX","PAGLIA BELLE","SWEET MATINA","ESSENCE FIT","DOLCE PASSIONE","AURUM",
+    "RUBI","PETIT FLEUR","ANHEMBI","VILA BUARQUE","SOLON","ALAMEDA","AURORA","ITACOLOMI",
+    "REPÚBLICA","VEIGA FILHO","MONTENEGRO","GUIMARÃES","MONTALEGRE","TÁVORA","VICTORIA",
+    "VILLALBA","LUMIAR","LANCASTRE","INÊS","ALCÂNTARA","CASTRO DAIRE","FILIPE","VILA FRADES",
+    "VARZIM","SINES","SETÚBAL","PORTELA","LISBOA","ALMEIDA","TUPI","MIRAMAR","ÁUREA",
+    "CONSTANÇA","SANTARÉM","GAEL","AYLA","FELGUEIRAS"
+  ];
+
+  // Verifica se algum produto do carrinho tem direito a pick
+  function carrinhoTemPick(){
+    var itens=lerItensCarrinhoArray();
+    if(itens.length===0)return false;
+    for(var i=0;i<itens.length;i++){
+      var nome=itens[i].trim().toUpperCase();
+      for(var j=0;j<PRODUTOS_COM_PICK.length;j++){
+        if(nome.indexOf(PRODUTOS_COM_PICK[j].toUpperCase())!==-1)return true;
+      }
+    }
+    return false;
+  }
+
   function carrinhoEhNamorados(){
     var itens=lerItensCarrinhoArray();
     if(itens.length===0)return false;
@@ -298,6 +357,7 @@
   var semMensagem=false;
   var cepOk=false;
   var cepValidoDia12=false; // se o CEP atual também é válido no dia 12
+  var pickSel=null; // objeto pick escolhida ou null
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -503,7 +563,8 @@
         _dataSel:dataSel?dataSel.toISOString():null,
         _periodoSel:periodoSel,
         _agConfirmado:agConfirmado,
-        _termoAceito:termoAceito
+        _termoAceito:termoAceito,
+        _pickCod:pickSel?pickSel.codigo:null
       }));
     }catch(x){}
   }
@@ -549,6 +610,20 @@
         termoAceito=true;
         var cb2=document.getElementById("fdc-termo");if(cb2)cb2.checked=true;
         var wrap=document.getElementById("fdc-termo-wrap");if(wrap)wrap.className="fdc-termo-wrap aceito";
+      }
+      if(dados._pickCod){
+        var pRest=PICKS.find(function(x){return x.codigo===dados._pickCod;});
+        if(pRest){
+          pickSel=pRest;
+          var pCod=document.getElementById("fdc-res-pick-cod");
+          var pFr=document.getElementById("fdc-res-pick-frase");
+          var pBtn=document.getElementById("fdc-btn-pick");
+          var pRes=document.getElementById("fdc-resumo-pick");
+          if(pCod){pCod.textContent=pRest.codigo;}
+          if(pFr){pFr.textContent=pRest.frase;}
+          if(pBtn){pBtn.style.display="none";}
+          if(pRes){pRes.style.display="block";}
+        }
       }
       fdcVerificar();
     }catch(x){}
@@ -619,6 +694,12 @@
       ".fdc-popup-btn-sec{background:#5a8966}",
       ".fdc-day.indisp-clicavel{cursor:pointer}",
       ".fdc-day.indisp-clicavel:hover{background:#f5f5f5}",
+      ".fdc-pick-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #e8c9a0;border-radius:7px;margin-bottom:7px;cursor:pointer;transition:all .15s}",
+      ".fdc-pick-item:hover{border-color:#a91537;background:#faf5eb}",
+      ".fdc-pick-item.sel{border-color:#a91537;background:#fff5e1}",
+      ".fdc-pick-item input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0}",
+      ".fdc-pick-cod{font-weight:700;color:#a91537;font-size:12px;font-family:monospace}",
+      ".fdc-pick-frase{font-size:13px;color:#333}",
       ".fdc-popup-btn-sec:hover{background:#46714f}",
       ".fdc-popup-conf{max-width:460px;text-align:left}",
       ".fdc-popup-conf h3{text-align:center}",
@@ -714,6 +795,16 @@
           '<div class="fdc-sec">Presenteado</div>',
           '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
           '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
+        '</div>',
+        '<div id="fdc-bloco-pick" style="display:none">',
+          '<div class="fdc-sec">🎀 Pick Decorativa</div>',
+          '<button class="fdc-btn-ag" id="fdc-btn-pick" onclick="fdcAbrirModalPick()">🎀 Brinde: Escolha a sua pick decorativa</button>',
+          '<div id="fdc-resumo-pick" style="display:none" class="fdc-resumo-ag">',
+            '<div class="fdc-resumo-ag-grid" style="grid-template-columns:1fr">',
+              '<div class="fdc-resumo-ag-item"><label>🎀 Pick escolhida</label><strong id="fdc-res-pick-cod">—</strong><span id="fdc-res-pick-frase"></span></div>',
+            '</div>',
+            '<button class="fdc-btn-alt" onclick="fdcAlterarPick()">Alterar pick</button>',
+          '</div>',
         '</div>',
         '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
         '<div class="fdc-campo">',
@@ -842,6 +933,36 @@
     ].join("");
     document.body.appendChild(overlay);
     overlay.onclick=function(e){if(e.target===overlay)fdcFecharModal();};
+  }
+
+  function montarModalPick(){
+    var overlay=document.createElement("div");
+    overlay.id="fdc-overlay-pick";overlay.className="fdc-overlay";
+    var itensHtml=PICKS.map(function(p){
+      return '<div class="fdc-pick-item" data-cod="'+p.codigo+'"><input type="radio" name="fdc-pick-radio"/><div><span class="fdc-pick-cod">'+p.codigo+'</span> — <span class="fdc-pick-frase">'+p.frase+'</span></div></div>';
+    }).join("");
+    overlay.innerHTML=[
+      '<div class="fdc-modal" style="max-width:520px">',
+        '<div class="fdc-modal-header"><h4>🎀 Escolha sua pick decorativa</h4><button class="fdc-modal-fechar" onclick="fdcFecharModalPick()">&times;</button></div>',
+        '<div style="padding:16px 20px">',
+          '<p style="font-size:12.5px;color:#666;line-height:1.5;margin-bottom:14px">A pick decorativa acompanha seu kit como brinde. Escolha a frase que combina com a ocasião do presente.</p>',
+          '<div id="fdc-picks-lista">'+itensHtml+'</div>',
+        '</div>',
+        '<button class="fdc-btn-conf" id="fdc-btn-conf-pick" disabled onclick="fdcConfirmarPick()">Confirmar</button>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(overlay);
+    overlay.onclick=function(e){if(e.target===overlay)fdcFecharModalPick();};
+
+    // Adiciona listeners nas opções
+    overlay.querySelectorAll(".fdc-pick-item").forEach(function(el){
+      el.onclick=function(){
+        overlay.querySelectorAll(".fdc-pick-item").forEach(function(x){x.classList.remove("sel");x.querySelector("input").checked=false;});
+        el.classList.add("sel");
+        el.querySelector("input").checked=true;
+        document.getElementById("fdc-btn-conf-pick").disabled=false;
+      };
+    });
   }
 
   window.fdcMascaraCep=function(el){
@@ -1081,6 +1202,47 @@
     fdcVerificar();fdcAbrirModal();
   };
 
+  window.fdcAbrirModalPick=function(){
+    document.getElementById("fdc-overlay-pick").classList.add("ativo");
+    // Se já tem pick selecionada, marca no modal
+    var itens=document.querySelectorAll("#fdc-overlay-pick .fdc-pick-item");
+    itens.forEach(function(el){el.classList.remove("sel");el.querySelector("input").checked=false;});
+    if(pickSel){
+      var el=document.querySelector("#fdc-overlay-pick .fdc-pick-item[data-cod='"+pickSel.codigo+"']");
+      if(el){el.classList.add("sel");el.querySelector("input").checked=true;}
+      document.getElementById("fdc-btn-conf-pick").disabled=false;
+    }else{
+      document.getElementById("fdc-btn-conf-pick").disabled=true;
+    }
+  };
+
+  window.fdcFecharModalPick=function(){
+    document.getElementById("fdc-overlay-pick").classList.remove("ativo");
+  };
+
+  window.fdcConfirmarPick=function(){
+    var sel=document.querySelector("#fdc-overlay-pick .fdc-pick-item.sel");
+    if(!sel)return;
+    var cod=sel.getAttribute("data-cod");
+    var p=PICKS.find(function(x){return x.codigo===cod;});
+    if(!p)return;
+    pickSel=p;
+    document.getElementById("fdc-res-pick-cod").textContent=p.codigo;
+    document.getElementById("fdc-res-pick-frase").textContent=p.frase;
+    document.getElementById("fdc-btn-pick").style.display="none";
+    document.getElementById("fdc-resumo-pick").style.display="block";
+    fdcFecharModalPick();
+    salvarSessao();
+  };
+
+  window.fdcAlterarPick=function(){
+    document.getElementById("fdc-btn-pick").style.display="block";
+    document.getElementById("fdc-resumo-pick").style.display="none";
+    pickSel=null;
+    salvarSessao();
+    fdcAbrirModalPick();
+  };
+
   function fdcRenderCal(){
     document.getElementById("fdc-mes-titulo").textContent=MESES[mesAtual]+" "+anoAtual;
     var grid=document.getElementById("fdc-cal-grid");grid.innerHTML="";
@@ -1210,12 +1372,17 @@
     var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
     var agora=new Date();
     var cepDigitado=(document.getElementById("fdc-cep")||{}).value||"";
+    var pickTxt="(não aplicável)";
+    if(carrinhoTemPick()){
+      pickTxt=pickSel?(pickSel.codigo+" - "+pickSel.frase):"(não escolhida)";
+    }
     var dados={
       tipo_pedido:tipo==="entrega"?"Entrega":"Retirada na loja",
       itens_carrinho:lerItensCarrinho(),
       cep_entrega:tipo==="entrega"?(cepDigitado||"(não informado)"):"(retirada na loja)",
       nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
       tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
+      pick_decorativa:pickTxt,
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
       data_entrega:dataSel?dataSel.toLocaleDateString("pt-BR"):"(não informado)",
       periodo_entrega:p?p.nome+" ("+p.hora+")":"(não informado)",
@@ -1293,6 +1460,18 @@
       '</div>';
     }
 
+    // Pick decorativa (só aparece se carrinho tem produto elegível)
+    if(carrinhoTemPick()){
+      var pickTxtModal=pickSel?(pickSel.codigo+" — "+pickSel.frase):"Nenhuma escolhida";
+      html+='<div class="fdc-conf-item">'+
+        '<div class="fdc-conf-icon">🎀</div>'+
+        '<div style="flex:1">'+
+          '<div class="fdc-conf-label">Pick decorativa</div>'+
+          '<div class="fdc-conf-valor">'+pickTxtModal+'</div>'+
+        '</div>'+
+      '</div>';
+    }
+
     var mensagem=(document.getElementById("fdc-msg")||{}).value||"";
     if(!semMensagem&&mensagem.trim()){
       html+='<div class="fdc-conf-item">'+
@@ -1323,6 +1502,7 @@
     var bloco=montarBloco();
     montarPopup();
     montarModal();
+    montarModalPick();
 
     var alvos=[
       ".carrinho-produtos","table.carrinho",".cart-table",
@@ -1347,6 +1527,11 @@
     restaurarSessao();
     atualizarTrava();
 
+    // Mostra a seção de pick se algum produto do carrinho for elegível
+    if(carrinhoTemPick()){
+      var blocoPick=document.getElementById("fdc-bloco-pick");
+      if(blocoPick)blocoPick.style.display="block";
+    }
     document.addEventListener("click",function(e){
       var el=e.target;
       while(el&&el!==document.body){
@@ -1391,5 +1576,3 @@
   else{window.addEventListener("load",init);}
 
 })();
-
-// v33
