@@ -65,7 +65,7 @@
   var REGRAS_TAGS = [
     {
       teste: function (t) { return contemPalavra(t, "importadas"); },
-      cor: "#d4af37", corTexto: "#a91537", borda: "#a91537",
+      cor: "#f3e52e", corTexto: "#d72e4e", borda: "#d72e4e",
       texto: "Rosas Importadas",
       tooltip: "Rosas Colombianas Premium"
     },
