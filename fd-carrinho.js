@@ -342,7 +342,7 @@
       "Seu pedido será entregue dentro do período selecionado no momento da compra. Acompanhe as atualizações enviadas por e-mail.",
       "Para garantir o cumprimento do horário escolhido, pedimos que o pagamento seja efetivado em até 15 minutos após o agendamento. Caso o pagamento ocorra depois desse prazo, o horário de entrega poderá ser reagendado pelo mesmo intervalo de atraso, já que a produção só inicia após a confirmação.",
       "O motorista permanecerá no local por até 10 (dez) minutos. Caso a entrega não seja concluída nesse período, o pedido retornará à loja.",
-      "Para um novo envio, será necessária a cobrança de uma nova taxa de entrega."
+      "Caso a entrega não seja concluída por ausência do destinatário, de uma pessoa responsável pelo recebimento, informações incorretas, impossibilidade de contato com o comprador para resolver ou qualquer motivo não imputável à Floricultura Dias, o pedido retornará à loja. O produto ficará disponível para retirada em nossa loja física por 2 dias. Tratando-se de flores — produto perecível — os sucessivos transportes inviabilizam sua reutilização ou comercialização, caracterizando culpa exclusiva do consumidor, não sendo cabível o cancelamento da compra nem a restituição dos valores pagos."
     ],
     retirada:[
       "Seu pedido estará disponível para retirada no período selecionado no momento da compra. Aguarde a confirmação enviada por e-mail ou WhatsApp.",
