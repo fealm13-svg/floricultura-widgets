@@ -5,8 +5,14 @@
   var CFG={
     emailjs_service_id:"service_8nyc25b",
     emailjs_template_id:"template_jaeoc5u",
-    emailjs_public_key:"LZISdXcU2KCrtNwVd"
+    emailjs_public_key:"LZISdXcU2KCrtNwVd",
+    tracking_url:"https://script.google.com/macros/s/AKfycbzTOokehlacD7nIpETyqHEkJRay8Pz2vRrStALijA37MytIZ-egF91zLy-hMevUZdmR/exec"
   };
+
+  // ── Estado de tracking (registro de CEPs) ────────────────────────────
+  var _protocoloSessao=null; // gerado no primeiro CEP válido, mantido pela sessão
+  var _ultimoCepRegistrado=null; // último CEP enviado pro tracking
+  var _pedidoFinalizadoTracking=false; // flag para não duplicar finalização
 
   // ── Dia dos Namorados ────────────────────────────────────────────────
   var _nam=(typeof window.FD_CONFIG==="object"&&window.FD_CONFIG&&window.FD_CONFIG.namorados)||{};
@@ -576,6 +582,11 @@
   }
 
   function restaurarSessao(){
+    // Restaura o protocolo da sessão se existir
+    try{
+      var protoSaved=sessionStorage.getItem("fdc_protocolo");
+      if(protoSaved)_protocoloSessao=protoSaved;
+    }catch(x){}
     try{
       var dados=JSON.parse(sessionStorage.getItem("fdc_carrinho"));
       if(!dados)return;
@@ -1006,6 +1017,10 @@
       cepValidoDia12=cepValidoNamorados(cep);
       aviso.classList.remove("ativo");
       preencherCepPlataforma(el.value);
+      // Registra CEP atendido no Google Sheets (silencioso, se não for restauração de sessão)
+      if(!silencioso){
+        registrarCepTracking(el.value,"atendido",descobrirFaixaCep(cep));
+      }
     }else{
       cepOk=false;
       cepValidoDia12=false;
@@ -1014,6 +1029,8 @@
       aviso.classList.remove("ativo");
       if(!silencioso){
         document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
+        // Registra CEP não atendido
+        registrarCepTracking(el.value,"não atendido","");
       }
     }
     // Se já havia um período selecionado e ele se tornou inválido com o novo CEP, reseta
@@ -1420,9 +1437,79 @@
     return "FD-"+data+"-"+hora;
   }
 
+  // Retorna o protocolo da sessão (gera na primeira chamada, mantém depois)
+  function getProtocoloSessao(){
+    if(!_protocoloSessao){
+      _protocoloSessao=gerarProtocolo();
+      try{sessionStorage.setItem("fdc_protocolo",_protocoloSessao);}catch(x){}
+    }
+    return _protocoloSessao;
+  }
+
+  // Registra o CEP no Google Sheets (fire-and-forget, silencioso)
+  function registrarCepTracking(cep,status,faixa){
+    if(!CFG.tracking_url)return;
+    // Evita duplicar registro do mesmo CEP na mesma sessão
+    if(_ultimoCepRegistrado===cep)return;
+    _ultimoCepRegistrado=cep;
+    var protocolo=getProtocoloSessao();
+    var payload={
+      acao:"registrar_cep",
+      cep:cep,
+      status:status,
+      faixa:faixa||"",
+      protocolo:protocolo
+    };
+    try{
+      fetch(CFG.tracking_url,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)
+      }).catch(function(){});
+    }catch(x){}
+  }
+
+  // Marca o pedido como finalizado no Google Sheets
+  function finalizarPedidoTracking(){
+    if(!CFG.tracking_url)return;
+    if(_pedidoFinalizadoTracking)return;
+    if(!_protocoloSessao)return;
+    _pedidoFinalizadoTracking=true;
+    var payload={
+      acao:"finalizar_pedido",
+      protocolo:_protocoloSessao
+    };
+    try{
+      fetch(CFG.tracking_url,{
+        method:"POST",
+        headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify(payload)
+      }).catch(function(){});
+    }catch(x){}
+  }
+
+  // Formata número CEP em faixa "01100-000 → 01109-999"
+  function formatarFaixaCep(faixa){
+    function fmt(n){
+      var s=String(n).padStart(8,"0");
+      return s.substring(0,5)+"-"+s.substring(5);
+    }
+    return fmt(faixa[0])+" → "+fmt(faixa[1]);
+  }
+
+  // Descobre em qual faixa o CEP se encaixa
+  function descobrirFaixaCep(cep){
+    var n=cepNoFormato(cep);
+    for(var i=0;i<FAIXAS_CEP.length;i++){
+      if(n>=FAIXAS_CEP[i][0]&&n<=FAIXAS_CEP[i][1])return formatarFaixaCep(FAIXAS_CEP[i]);
+    }
+    return "";
+  }
+
   function mostrarModalConfirmacao(href){
     var bloco=document.getElementById("fdc-conf-bloco");
-    var protocolo=gerarProtocolo();
+    // Reusa o protocolo da sessão (se existir), senão gera um novo
+    var protocolo=getProtocoloSessao();
     document.getElementById("fdc-conf-protocolo").textContent=protocolo;
 
     var html="";
@@ -1501,6 +1588,7 @@
     btn.onclick=function(){
       btn.disabled=true;
       btn.textContent="Enviando…";
+      finalizarPedidoTracking(); // marca no Google Sheets
       enviarEmail(function(){window.location.href=href;});
     };
 
