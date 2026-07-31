@@ -1595,6 +1595,46 @@
     return _protocoloSessao;
   }
 
+  // Converte valor em número (aceita "R$ 1.234,56" ou 1234.56)
+  function fdNumero(v){
+    if(typeof v==="number")return v;
+    var s=String(v).replace(/[^\d.,-]/g,"");
+    if(s.indexOf(",")>-1&&s.indexOf(".")>-1){
+      s=s.replace(/\./g,"").replace(",",".");
+    }else if(s.indexOf(",")>-1){
+      s=s.replace(",",".");
+    }
+    return parseFloat(s)||0;
+  }
+
+  // Lê os produtos do carrinho a partir do dataLayer (ProductBasketProducts)
+  function fdLerCarrinho(){
+    var itens=[];
+    try{
+      var dl=window.dataLayer||[];
+      for(var i=dl.length-1;i>=0;i--){
+        var o=dl[i];
+        if(!o)continue;
+        var lista=o.ProductBasketProducts||(o.ecommerce&&o.ecommerce.checkout&&o.ecommerce.checkout.products);
+        if(lista&&lista.length){itens=lista;break;}
+      }
+    }catch(e){}
+    var produtos=[],qtdTotal=0,valorTotal=0;
+    itens.forEach(function(p){
+      var nome=p.name||"";
+      var qtd=parseInt(p.quantity||1,10)||1;
+      var preco=fdNumero(p.price||0);
+      produtos.push({nome:nome,qtd:qtd,id:p.id||"",preco:preco});
+      qtdTotal+=qtd;
+      valorTotal+=preco*qtd;
+    });
+    return {
+      produtos:produtos,
+      qtd_itens:qtdTotal,
+      valor_total:Math.round(valorTotal*100)/100
+    };
+  }
+
   // Registra o CEP no Google Sheets (fire-and-forget, silencioso)
   function registrarCepTracking(cep,status,faixa){
     if(!CFG.tracking_url)return;
@@ -1602,12 +1642,16 @@
     if(_ultimoCepRegistrado===cep)return;
     _ultimoCepRegistrado=cep;
     var protocolo=getProtocoloSessao();
+    var carrinho=fdLerCarrinho();
     var payload={
       acao:"registrar_cep",
       cep:cep,
       status:status,
       faixa:faixa||"",
-      protocolo:protocolo
+      protocolo:protocolo,
+      produtos:carrinho.produtos,
+      qtd_itens:carrinho.qtd_itens,
+      valor_total:carrinho.valor_total
     };
     try{
       fetch(CFG.tracking_url,{
