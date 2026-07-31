@@ -178,6 +178,58 @@
     [5000000,5001099],[5001150,5020000]
   ];
 
+  // CEPs com bloqueio total (não realizamos entregas nesses endereços)
+  // Cliente vê popup e é impedido de agendar entrega (só retirada)
+  var CEPS_BLOQUEADOS=[
+    "01133-020",
+    "01140-080",
+    "01140-070",
+    "05001-100",
+    "01156-001",
+    "01128-030",
+    "01142-200",
+    "01142-300"
+  ];
+
+  // CEPs com alerta parcial (local problemático compartilha o CEP com outros endereços)
+  // Cliente vê aviso com nome do local e precisa marcar "ciente" para prosseguir
+  var CEPS_ALERTA_PARCIAL={
+    "01139-001":"Fórum Trabalhista",
+    "05003-100":"Shopping West Plaza",
+    "05001-200":"Nubank Parque",
+    "05005-030":"Bourbon Shopping",
+    "05005-900":"Bourbon Shopping",
+    "01232-010":"Hospital Samaritano",
+    "01232-011":"Hospital Samaritano",
+    "01238-000":"Shopping Higienópolis",
+    "01221-010":"Complexo Santa Casa",
+    "01239-001":"Mackenzie",
+    "01241-000":"Mackenzie",
+    "01120-010":"Pinacoteca de São Paulo",
+    "01101-010":"Pinacoteca de São Paulo",
+    "01032-001":"Estação da Luz",
+    "01122-000":"COPOM / Quartel do Comando Geral da PM",
+    "01124-060":"COPOM / Quartel do Comando Geral da PM",
+    "01107-000":"SABESP"
+  };
+
+  // Normaliza CEP para formato "00000-000"
+  function formatarCep(cep){
+    var n=cep.replace(/\D/g,"");
+    if(n.length!==8)return cep;
+    return n.substring(0,5)+"-"+n.substring(5);
+  }
+
+  // Verifica se o CEP está na lista de bloqueio total
+  function cepBloqueadoTotal(cep){
+    return CEPS_BLOQUEADOS.indexOf(formatarCep(cep))!==-1;
+  }
+
+  // Retorna o nome do local se o CEP tiver alerta parcial, senão null
+  function cepAlertaParcial(cep){
+    return CEPS_ALERTA_PARCIAL[formatarCep(cep)]||null;
+  }
+
   // Faixas de CEP com trânsito intenso após as 15h
   // (Tarde III bloqueada para estes CEPs quando o cliente acessar após esse horário)
   var FAIXAS_CEP_TRANSITO=[
@@ -370,6 +422,7 @@
   var cepOk=false;
   var cepValidoDia12=false; // se o CEP atual também é válido no dia 12
   var pickSel=null; // objeto pick escolhida ou null
+  var cienteAlertaParcial=false; // check do aviso de CEP com local problemático
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -667,6 +720,11 @@
       ".fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
       ".fdc-cep-aviso{display:none;margin-top:8px;padding:8px 12px;background:#fff4e0;border-left:3px solid #e8a33d;border-radius:4px;font-size:12px;color:#7a5a1f;line-height:1.4}",
       ".fdc-cep-aviso.ativo{display:block}",
+      ".fdc-cep-parcial{display:none;margin-top:8px;padding:10px 12px;background:#fff1f0;border-left:3px solid #a91537;border-radius:4px;font-size:12px;color:#6a1220;line-height:1.5}",
+      ".fdc-cep-parcial.ativo{display:block}",
+      ".fdc-cep-parcial strong{color:#a91537}",
+      ".fdc-cep-parcial-check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#6a1220;cursor:pointer;font-weight:600}",
+      ".fdc-cep-parcial-check input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
       ".fdc-bloco-trava{position:relative}",
       ".fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.5}",
       ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
@@ -800,6 +858,10 @@
           '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
           '<span id="fdc-cep-status"></span>',
           '<div id="fdc-cep-aviso" class="fdc-cep-aviso">⚠️ <strong>Atenção:</strong> este CEP não está incluído na nossa área de entrega para o Dia dos Namorados (12/06).</div>',
+          '<div id="fdc-cep-parcial" class="fdc-cep-parcial">',
+            '<span>⚠️ <strong>Atenção:</strong> Neste CEP funciona também o <strong id="fdc-cep-parcial-local">—</strong>, local onde infelizmente não realizamos entregas por dificuldade de acesso. Se a entrega for para outro endereço deste CEP, pode seguir normalmente. Se for para o <span id="fdc-cep-parcial-local2">—</span>, o pedido será cancelado.</span>',
+            '<label class="fdc-cep-parcial-check"><input type="checkbox" id="fdc-cep-parcial-check" onchange="fdcToggleCienteParcial()"/> Estou ciente</label>',
+          '</div>',
         '</div>',
       '</div>',
       '<div id="fdc-bloco-trava" class="fdc-bloco-trava">',
@@ -888,6 +950,23 @@
       '</div>'
     ].join("");
     document.body.appendChild(divCep);
+
+    // Popup para bloqueio total (endereço com difícil acesso)
+    var divBloq=document.createElement("div");
+    divBloq.id="fdc-popup-bloqueio-overlay";divBloq.className="fdc-popup-overlay";
+    divBloq.innerHTML=[
+      '<div class="fdc-popup">',
+        '<div class="fdc-popup-icon">⚠️</div>',
+        '<h3>Endereço com difícil acesso</h3>',
+        '<p>Infelizmente não realizamos entregas neste endereço devido a dificuldades de acesso, parada ou restrições do local.<br><br>Você pode retirar seu pedido em nossa loja física em <strong>Al. Barão de Limeira, 998 – Campos Elíseos</strong>.</p>',
+        '<div class="fdc-popup-btns">',
+          '<button class="fdc-popup-btn fdc-popup-btn-sec" onclick="fdcOptarRetiradaBloq()">Optar por Retirada</button>',
+          '<button class="fdc-popup-btn" onclick="fdcFecharPopupBloq()">Fechar</button>',
+        '</div>',
+      '</div>'
+    ].join("");
+    document.body.appendChild(divBloq);
+
 
     var divNam=document.createElement("div");
     divNam.id="fdc-popup-namorados-overlay";divNam.className="fdc-popup-overlay";
@@ -996,14 +1075,39 @@
     var el=document.getElementById("fdc-cep");
     var status=document.getElementById("fdc-cep-status");
     var aviso=document.getElementById("fdc-cep-aviso");
+    var parcial=document.getElementById("fdc-cep-parcial");
     var cep=el.value.replace(/\D/g,"");
 
     if(cep.length<8){
       cepOk=false;
       cepValidoDia12=false;
+      cienteAlertaParcial=false;
       status.textContent="";
       status.className="";
       aviso.classList.remove("ativo");
+      if(parcial){
+        parcial.classList.remove("ativo");
+        var cbP=document.getElementById("fdc-cep-parcial-check");
+        if(cbP)cbP.checked=false;
+      }
+      atualizarTrava();
+      fdcVerificar();
+      return;
+    }
+
+    // 1. Verifica bloqueio total (CEP de local com difícil acesso)
+    if(cepBloqueadoTotal(el.value)){
+      cepOk=false;
+      cepValidoDia12=false;
+      cienteAlertaParcial=false;
+      status.textContent="✗ Não realizamos entregas neste endereço";
+      status.className="fdc-cep-status erro";
+      aviso.classList.remove("ativo");
+      if(parcial)parcial.classList.remove("ativo");
+      if(!silencioso){
+        document.getElementById("fdc-popup-bloqueio-overlay").classList.add("ativo");
+        registrarCepTracking(el.value,"bloqueado","");
+      }
       atualizarTrava();
       fdcVerificar();
       return;
@@ -1017,6 +1121,24 @@
       cepValidoDia12=cepValidoNamorados(cep);
       aviso.classList.remove("ativo");
       preencherCepPlataforma(el.value);
+
+      // 2. Verifica alerta parcial (local problemático compartilhando CEP)
+      var localParcial=cepAlertaParcial(el.value);
+      if(localParcial&&parcial){
+        var el1=document.getElementById("fdc-cep-parcial-local");
+        var el2=document.getElementById("fdc-cep-parcial-local2");
+        if(el1)el1.textContent=localParcial;
+        if(el2)el2.textContent=localParcial;
+        parcial.classList.add("ativo");
+        // Reseta o check ao trocar de CEP
+        var cbP2=document.getElementById("fdc-cep-parcial-check");
+        if(cbP2)cbP2.checked=false;
+        cienteAlertaParcial=false;
+      }else if(parcial){
+        parcial.classList.remove("ativo");
+        cienteAlertaParcial=false;
+      }
+
       // Registra CEP atendido no Google Sheets (silencioso, se não for restauração de sessão)
       if(!silencioso){
         registrarCepTracking(el.value,"atendido",descobrirFaixaCep(cep));
@@ -1024,9 +1146,11 @@
     }else{
       cepOk=false;
       cepValidoDia12=false;
+      cienteAlertaParcial=false;
       status.textContent="✗ Não atendemos este CEP";
       status.className="fdc-cep-status erro";
       aviso.classList.remove("ativo");
+      if(parcial)parcial.classList.remove("ativo");
       if(!silencioso){
         document.getElementById("fdc-popup-cep-overlay").classList.add("ativo");
         // Registra CEP não atendido
@@ -1075,6 +1199,22 @@
     window.fdcSetTipo("retirada");
   };
 
+  window.fdcFecharPopupBloq=function(){
+    document.getElementById("fdc-popup-bloqueio-overlay").classList.remove("ativo");
+  };
+
+  window.fdcOptarRetiradaBloq=function(){
+    document.getElementById("fdc-popup-bloqueio-overlay").classList.remove("ativo");
+    window.fdcSetTipo("retirada");
+  };
+
+  window.fdcToggleCienteParcial=function(){
+    var cb=document.getElementById("fdc-cep-parcial-check");
+    cienteAlertaParcial=cb?cb.checked:false;
+    atualizarTrava();
+    fdcVerificar();
+  };
+
   window.fdcFecharPopupNamorados=function(){
     document.getElementById("fdc-popup-namorados-overlay").classList.remove("ativo");
   };
@@ -1118,7 +1258,16 @@
   function atualizarTrava(){
     var trava=document.getElementById("fdc-bloco-trava");
     if(!trava)return;
-    if(tipo==="entrega"&&!cepOk){
+    var bloquear=false;
+    if(tipo==="entrega"){
+      if(!cepOk)bloquear=true;
+      // Se tem alerta parcial e não marcou "ciente", bloqueia
+      var cepEl=document.getElementById("fdc-cep");
+      if(cepOk&&cepEl&&cepAlertaParcial(cepEl.value)&&!cienteAlertaParcial){
+        bloquear=true;
+      }
+    }
+    if(bloquear){
       trava.classList.add("bloqueado");
     }else{
       trava.classList.remove("bloqueado");
