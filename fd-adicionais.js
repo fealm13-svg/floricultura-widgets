@@ -319,6 +319,342 @@
     ancora.insertAdjacentElement("afterend", secao);
   }
 
+
+  // ─────────────────────────────────────────────
+  // MÓDULO 5 — PERSONALIZADOR DE FOTOS
+  // Regra:
+  //   - "foto polaroid" => personalizador Polaroid
+  //   - "foto" sem "polaroid" => upload simples 10x15
+  // As artes/fotos ficam no IndexedDB e só vão para o Cloudinary no checkout.
+  // ─────────────────────────────────────────────
+  var FD_FOTO_DB = "fd_fotos_db_v1";
+  var FD_FOTO_STORE = "personalizacoes";
+  var FD_CLOUD_NAME = "ccox0god";
+  var FD_UPLOAD_PRESET = "floricultura_personalizados";
+  var FD_FOTO_MODULE_READY = false;
+
+  var FD_FONTES = {
+    "Dancing Script": { base:120, min:72, weight:600 },
+    "Cormorant Garamond": { base:110, min:66, weight:600 },
+    "Special Elite": { base:92, min:58, weight:400 },
+    "Libre Baskerville": { base:88, min:56, weight:700 },
+    "Montserrat": { base:90, min:56, weight:600 }
+  };
+
+  function fdFotoTitulo(){
+    var el=document.querySelector(".span12.produto h1, .info-principal-produto h1, h1.titulo, .nome-produto");
+    return el ? (el.innerText||el.textContent||"").trim() : "";
+  }
+
+  function fdFotoTipo(titulo){
+    var t=(titulo||"").toLowerCase();
+    if(t.indexOf("foto polaroid")!==-1 || t.indexOf("fotos polaroid")!==-1) return "polaroid";
+    if(t.indexOf("foto")!==-1) return "foto10x15";
+    return null;
+  }
+
+  function fdFotoQuantidadePorUnidade(titulo){
+    var t=titulo||"";
+    var m=t.match(/\b(\d+)\s*(?:fotos?|polaroids?)\b/i);
+    if(m) return Math.max(1,Math.min(12,parseInt(m[1],10)));
+    m=t.match(/\((\d+)\s*(?:un|un\.|unid|unidades?)\)/i);
+    if(m && t.toLowerCase().indexOf("polaroid")!==-1) return Math.max(1,Math.min(12,parseInt(m[1],10)));
+    return 1;
+  }
+
+  function fdFotoQuantidadeProduto(){
+    var sels=["#quantidade","input[name='quantity']","input[name='qty']",".quantidade input",".quantity input","input.quantidade"];
+    for(var i=0;i<sels.length;i++){
+      var el=document.querySelector(sels[i]);
+      if(el){var n=parseInt(el.value,10);if(n>0)return n;}
+    }
+    return 1;
+  }
+
+  function fdFotoEsc(v){return String(v).replace(/[&<>"']/g,function(m){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m];});}
+
+  function fdFotoGerarProtocolo(){
+    var p=null;
+    try{p=sessionStorage.getItem("fdc_protocolo");}catch(e){}
+    if(p)return p;
+    var d=new Date();
+    p="FD-"+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");
+    try{sessionStorage.setItem("fdc_protocolo",p);}catch(e){}
+    return p;
+  }
+
+  function fdFotoDB(){
+    return new Promise(function(resolve,reject){
+      var r=indexedDB.open(FD_FOTO_DB,1);
+      r.onupgradeneeded=function(){
+        var db=r.result;
+        if(!db.objectStoreNames.contains(FD_FOTO_STORE)) db.createObjectStore(FD_FOTO_STORE,{keyPath:"id"});
+      };
+      r.onsuccess=function(){resolve(r.result);};
+      r.onerror=function(){reject(r.error||new Error("Não foi possível abrir o armazenamento local."));};
+    });
+  }
+
+  function fdFotoDBPut(obj){
+    return fdFotoDB().then(function(db){return new Promise(function(resolve,reject){
+      var tx=db.transaction(FD_FOTO_STORE,"readwrite");
+      tx.objectStore(FD_FOTO_STORE).put(obj);
+      tx.oncomplete=function(){db.close();resolve();};
+      tx.onerror=function(){db.close();reject(tx.error||new Error("Falha ao guardar a personalização."));};
+    });});
+  }
+
+  function fdFotoDBGet(ids){
+    return fdFotoDB().then(function(db){return new Promise(function(resolve,reject){
+      var tx=db.transaction(FD_FOTO_STORE,"readonly");
+      var store=tx.objectStore(FD_FOTO_STORE), out=[], left=ids.length;
+      if(!left){db.close();resolve(out);return;}
+      ids.forEach(function(id,idx){
+        var r=store.get(id);
+        r.onsuccess=function(){out[idx]=r.result||null;if(--left===0){db.close();resolve(out);}};
+        r.onerror=function(){if(--left===0){db.close();resolve(out);}};
+      });
+    });});
+  }
+
+  function fdFotoDBDelete(id){
+    return fdFotoDB().then(function(db){return new Promise(function(resolve,reject){
+      var tx=db.transaction(FD_FOTO_STORE,"readwrite");tx.objectStore(FD_FOTO_STORE).delete(id);
+      tx.oncomplete=function(){db.close();resolve();};tx.onerror=function(){db.close();reject(tx.error);};
+    });});
+  }
+
+  function fdFotoGetPendingIds(){
+    try{return JSON.parse(sessionStorage.getItem("fd_fotos_pendentes")||"[]");}catch(e){return []}
+  }
+  function fdFotoSetPendingIds(ids){try{sessionStorage.setItem("fd_fotos_pendentes",JSON.stringify(ids));}catch(e){}}
+  function fdFotoAddPendingId(id){var a=fdFotoGetPendingIds();if(a.indexOf(id)===-1)a.push(id);fdFotoSetPendingIds(a);}
+
+  function fdFotoBlobFromDataUrl(dataUrl){
+    var parts=dataUrl.split(",");
+    var mime=(parts[0].match(/:(.*?);/)||[])[1]||"image/png";
+    var bin=atob(parts[1]);var len=bin.length;var bytes=new Uint8Array(len);
+    for(var i=0;i<len;i++)bytes[i]=bin.charCodeAt(i);
+    return new Blob([bytes],{type:mime});
+  }
+
+  function fdFotoFileToDataUrl(file){
+    return new Promise(function(resolve,reject){
+      var r=new FileReader();r.onload=function(){resolve(r.result);};r.onerror=reject;r.readAsDataURL(file);
+    });
+  }
+
+  function fdFotoCarregarFonte(font){
+    if(document.fonts&&document.fonts.load) return document.fonts.load("600 120px \""+font+"\"").catch(function(){});
+    return Promise.resolve();
+  }
+
+  function fdFotoAdaptiveSize(text,font,scale,maxWidth){
+    var f=FD_FONTES[font]||FD_FONTES["Dancing Script"];
+    var probe=document.createElement("span");
+    probe.style.position="fixed";probe.style.visibility="hidden";probe.style.whiteSpace="nowrap";probe.style.left="-99999px";
+    probe.style.fontFamily='"'+font+'"';probe.style.fontWeight=f.weight;probe.textContent=text;
+    document.body.appendChild(probe);
+    var size=(f.base*(scale||.75));
+    while(size>24){probe.style.fontSize=size+"px";if(probe.getBoundingClientRect().width<=maxWidth)break;size-=1;}
+    document.body.removeChild(probe);
+    return Math.max(24,size);
+  }
+
+  function fdFotoGerarPolaroid(item){
+    return new Promise(async function(resolve,reject){
+      try{
+        var W=1772,H=2362,c=document.createElement("canvas");c.width=W;c.height=H;
+        var ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+        var sideMargin=116,photoW=W-(sideMargin*2),photoH=Math.round(photoW*(3.5/3)),px=sideMargin,py=116;
+        var src=URL.createObjectURL(item.blob),img=new Image();
+        img.onload=async function(){
+          try{
+            var cover=Math.max(photoW/img.naturalWidth,photoH/img.naturalHeight);
+            var drawW=img.naturalWidth*cover*(item.scale||1),drawH=img.naturalHeight*cover*(item.scale||1);
+            var drawX=(W/2)+(item.xNorm||0)*photoW-(drawW/2),drawY=(py+photoH/2)+(item.yNorm||0)*photoH-(drawH/2);
+            ctx.save();ctx.beginPath();ctx.rect(px,py,photoW,photoH);ctx.clip();ctx.drawImage(img,drawX,drawY,drawW,drawH);ctx.restore();
+            if(item.ins&&item.text&&item.text.trim()){
+              await fdFotoCarregarFonte(item.font);
+              var size=fdFotoAdaptiveSize(item.text.trim(),item.font,item.fontScale||.75,W-220);
+              ctx.fillStyle="#222";ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=(FD_FONTES[item.font]?.weight||600)+" "+size+"px \""+item.font+"\"";
+              var lowerTop=py+photoH,lowerH=H-lowerTop;
+              ctx.fillText(item.text.trim(),W/2,lowerTop+lowerH/2);
+            }
+            URL.revokeObjectURL(src);
+            c.toBlob(function(blob){if(!blob)reject(new Error("Não foi possível gerar a arte final."));else resolve(blob);},"image/png");
+          }catch(e){URL.revokeObjectURL(src);reject(e);}
+        };
+        img.onerror=function(){URL.revokeObjectURL(src);reject(new Error("Não foi possível carregar a foto."));};
+        img.src=src;
+      }catch(e){reject(e);}
+    });
+  }
+
+  function fdFotoCSS(){
+    if(document.getElementById("fd-foto-css"))return;
+    var s=document.createElement("style");s.id="fd-foto-css";s.innerHTML=[
+      "#fd-foto-personalizador{margin:22px 0;padding:18px;border:1px solid #e4e0de;border-radius:12px;background:#fff}",
+      "#fd-foto-personalizador .fdp-title{font-size:16px;font-weight:800;color:#a91537;margin:0 0 5px}",
+      "#fd-foto-personalizador .fdp-sub{font-size:12px;color:#777;margin-bottom:14px}",
+      "#fd-foto-personalizador .fdp-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}",
+      "#fd-foto-personalizador .fdp-item{border:1px solid #e5e0de;border-radius:9px;padding:12px}",
+      "#fd-foto-personalizador .fdp-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;font-size:13px;font-weight:800}",
+      "#fd-foto-personalizador .fdp-upload{border:2px dashed #d95d78;background:#fffafb;border-radius:9px;padding:14px;text-align:center}",
+      "#fd-foto-personalizador input[type=file]{display:none}",
+      "#fd-foto-personalizador .fdp-file{font-size:12px;font-weight:700;color:#444;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:9px}",
+      "#fd-foto-personalizador .fdp-btn{border-radius:8px;padding:9px 12px;font-weight:800;cursor:pointer;background:#fff;border:1px solid #a91537;color:#a91537}",
+      "#fd-foto-personalizador .fdp-btn-main{background:#a91537;color:#fff}",
+      "#fd-foto-personalizador .fdp-actions{display:flex;gap:7px;justify-content:center;flex-wrap:wrap}",
+      "#fd-foto-personalizador .fdp-mini{display:none;margin-top:10px;padding:8px;border-radius:8px;background:#fafafa;text-align:center}",
+      "#fd-foto-personalizador .fdp-mini img{max-width:130px;max-height:160px;display:block;margin:auto}",
+      "#fd-foto-personalizador .fdp-ok{color:#217448;font-size:12px;font-weight:700}",
+      ".fdp-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:999999;display:none;align-items:center;justify-content:center;padding:14px}",
+      ".fdp-overlay.open{display:flex}",
+      ".fdp-editor{width:min(980px,100%);max-height:95vh;overflow:auto;background:#fff;border-radius:14px;box-shadow:0 20px 70px rgba(0,0,0,.5)}",
+      ".fdp-head{padding:14px 16px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;font-weight:800}",
+      ".fdp-body{display:grid;grid-template-columns:minmax(300px,1fr) 335px;gap:18px;padding:16px}",
+      ".fdp-stagearea{background:#f5f5f5;border-radius:10px;padding:16px;display:flex;justify-content:center;align-items:center;min-height:500px}",
+      ".fdp-stage{width:min(370px,72vw);background:#fff;padding:10px 10px 19px;box-shadow:0 8px 24px rgba(0,0,0,.15)}",
+      ".fdp-photo{position:relative;aspect-ratio:3/3.5;overflow:hidden;background:#ddd;touch-action:none;user-select:none;cursor:grab}",
+      ".fdp-photo img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none}",
+      ".fdp-caption{height:62px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1;white-space:nowrap;padding:0 9px}",
+      ".fdp-lab{font-size:13px;font-weight:800;margin:0 0 7px}",
+      ".fdp-zoom{display:flex;align-items:center;gap:8px}.fdp-zoom input{flex:1}.fdp-pct{width:48px;font-size:12px;color:#666;text-align:right}",
+      ".fdp-fonts{display:grid;grid-template-columns:1fr 1fr;gap:7px}.fdp-font{border:1px solid #ddd;background:#fff;border-radius:8px;padding:8px 9px;cursor:pointer;font-size:12px}.fdp-font.sel{border-color:#a91537;color:#a91537;font-weight:800}",
+      ".fdp-text{width:100%;padding:10px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box}",
+      ".fdp-foot{padding:12px 16px;border-top:1px solid #eee;display:flex;justify-content:flex-end;gap:8px}",
+      "@media(max-width:800px){#fd-foto-personalizador .fdp-grid,.fdp-body{grid-template-columns:1fr}.fdp-stagearea{min-height:390px}.fdp-stage{width:min(345px,82vw)}}"
+    ].join("");document.head.appendChild(s);
+  }
+
+  function fdFotoQuantidadeTotal(tipo,titulo){
+    var q=fdFotoQuantidadeProduto();
+    return tipo==="polaroid" ? fdFotoQuantidadePorUnidade(titulo)*q : q;
+  }
+
+  function fdFotoEstadoVazio(){
+    return {blob:null,nome:"",xNorm:0,yNorm:0,scale:1,ins:false,text:"",font:"Dancing Script",fontScale:.75};
+  }
+
+  function fdFotoCriarUI(titulo,tipo,total){
+    if(document.getElementById("fd-foto-personalizador"))return;
+    fdFotoCSS();
+    var box=document.createElement("div");box.id="fd-foto-personalizador";
+    var h="";
+    if(tipo==="polaroid") h='<div class="fdp-title">Personalize suas fotos Polaroid</div><div class="fdp-sub">Ajuste cada foto como quiser antes de adicionar ao carrinho.</div>';
+    else h='<div class="fdp-title">Envie sua foto</div><div class="fdp-sub">Envie uma foto JPG ou PNG para impressão 10x15.</div>';
+    h+='<div class="fdp-grid" id="fdp-grid"></div>';
+    box.innerHTML=h;
+    var anchor=document.querySelector(".produto-comprar, .acao-produto, .acoes-produto, .info-principal-produto")||document.querySelector(".produto" )||document.querySelector("main");
+    if(anchor)anchor.parentNode.insertBefore(box,anchor);
+    var grid=box.querySelector("#fdp-grid");
+    for(var i=1;i<=total;i++){
+      var item=document.createElement("div");item.className="fdp-item";item.id="fdp-item-"+i;
+      item.innerHTML='<div class="fdp-top"><span>Foto '+i+'</span><span class="fdp-ok" id="fdp-status-'+i+'"></span></div>'+
+        '<div class="fdp-upload"><input id="fdp-file-'+i+'" type="file" accept="image/jpeg,image/png">'+
+        '<button type="button" class="fdp-btn fdp-btn-main" id="fdp-add-'+i+'">Escolher foto</button><div style="font-size:11px;color:#777;margin-top:7px">JPG ou PNG • até 10 MB</div>'+
+        '<div id="fdp-selected-'+i+'" style="display:none;margin-top:10px"><div class="fdp-file" id="fdp-name-'+i+'"></div><div class="fdp-actions"><button type="button" class="fdp-btn" id="fdp-edit-'+i+'">Ajustar foto</button><button type="button" class="fdp-btn" id="fdp-remove-'+i+'">Trocar</button></div></div>'+
+        '<div class="fdp-mini" id="fdp-mini-'+i+'"></div></div></div>';
+      grid.appendChild(item);
+    }
+  }
+
+  function fdFotoAbrirEditor(state,index,onApply,onCancel){
+    var overlay=document.createElement("div");overlay.className="fdp-overlay open";overlay.id="fdp-editor-overlay";
+    overlay.innerHTML='<div class="fdp-editor"><div class="fdp-head">Ajuste da Foto '+index+'<button type="button" id="fdp-close" class="fdp-btn">×</button></div>'+
+      '<div class="fdp-body"><div class="fdp-stagearea"><div><div class="fdp-stage"><div class="fdp-photo" id="fdp-stage"><img id="fdp-stage-img"></div><div class="fdp-caption" id="fdp-caption"></div></div><div style="font-size:11px;color:#777;text-align:center;margin-top:8px">Arraste com mouse ou dedo. No celular, use dois dedos para zoom.</div></div></div>'+
+      '<div><div style="background:#faf5f7;border-radius:9px;padding:11px;font-size:12px;line-height:1.5;color:#555;margin-bottom:14px"><b>Como ajustar:</b><br>• arraste para posicionar<br>• pinça para zoom<br>• use o controle para ajuste fino</div>'+ 
+      '<p class="fdp-lab">Zoom da foto</p><div class="fdp-zoom"><input id="fdp-zoom" type="range" min="1" max="3.2" step=".01" value="1"><span class="fdp-pct" id="fdp-zoom-pct">100%</span></div>'+ 
+      '<div style="height:16px"></div><p class="fdp-lab">Inscrição na borda</p><label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center"><input id="fdp-ins" type="checkbox"> Adicionar inscrição</label>'+ 
+      '<input id="fdp-text" class="fdp-text" maxlength="20" placeholder="Ex.: FELIZ DIA DAS MÃES" style="display:none;margin-top:8px"><div id="fdp-count" style="display:none;text-align:right;font-size:11px;color:#777">0/20</div>'+ 
+      '<div id="fdp-font-block" style="display:none;margin-top:15px"><p class="fdp-lab">Fonte</p><div class="fdp-fonts">'+Object.keys(FD_FONTES).map(function(f,idx){return '<button type="button" class="fdp-font '+(idx===0?'sel':'')+'" data-font="'+f+'">'+["Manuscrita","Elegante","Jornal","Clássica","Moderna"][idx]+'</button>';}).join("")+'</div><p class="fdp-lab" style="margin-top:14px">Tamanho da inscrição</p><div class="fdp-zoom"><button type="button" id="fdp-font-minus" class="fdp-btn">−</button><input id="fdp-font-size" type="range" min="50" max="150" value="75"><button type="button" id="fdp-font-plus" class="fdp-btn">+</button><span class="fdp-pct" id="fdp-font-pct">75%</span></div></div></div></div>'+
+      '<div class="fdp-foot"><button type="button" id="fdp-cancel" class="fdp-btn">Cancelar</button><button type="button" id="fdp-apply" class="fdp-btn fdp-btn-main">✓ Confirmar esta foto</button></div></div>';
+    document.body.appendChild(overlay);
+    var img=overlay.querySelector("#fdp-stage-img"),stage=overlay.querySelector("#fdp-stage"),caption=overlay.querySelector("#fdp-caption"),draft=JSON.parse(JSON.stringify(state));
+    img.src=URL.createObjectURL(state.blob);
+    var pts={},drag=null,pinch=null;
+    function fit(){if(!img.naturalWidth)return;var r=Math.max(stage.clientWidth/img.naturalWidth,stage.clientHeight/img.naturalHeight);draft.baseW=img.naturalWidth*r;draft.baseH=img.naturalHeight*r;transform();captionRender();}
+    function transform(){img.style.width=draft.baseW+"px";img.style.height=draft.baseH+"px";img.style.transform='translate(calc(-50% + '+(draft.xNorm||0)*stage.clientWidth+'px),calc(-50% + '+(draft.yNorm||0)*stage.clientHeight+'px)) scale('+(draft.scale||1)+')';overlay.querySelector("#fdp-zoom-pct").textContent=Math.round((draft.scale||1)*100)+"%";}
+    function capSize(){var f=FD_FONTES[draft.font]||FD_FONTES["Dancing Script"];var scale=draft.fontScale||.75;return fdFotoAdaptiveSize(draft.text||"",draft.font,scale,caption.clientWidth-18);}
+    function captionRender(){var on=draft.ins,text=draft.text||"";caption.textContent=on?text:"";caption.style.fontFamily='"'+draft.font+'"';caption.style.fontWeight=(FD_FONTES[draft.font]||FD_FONTES["Dancing Script"]).weight;caption.style.fontSize=on?capSize()+"px":"0px";}
+    function setFont(f){draft.font=f;overlay.querySelectorAll(".fdp-font").forEach(function(b){b.classList.toggle("sel",b.dataset.font===f);});captionRender();}
+    overlay.querySelector("#fdp-ins").checked=!!draft.ins;overlay.querySelector("#fdp-text").value=draft.text||"";overlay.querySelector("#fdp-zoom").value=draft.scale||1;overlay.querySelector("#fdp-font-size").value=Math.round((draft.fontScale||.75)*100);overlay.querySelector("#fdp-font-pct").textContent=Math.round((draft.fontScale||.75)*100)+"%";
+    function toggle(){var on=overlay.querySelector("#fdp-ins").checked;draft.ins=on;overlay.querySelector("#fdp-text").style.display=on?"block":"none";overlay.querySelector("#fdp-count").style.display=on?"block":"none";overlay.querySelector("#fdp-font-block").style.display=on?"block":"none";captionRender();}
+    overlay.querySelector("#fdp-ins").addEventListener("change",toggle);overlay.querySelector("#fdp-text").addEventListener("input",function(){draft.text=this.value.slice(0,20);this.value=draft.text;overlay.querySelector("#fdp-count").textContent=draft.text.length+"/20";captionRender();});
+    overlay.querySelectorAll(".fdp-font").forEach(function(b){b.addEventListener("click",function(){setFont(b.dataset.font);});});
+    overlay.querySelector("#fdp-font-size").addEventListener("input",function(){draft.fontScale=parseInt(this.value,10)/100;overlay.querySelector("#fdp-font-pct").textContent=this.value+"%";captionRender();});
+    overlay.querySelector("#fdp-font-minus").addEventListener("click",function(){var el=overlay.querySelector("#fdp-font-size");el.value=Math.max(50,parseInt(el.value,10)-5);el.dispatchEvent(new Event("input"));});
+    overlay.querySelector("#fdp-font-plus").addEventListener("click",function(){var el=overlay.querySelector("#fdp-font-size");el.value=Math.min(150,parseInt(el.value,10)+5);el.dispatchEvent(new Event("input"));});
+    overlay.querySelector("#fdp-zoom").addEventListener("input",function(){draft.scale=parseFloat(this.value);transform();});
+    stage.addEventListener("pointerdown",function(e){pts[e.pointerId]={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId);var ids=Object.keys(pts);if(e.pointerType==="touch"&&ids.length===2){var a=pts[ids[0]],b=pts[ids[1]];pinch={dist:Math.hypot(b.x-a.x,b.y-a.y),scale:draft.scale};drag=null;}else{drag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:draft.xNorm||0,oy:draft.yNorm||0};}});
+    stage.addEventListener("pointermove",function(e){if(pts[e.pointerId])pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);if(ids.length===2&&pinch){var a=pts[ids[0]],b=pts[ids[1]],dist=Math.hypot(b.x-a.x,b.y-a.y);draft.scale=Math.min(3.2,Math.max(1,pinch.scale*dist/pinch.dist));overlay.querySelector("#fdp-zoom").value=draft.scale;transform();return;}if(drag&&drag.id===e.pointerId){draft.xNorm=(drag.ox||0)+(e.clientX-drag.x)/Math.max(1,stage.clientWidth);draft.yNorm=(drag.oy||0)+(e.clientY-drag.y)/Math.max(1,stage.clientHeight);transform();}});
+    function end(e){delete pts[e.pointerId];if(Object.keys(pts).length<2)pinch=null;if(drag&&drag.id===e.pointerId)drag=null;}stage.addEventListener("pointerup",end);stage.addEventListener("pointercancel",end);
+    stage.addEventListener("wheel",function(e){e.preventDefault();draft.scale=Math.min(3.2,Math.max(1,draft.scale+(e.deltaY<0?.08:-.08)));overlay.querySelector("#fdp-zoom").value=draft.scale;transform();},{passive:false});
+    overlay.querySelector("#fdp-close").onclick=overlay.querySelector("#fdp-cancel").onclick=function(){URL.revokeObjectURL(img.src);overlay.remove();onCancel&&onCancel();};
+    overlay.querySelector("#fdp-apply").onclick=function(){draft.fileName=state.fileName;URL.revokeObjectURL(img.src);overlay.remove();onApply(draft);};
+    toggle();setTimeout(fit,80);
+  }
+
+  function fdFotoIniciarPersonalizador(){
+    if(FD_FOTO_MODULE_READY)return;
+    var titulo=fdFotoTitulo(),tipo=fdFotoTipo(titulo);if(!tipo)return;
+    FD_FOTO_MODULE_READY=true;
+    var total=fdFotoQuantidadeTotal(tipo,titulo);
+    fdFotoCriarUI(titulo,tipo,total);
+    var states=[];for(var i=0;i<total;i++)states.push(fdFotoEstadoVazio());
+    function refresh(i){var s=states[i-1], selected=document.getElementById("fdp-selected-"+i),add=document.getElementById("fdp-add-"+i),name=document.getElementById("fdp-name-"+i),status=document.getElementById("fdp-status-"+i),mini=document.getElementById("fdp-mini-"+i);if(!selected)return;if(s.blob){selected.style.display="block";add.style.display="none";name.textContent=s.fileName||"Foto selecionada";status.textContent="✓ pronta";if(tipo==="foto10x15"){mini.style.display="block";mini.innerHTML="<div style=\"font-size:11px;color:#666;margin-bottom:4px\">Prévia</div><img src=\""+URL.createObjectURL(s.blob)+"\">";}else{mini.style.display="none";}}else{selected.style.display="none";add.style.display="inline-block";status.textContent="";mini.style.display="none";}}
+    for(let i=1;i<=total;i++){
+      (function(idx){
+        var input=document.getElementById("fdp-file-"+idx),add=document.getElementById("fdp-add-"+idx),edit=document.getElementById("fdp-edit-"+idx),rem=document.getElementById("fdp-remove-"+idx);
+        add.onclick=function(){input.click();};
+        input.onchange=async function(){var f=input.files&&input.files[0];if(!f)return;if(!/^image\/(jpeg|png)$/.test(f.type)){alert("Escolha uma imagem JPG ou PNG.");return;}if(f.size>10*1024*1024){alert("A imagem deve ter no máximo 10 MB.");return;}states[idx-1].blob=f;states[idx-1].fileName=f.name;states[idx-1].xNorm=0;states[idx-1].yNorm=0;states[idx-1].scale=1;states[idx-1].ins=false;states[idx-1].text="";states[idx-1].font="Dancing Script";states[idx-1].fontScale=.75;refresh(idx);if(tipo==="polaroid")edit.click();};
+        edit.onclick=function(){if(!states[idx-1].blob)return;if(tipo!=="polaroid")return;fdFotoAbrirEditor(states[idx-1],idx,function(d){states[idx-1]=d;refresh(idx);},function(){});};
+        rem.onclick=function(){states[idx-1]=fdFotoEstadoVazio();input.value="";refresh(idx);};
+      })(i);
+    }
+
+    function todosProntos(){for(var i=0;i<states.length;i++)if(!states[i].blob)return false;return true;}
+    function gravarNoDB(){
+      var protocol=fdFotoGerarProtocolo(), group="fdg-"+Date.now()+"-"+Math.random().toString(36).slice(2,8), q=fdFotoQuantidadeProduto();
+      var promises=[];
+      states.forEach(function(s,idx){
+        var id=group+"-"+(idx+1);
+        var record={id:id,protocolo:protocol,produto:titulo,tipo:tipo,unidade:Math.floor(idx/(tipo==="polaroid"?fdFotoQuantidadePorUnidade(titulo):1))+1,foto:idx+1,blob:s.blob,fileName:s.fileName||"foto",xNorm:s.xNorm||0,yNorm:s.yNorm||0,scale:s.scale||1,ins:!!s.ins,text:s.text||"",font:s.font||"Dancing Script",fontScale:s.fontScale||.75,createdAt:Date.now(),ttl:Date.now()+6*60*60*1000};
+        promises.push(fdFotoDBPut(record).then(function(){fdFotoAddPendingId(id);}));
+      });
+      return Promise.all(promises);
+    }
+
+    var buySelectors=[".botao-comprar", ".botao.principal", ".adicionar-carrinho", "#btn-comprar", ".btn-comprar", "button[type='submit']", "input[type='submit']"];
+    document.addEventListener("click",function(ev){
+      var el=ev.target;while(el&&el!==document.body&&!(el.matches&&buySelectors.some(function(s){try{return el.matches(s);}catch(e){return false;}})))el=el.parentElement;
+      if(!el||el===document.body)return;
+      if(!todosProntos()){ev.preventDefault();ev.stopPropagation();alert("Adicione e confirme todas as fotos antes de adicionar o produto ao carrinho.");return;}
+      if(el.dataset.fdPersonalizacaoOk==="1")return;
+      ev.preventDefault();ev.stopPropagation();el.dataset.fdPersonalizacaoOk="1";
+      gravarNoDB().then(function(){
+        el.click();
+      }).catch(function(e){el.dataset.fdPersonalizacaoOk="";alert("Não foi possível guardar as fotos antes de adicionar o produto ao carrinho. Tente novamente.");console.error(e);});
+    },true);
+
+    window.FD_FOTO_PERSONALIZADOR={
+      titulo:titulo,tipo:tipo,total:total,
+      estaPronto:todosProntos
+    };
+  }
+
+  // Tenta iniciar após o tema carregar o título e os controles do produto.
+  function iniciarModuloFotos(){
+    var tentativas=0;
+    var timer=setInterval(function(){
+      tentativas++;
+      if(fdFotoTitulo()&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
+        clearInterval(timer);fdFotoIniciarPersonalizador();
+      }else if(tentativas>30){clearInterval(timer);}
+    },300);
+  }
+
   // ─────────────────────────────────────────────
   // MÓDULO 4 — SUBSTITUIR MENSAGENS DE FRETE
   // ─────────────────────────────────────────────
@@ -345,6 +681,7 @@
     aplicarTagProduto();
     construirComplementos();
     corrigirMensagensFrete();
+    iniciarModuloFotos();
   }
 
   // Aguarda DOM pronto
@@ -364,6 +701,7 @@
         aplicarTagProduto();
         construirComplementos();
         corrigirMensagensFrete();
+        iniciarModuloFotos();
       }, 400);
     });
     observer.observe(document.body, { childList: true, subtree: true });
