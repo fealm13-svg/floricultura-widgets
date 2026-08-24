@@ -1734,9 +1734,17 @@
       });
     });
   }
+  function fdNormalizarNomeProduto(nome){
+    var s=String(nome||"").toLowerCase().replace(/\u00a0/g," ");
+    try{ s=s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,""); }catch(e){}
+    s=s.replace(/[^a-z0-9]+/g," ").replace(/\\s+/g," ").trim();
+    return s;
+  }
+
   function fdFotoNomeCompativel(a,b){
     var x=fdNormalizarNomeProduto(a),y=fdNormalizarNomeProduto(b);
-    return !!x && !!y && (x===y || x.indexOf(y)!==-1 || y.indexOf(x)!==-1);
+    if(!x||!y)return false;
+    return x===y || x.indexOf(y)!==-1 || y.indexOf(x)!==-1;
   }
   function fdNumeroNomeProduto(nome){
     var t=(nome||"").toLowerCase();
@@ -1769,6 +1777,8 @@
     if(grupoAtual)all=all.filter(function(x){return (x.id||"").indexOf(grupoAtual+"-")===0;});
     if(!all.length)return true;
     var items=await fdCheckoutSelecionarItensDoCarrinho(all);
+    console.log("[FD FOTO] pendentes:", all.map(function(x){return {id:x.id,produto:x.produto,tipo:x.tipo,unidade:x.unidade,foto:x.foto};}));
+    console.log("[FD FOTO] selecionados para o carrinho:", items.map(function(x){return {id:x.id,produto:x.produto,tipo:x.tipo,unidade:x.unidade,foto:x.foto};}));
     if(!items.length){
       // Não há personalizações compatíveis com os produtos atuais do carrinho.
       // Limpa apenas referências antigas/órfãs da sessão para não tentar enviá-las.
@@ -1792,7 +1802,7 @@
     }catch(e){
       if(btn)btn.textContent="Tentar novamente";
       console.error("[FD FOTO] erro no upload:",e);
-      alert("Não conseguimos concluir o envio das fotos. Verifique sua conexão e tente novamente.");
+      alert("Não conseguimos concluir o envio das fotos. Verifique sua conexão e tente novamente.\n\nErro técnico: "+(e&&e.message?e.message:"erro desconhecido"));
       return false;
     }
   }
