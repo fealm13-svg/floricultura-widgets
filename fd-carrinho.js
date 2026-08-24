@@ -1124,6 +1124,8 @@
       cepValidoDia12=cepValidoNamorados(cep);
       aviso.classList.remove("ativo");
       preencherCepPlataforma(el.value);
+      // Após a plataforma calcular o frete, sincroniza o radio conforme tipo atual
+      sincronizarFretePlataforma(tipo);
 
       // 2. Verifica alerta parcial (local problemático compartilhando CEP)
       var localParcial=cepAlertaParcial(el.value);
@@ -1190,6 +1192,48 @@
         if(btn){setTimeout(function(){btn.click();},150);}
       }
     }catch(x){console.error("[FD] Erro ao preencher CEP plataforma:",x);}
+  }
+
+  // CEP padrão da loja (Al. Barão de Limeira, 998) — usado para forçar cálculo do frete em retirada
+  var CEP_LOJA="01202-002";
+
+  // Marca automaticamente o radio de frete correspondente na plataforma
+  // tipo: "entrega" ou "retirada"
+  function marcarFretePlataforma(tipoAlvo){
+    try{
+      var radios=document.querySelectorAll('input[type="radio"][name="formaEnvio"]');
+      if(!radios||radios.length===0)return false;
+      var termo=tipoAlvo==="retirada"?"retirada":"entrega";
+      for(var i=0;i<radios.length;i++){
+        var r=radios[i];
+        var label=r.closest("label");
+        var nomeEl=label?label.querySelector(".nome"):null;
+        var texto=(nomeEl?nomeEl.innerText:(label?label.innerText:"")).toLowerCase();
+        if(texto.indexOf(termo)!==-1){
+          if(!r.checked){
+            r.checked=true;
+            r.dispatchEvent(new Event("change",{bubbles:true}));
+            r.dispatchEvent(new Event("click",{bubbles:true}));
+          }
+          return true;
+        }
+      }
+      return false;
+    }catch(x){
+      return false;
+    }
+  }
+
+  // Tenta marcar o radio agora; se falhar, tenta novamente em 500ms, 1s, 2s
+  function sincronizarFretePlataforma(tipoAlvo){
+    if(marcarFretePlataforma(tipoAlvo))return;
+    setTimeout(function(){
+      if(marcarFretePlataforma(tipoAlvo))return;
+      setTimeout(function(){
+        if(marcarFretePlataforma(tipoAlvo))return;
+        setTimeout(function(){marcarFretePlataforma(tipoAlvo);},1000);
+      },500);
+    },500);
   }
 
   window.fdcFecharPopupCep=function(){
@@ -1310,6 +1354,22 @@
     atualizarTrava();
     var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");steps.forEach(function(s){s.classList.remove("active","done");});if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("active");
     salvarSessao();fdcVerificar();
+
+    // Sincroniza o radio de frete da plataforma
+    if(t==="retirada"){
+      // Se cliente escolheu retirada mas ainda não digitou CEP, força o CEP da loja
+      // para a plataforma calcular o frete e exibir as opções
+      var cepEl=document.getElementById("fdc-cep");
+      var cepAtual=cepEl?cepEl.value.replace(/\D/g,""):"";
+      if(cepAtual.length<8){
+        preencherCepPlataforma(CEP_LOJA);
+      }
+      // Marca o radio de Retirada (com retentativas)
+      sincronizarFretePlataforma("retirada");
+    }else{
+      // Marca o radio de Entrega
+      sincronizarFretePlataforma("entrega");
+    }
   };
 
   window.fdcMascaraTel=function(el){
