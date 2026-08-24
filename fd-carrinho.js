@@ -701,231 +701,179 @@
 
   function injetarCSS(){
     var css=[
-      ".fdc-bloco{background:#fff;border:1px solid #e6e1de;border-radius:14px;padding:20px 20px;margin:22px 0;font-family:inherit;box-shadow:0 2px 14px rgba(0,0,0,.05)}",
-      ".fdc-titulo{color:#a91537;font-size:18px;font-weight:800;margin-bottom:16px;letter-spacing:-.1px}",
-      ".fdc-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;border:none;overflow:visible}",
-      ".fdc-toggle-btn{padding:13px 12px;background:#fff;border:1.5px solid #d8d3d0;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;color:#555;transition:all .2s}",
+      ".fdc-bloco{background:transparent;border:0;padding:0;margin:20px 0;font-family:inherit;box-shadow:none}",
+      ".fdc-v9-head{background:#fff;border:1px solid #e7e3e0;border-radius:14px;padding:18px 18px 16px;margin-bottom:14px}",
+      ".fdc-v9-head h2{margin:0;color:#a91537;font-size:21px;line-height:1.25}",
+      ".fdc-v9-head p{margin:5px 0 0;color:#777;font-size:12px;line-height:1.45}",
+      ".fdc-v9-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:15px}",
+      ".fdc-v9-step{display:flex;align-items:center;gap:7px;border:1px solid #e7e3e0;background:#fafafa;border-radius:9px;padding:8px 9px;font-size:11px;color:#8a8a8a}",
+      ".fdc-v9-step .n{width:23px;height:23px;border-radius:50%;background:#e9e7e6;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}",
+      ".fdc-v9-step.done{background:#f4faf6;border-color:#d6e8dc;color:#3d7650}.fdc-v9-step.done .n{background:#3d875a;color:#fff}",
+      ".fdc-v9-step.active{background:#fff5f7;border-color:#dfb7c2;color:#a91537}.fdc-v9-step.active .n{background:#a91537;color:#fff}",
+      ".fdc-v9-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}",
+      ".fdc-v9-card{background:#fff;border:1px solid #e7e3e0;border-radius:12px;padding:16px;margin-bottom:12px}",
+      ".fdc-v9-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}",
+      ".fdc-v9-card-title{margin:0;font-size:15px;font-weight:800;color:#2d2d2d}",
+      ".fdc-v9-edit{background:none;border:0;color:#a91537;font-size:11px;font-weight:800;cursor:pointer}",
+      ".fdc-v9-receber{display:grid;grid-template-columns:1fr 1fr;gap:9px}",
+      ".fdc-v9-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 13px}",
+      ".fdc-toggle-btn{min-height:48px;padding:12px 10px;background:#fff;border:1.5px solid #d8d3d0;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;color:#555;transition:all .2s}",
       ".fdc-toggle-btn.ativo{background:#5a8966;color:#fff;border-color:#5a8966;box-shadow:0 2px 8px rgba(90,137,102,.18)}",
-      ".fdc-sec{font-size:13px;font-weight:800;color:#a91537;margin:18px 0 10px;padding-bottom:7px;border-bottom:1px solid #eee}",
-      ".fdc-campo{margin-bottom:12px}",
-      ".fdc-campo label{display:block;font-size:13px;font-weight:700;color:#444;margin-bottom:5px}",
-      ".fdc-campo label small{font-weight:400;color:#888;font-size:11px;display:block;margin-top:1px}",
-      ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #c8c8c8;border-radius:7px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}",
-      ".fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
-      ".fdc-campo textarea{resize:vertical;min-height:90px}",
-      ".fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa;cursor:not-allowed}",
-      ".fdc-cep-wrap{position:relative}",
-      ".fdc-cep-status{display:inline-block;margin-top:6px;font-size:12px;font-weight:600;padding:4px 10px;border-radius:4px}",
-      ".fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}",
-      ".fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
-      ".fdc-cep-aviso{display:none;margin-top:8px;padding:8px 12px;background:#fff4e0;border-left:3px solid #e8a33d;border-radius:4px;font-size:12px;color:#7a5a1f;line-height:1.4}",
-      ".fdc-cep-aviso.ativo{display:block}",
-      ".fdc-cep-parcial{display:none;margin-top:8px;padding:10px 12px;background:#fff1f0;border-left:3px solid #a91537;border-radius:4px;font-size:12px;color:#6a1220;line-height:1.5}",
-      ".fdc-cep-parcial.ativo{display:block}",
-      ".fdc-cep-parcial strong{color:#a91537}",
-      ".fdc-cep-parcial-check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:12px;color:#6a1220;cursor:pointer;font-weight:600}",
-      ".fdc-cep-parcial-check input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
-      ".fdc-bloco-trava{position:relative}",
-      ".fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.5}",
-      ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}",
-      ".fdc-contador{font-size:11px;color:#aaa}",
-      ".fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:12px;color:#666;cursor:pointer;user-select:none}",
-      ".fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px;flex-shrink:0;cursor:pointer;vertical-align:middle}",
-      ".fdc-btn-ag{width:100%;background:#fff;color:#5a8966;border:1.5px solid #5a8966;padding:12px;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;margin-bottom:10px}",
-      ".fdc-btn-ag:hover{background:#eef5ef}",
+      ".fdc-v9-cep-title{font-size:12px;font-weight:800;color:#444;margin:0 0 6px}",
+      ".fdc-campo{margin-bottom:11px}.fdc-campo label{display:block;font-size:12px;font-weight:700;color:#444;margin-bottom:5px}.fdc-campo label small{font-weight:400;color:#888;font-size:10px;display:block;margin-top:2px}",
+      ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #d0cbc8;border-radius:8px;padding:10px 11px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}.fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
+      ".fdc-campo textarea{resize:vertical;min-height:88px}.fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa}",
+      ".fdc-cep-wrap{position:relative}.fdc-cep-status{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;padding:4px 8px;border-radius:5px}.fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}.fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
+      ".fdc-cep-aviso,.fdc-cep-parcial{display:none;margin-top:7px;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.45}.fdc-cep-aviso{background:#fff4e0;border-left:3px solid #e8a33d;color:#7a5a1f}.fdc-cep-aviso.ativo{display:block}.fdc-cep-parcial{background:#fff1f0;border-left:3px solid #a91537;color:#6a1220}.fdc-cep-parcial.ativo{display:block}.fdc-cep-parcial-check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;cursor:pointer;font-weight:600}.fdc-cep-parcial-check input{accent-color:#a91537;width:14px;height:14px}",
+      ".fdc-bloco-trava{position:relative}.fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.48}",
+      ".fdc-sec{font-size:12px;font-weight:800;color:#a91537;margin:15px 0 9px;padding-bottom:6px;border-bottom:1px solid #eee}",
+      ".fdc-btn-ag{width:100%;background:#fff;color:#5a8966;border:1.5px solid #5a8966;padding:11px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:9px}.fdc-btn-ag:hover{background:#eef5ef}",
+      ".fdc-resumo-ag{background:#f7fbf8;border:1px solid #d8e7dc;border-radius:9px;padding:11px 12px;margin-bottom:10px}.fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.fdc-resumo-ag-item label{font-size:10px;color:#888;display:block;margin-bottom:2px}.fdc-resumo-ag-item strong{font-size:12px;color:#333;display:block}.fdc-resumo-ag-item span{font-size:10px;color:#888}.fdc-btn-alt{background:#fff;border:1px solid #5a8966;color:#5a8966;border-radius:7px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer}",
+      ".fdc-pick-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #e8c9a0;border-radius:7px;margin-bottom:7px;cursor:pointer;transition:all .15s}.fdc-pick-item:hover{border-color:#a91537;background:#faf5eb}.fdc-pick-item.sel{border-color:#a91537;background:#fff5e1}.fdc-pick-item input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0}.fdc-pick-cod{font-weight:700;color:#a91537;font-size:12px;font-family:monospace}.fdc-pick-frase{font-size:13px;color:#333}",
       ".fdc-btn-ag:disabled{background:#aaa;cursor:not-allowed}",
-      ".fdc-resumo-ag{background:#f7fbf8;border:1px solid #d8e7dc;border-radius:10px;padding:12px 14px;margin-bottom:12px}",
-      ".fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}",
-      ".fdc-resumo-ag-item label{font-size:11px;color:#888;display:block;margin-bottom:2px}",
-      ".fdc-resumo-ag-item strong{font-size:13px;color:#333;display:block}",
-      ".fdc-resumo-ag-item span{font-size:11px;color:#888}",
-      ".fdc-btn-alt{background:#fff;border:1px solid #5a8966;color:#5a8966;border-radius:7px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer}",
-      ".fdc-btn-alt:hover{background:#eef3ed}",
-      ".fdc-termo-wrap{border-radius:8px;padding:14px 16px;margin-top:4px;transition:background .3s;background:#3a3a3a}",
-      ".fdc-termo-wrap.aceito{background:#72cd41}",
-      ".fdc-termo-lista{list-style:none;padding:0 4px 0 0;margin-bottom:12px;max-height:150px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.35) transparent}",
-      ".fdc-termo-lista::-webkit-scrollbar{width:6px}",
-      ".fdc-termo-lista::-webkit-scrollbar-track{background:transparent}",
-      ".fdc-termo-lista::-webkit-scrollbar-thumb{background:rgba(255,255,255,.35);border-radius:3px}",
-      ".fdc-termo-lista::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.5)}",
-      ".fdc-termo-lista li{font-size:12px;color:#fff;line-height:1.6;padding:4px 0 4px 18px;position:relative}",
-      ".fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.6)}",
-      ".fdc-termo-check{display:flex;align-items:center;gap:8px;font-size:12px;color:#fff;cursor:pointer;font-weight:600}",
-      ".fdc-termo-check input{accent-color:#fff;width:14px;height:14px;flex-shrink:0;vertical-align:middle}",
-      ".fdc-status{margin-top:14px;background:#fff;border:1.5px solid #c8c8c8;border-radius:8px;padding:10px 14px}",
-      ".fdc-status p{font-size:12px;color:#888;margin-bottom:6px}",
-      ".fdc-status-items{display:flex;flex-wrap:wrap;gap:6px}",
-      ".fdc-st{font-size:11px;padding:3px 10px;border-radius:20px;background:#efefef;color:#999}",
-      ".fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
-      ".fdc-box-ok{display:none;background:#72cd41;border-radius:8px;padding:14px 16px;margin-top:14px}",
-      ".fdc-box-ok-inner{display:flex;align-items:flex-start;gap:12px}",
-      ".fdc-box-ok-icon{font-size:22px;flex-shrink:0;line-height:1.3}",
-      ".fdc-box-ok-txt strong{font-size:14px;color:#fff;display:block;margin-bottom:4px}",
-      ".fdc-box-ok-txt p{font-size:12px;color:#fff;line-height:1.5;opacity:.95}",
-      ".fdc-popup-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:999999;align-items:center;justify-content:center}",
-      ".fdc-popup-overlay.ativo{display:flex}",
-      ".fdc-popup{background:#fff;border-radius:12px;padding:28px 24px;width:90%;max-width:420px;text-align:center}",
-      ".fdc-popup-icon{font-size:36px;margin-bottom:12px}",
-      ".fdc-popup h3{font-size:16px;font-weight:700;color:#333;margin-bottom:8px}",
-      ".fdc-popup p{font-size:13px;color:#666;line-height:1.6;margin-bottom:20px}",
-      ".fdc-popup-btn{background:#a91537;color:#fff;border:none;padding:11px 28px;border-radius:7px;font-size:14px;font-weight:600;cursor:pointer;margin:0 4px}",
-      ".fdc-popup-btn:hover{background:#8a1029}",
-      ".fdc-popup-btn-sec{background:#5a8966}",
-      ".fdc-day.indisp-clicavel{cursor:pointer}",
-      ".fdc-day.indisp-clicavel:hover{background:#f5f5f5}",
-      ".fdc-pick-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #e8c9a0;border-radius:7px;margin-bottom:7px;cursor:pointer;transition:all .15s}",
-      ".fdc-pick-item:hover{border-color:#a91537;background:#faf5eb}",
-      ".fdc-pick-item.sel{border-color:#a91537;background:#fff5e1}",
-      ".fdc-pick-item input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0}",
-      ".fdc-pick-cod{font-weight:700;color:#a91537;font-size:12px;font-family:monospace}",
-      ".fdc-pick-frase{font-size:13px;color:#333}",
-      ".fdc-popup-btn-sec:hover{background:#46714f}",
-      ".fdc-popup-conf{max-width:460px;text-align:left}",
-      ".fdc-popup-conf h3{text-align:center}",
-      ".fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:14px 16px;margin-bottom:14px}",
-      ".fdc-conf-item{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}",
-      ".fdc-conf-item:last-child{margin-bottom:0}",
-      ".fdc-conf-icon{font-size:16px;line-height:1.4;flex-shrink:0}",
-      ".fdc-conf-label{font-size:11px;color:#888;font-weight:600;margin-bottom:2px;text-transform:uppercase;letter-spacing:.4px}",
-      ".fdc-conf-valor{font-size:14px;color:#333;font-weight:600}",
-      ".fdc-conf-sub{font-size:12px;color:#666;font-weight:400;margin-top:1px}",
-      ".fdc-conf-msg-txt{font-size:13px;color:#333;font-style:italic;line-height:1.5;font-weight:400}",
-      ".fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:11px 13px;font-size:12.5px;color:#444;line-height:1.55;text-align:left}",
-      ".fdc-conf-aviso strong{font-weight:600;color:#333}",
-      ".fdc-popup-btns{display:flex;flex-wrap:wrap;gap:8px;justify-content:center}",
-      ".fdc-overlay{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);z-index:99999;align-items:center;justify-content:center}",
-      ".fdc-overlay.ativo{display:flex}",
-      ".fdc-modal{background:#fff;border-radius:12px;width:90%;max-width:620px;overflow:hidden;max-height:90vh;overflow-y:auto}",
-      ".fdc-modal-header{padding:14px 18px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:1}",
-      ".fdc-modal-header h4{font-size:15px;font-weight:600;color:#333;margin:0}",
-      ".fdc-modal-fechar{background:none;border:none;font-size:22px;color:#999;cursor:pointer;line-height:1}",
-      ".fdc-modal-body{display:grid;grid-template-columns:1fr 1fr;min-height:300px}",
-      "@media(max-width:520px){.fdc-modal-body{grid-template-columns:1fr}.fdc-per-lado{border-left:none!important;border-top:1px solid #eee}}",
-      ".fdc-cal-lado{padding:14px}",
-      ".fdc-per-lado{padding:14px;border-left:1px solid #eee}",
-      ".fdc-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}",
-      ".fdc-cal-nav span{font-size:13px;font-weight:600;color:#333}",
-      ".fdc-cal-nav button{background:none;border:1px solid #ddd;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:15px;color:#666;display:flex;align-items:center;justify-content:center}",
-      ".fdc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}",
-      ".fdc-dow{font-size:10px;color:#aaa;text-align:center;padding:2px 0}",
-      ".fdc-day{font-size:12px;text-align:center;padding:8px 2px;border-radius:8px;cursor:default;border:1px solid transparent;background:#fff;width:100%;color:#c33}",
-      ".fdc-day.disp{background:#e7f5eb;color:#23663a;border-color:#a9d5b6;cursor:pointer;font-weight:700}",
-      ".fdc-day.disp:hover{background:#d5eddd}",
-      ".fdc-day.sel{background:#a91537;color:#fff;border-color:#a91537;font-weight:800}",
-      ".fdc-day.hj{outline:2px solid #a91537;outline-offset:-2px}",
-      ".fdc-day:not(.disp):not(.sel):not(.hj):not(.namorados-esgotado):not(.namorados-produto):not(.namorados-cep):not(:empty){background:#fdeaea;color:#a72d2d;border-color:#e7a1a1}",
-      ".fdc-day.namorados-esgotado{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}",
-      ".fdc-day.namorados-esgotado:hover{background:#ffcccc}",
-      ".fdc-day.namorados-produto{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}",
-      ".fdc-day.namorados-produto:hover{background:#ffd6d6}",
-      ".fdc-day.namorados-cep{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}",
-      ".fdc-day.namorados-cep:hover{background:#ffcccc}",
-      ".fdc-legenda{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}",
-      ".fdc-leg{display:flex;align-items:center;gap:5px;font-size:10px;color:#777}",
-      ".fdc-leg-dot{width:11px;height:11px;border-radius:3px}",
-      ".fdc-per-titulo{font-size:12px;font-weight:800;color:#555;margin-bottom:10px}",
-      ".fdc-periodo{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid #8fc49e;background:#edf8f1;color:#21613a;border-radius:9px;margin-bottom:8px;cursor:pointer}",
-      ".fdc-periodo:hover{border-color:#4d9a63}",
-      ".fdc-periodo.sel{border-color:#a91537;background:#fff;color:#a91537;box-shadow:0 0 0 2px rgba(169,21,55,.08)}",
-      ".fdc-periodo.bloq{opacity:1;cursor:default;pointer-events:none;background:#fdeaea;border-color:#e7a1a1;color:#a72d2d}",
-      ".fdc-periodo input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0}",
-      ".fdc-per-nome{font-size:13px;font-weight:600;color:#333}",
-      ".fdc-per-hora{font-size:11px;color:#888}",
-      ".fdc-modal-resumo{border-top:1px solid #eee;padding:12px 18px;display:grid;grid-template-columns:1fr 1fr;gap:8px}",
-      ".fdc-modal-res label{font-size:11px;color:#888;margin-bottom:2px;display:block}",
-      ".fdc-modal-res strong{font-size:13px;color:#333}",
-      ".fdc-modal-res small{font-size:11px;color:#aaa;display:block}",
-      ".fdc-btn-conf{width:calc(100% - 36px);margin:0 18px 16px;background:#a91537;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}",
-      ".fdc-btn-conf:disabled{background:#ccc;cursor:default}",
-      ".fdc-btn-conf:not(:disabled):hover{background:#8a1029}",
-      ".fdc-toggle-btn{min-height:48px}",
-      ".fdc-periodo{min-height:48px}",
-      "@media(max-width:520px){.fdc-bloco{padding:16px 14px}.fdc-toggle-btn{font-size:12px;padding:12px 8px}.fdc-day{padding:9px 2px;font-size:11px}.fdc-periodo{padding:12px}.fdc-status-items{gap:5px}}",
+      ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}.fdc-contador{font-size:10px;color:#aaa}.fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:11px;color:#666;cursor:pointer;user-select:none}.fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px}",
+      ".fdc-termo-wrap{border-radius:9px;padding:13px 14px;margin-top:4px;background:#3a3a3a}.fdc-termo-wrap.aceito{background:#72cd41}.fdc-termo-lista{list-style:none;padding:0 4px 0 0;margin:0 0 10px;max-height:145px;overflow-y:auto;scrollbar-width:thin}.fdc-termo-lista li{font-size:11px;color:#fff;line-height:1.55;padding:4px 0 4px 17px;position:relative}.fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.65)}.fdc-termo-check{display:flex;align-items:center;gap:7px;font-size:11px;color:#fff;cursor:pointer;font-weight:700}.fdc-termo-check input{accent-color:#fff;width:14px;height:14px}",
+      ".fdc-v9-side{position:sticky;top:14px}.fdc-v9-summary{background:#fff;border:1px solid #e7e3e0;border-radius:12px;padding:15px}.fdc-v9-summary h3{margin:0 0 12px;font-size:14px}.fdc-v9-summary-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #eee;font-size:11px}.fdc-v9-summary-row:last-child{border-bottom:0}.fdc-v9-summary-row span{color:#777}.fdc-v9-summary-row strong{color:#333;text-align:right}.fdc-v9-check{margin-top:11px;background:#edf7f0;border-radius:8px;padding:10px;font-size:10px;line-height:1.45;color:#275d3c}.fdc-v9-status{margin-top:10px;background:#fafafa;border:1px solid #e8e5e3;border-radius:9px;padding:10px}.fdc-v9-status-title{font-size:11px;font-weight:800;margin-bottom:7px;color:#555}.fdc-status-items{display:flex;flex-wrap:wrap;gap:5px}.fdc-st{font-size:10px;padding:3px 8px;border-radius:20px;background:#efefef;color:#999}.fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
+      ".fdc-box-ok{display:none;background:#72cd41;border-radius:9px;padding:13px;margin-top:10px}.fdc-box-ok-inner{display:flex;align-items:flex-start;gap:10px}.fdc-box-ok-icon{font-size:20px}.fdc-box-ok-txt strong{font-size:13px;color:#fff;display:block;margin-bottom:4px}.fdc-box-ok-txt p{font-size:11px;color:#fff;line-height:1.45;margin:0}",
+      /* Modal: keep existing business logic/IDs, but optimize UX */
+      ".fdc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:99999;align-items:center;justify-content:center}.fdc-overlay.ativo{display:flex}",
+      ".fdc-modal{background:#fff;border-radius:14px;width:min(94%,680px);max-height:92vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.25)}",
+      ".fdc-modal-header{padding:14px 17px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}.fdc-modal-header h4{font-size:15px;font-weight:700;color:#333;margin:0}.fdc-modal-fechar{background:#f3f3f3;border:0;border-radius:50%;width:32px;height:32px;font-size:20px;color:#777;cursor:pointer}",
+      ".fdc-modal-body{display:grid;grid-template-columns:1fr 1fr}.fdc-cal-lado{padding:15px}.fdc-per-lado{padding:15px;border-left:1px solid #eee}.fdc-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.fdc-cal-nav span{font-size:13px;font-weight:700}.fdc-cal-nav button{background:#fff;border:1px solid #ddd;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:17px;color:#666;display:flex;align-items:center;justify-content:center}.fdc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.fdc-dow{font-size:10px;color:#aaa;text-align:center;padding:2px}.fdc-day{font-size:11px;text-align:center;padding:8px 2px;border-radius:8px;border:1px solid #e7a1a1;background:#fdeaea;color:#a72d2d;width:100%;font-weight:600}.fdc-day.disp{background:#e7f5eb;color:#23663a;border-color:#a9d5b6;cursor:pointer;font-weight:800}.fdc-day.disp:hover{background:#d5eddd}.fdc-day.sel{background:#a91537;color:#fff;border-color:#a91537}.fdc-day.hj{outline:2px solid #a91537;outline-offset:-2px}.fdc-day.namorados-esgotado,.fdc-day.namorados-produto,.fdc-day.namorados-cep{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}.fdc-legenda{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}.fdc-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:#777}.fdc-leg-dot{width:11px;height:11px;border-radius:3px}.fdc-per-titulo{font-size:12px;font-weight:800;color:#555;margin-bottom:9px}.fdc-periodo{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1.5px solid #8fc49e;background:#edf8f1;color:#21613a;border-radius:9px;margin-bottom:7px;cursor:pointer;min-height:48px}.fdc-periodo.sel{border-color:#a91537;background:#fff;color:#a91537;box-shadow:0 0 0 2px rgba(169,21,55,.08)}.fdc-periodo.bloq{background:#fdeaea;border-color:#e7a1a1;color:#a72d2d;cursor:default;pointer-events:none}.fdc-periodo input{accent-color:#a91537;width:14px;height:14px}.fdc-per-nome{font-size:12px;font-weight:700;color:#333}.fdc-per-hora{font-size:10px;color:#888}.fdc-modal-resumo{border-top:1px solid #eee;padding:11px 17px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.fdc-modal-res label{font-size:10px;color:#888;margin-bottom:2px;display:block}.fdc-modal-res strong{font-size:12px;color:#333}.fdc-modal-res small{font-size:10px;color:#aaa;display:block}.fdc-btn-conf{width:calc(100% - 34px);margin:0 17px 15px;background:#a91537;color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-btn-conf:disabled{background:#ccc;cursor:default}",
+      ".fdc-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:999999;align-items:center;justify-content:center}.fdc-popup-overlay.ativo{display:flex}.fdc-popup{background:#fff;border-radius:13px;padding:26px 22px;width:90%;max-width:430px;text-align:center}.fdc-popup-icon{font-size:34px;margin-bottom:10px}.fdc-popup h3{font-size:16px;margin:0 0 8px}.fdc-popup p{font-size:12px;color:#666;line-height:1.55}.fdc-popup-btn{background:#a91537;color:#fff;border:0;padding:11px 26px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-popup-btn-sec{background:#5a8966}.fdc-popup-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}",
+      ".fdc-popup-conf{max-width:460px;text-align:left}.fdc-popup-conf h3{text-align:center}.fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:13px 14px;margin-bottom:13px}.fdc-conf-item{display:flex;gap:9px;margin-bottom:11px}.fdc-conf-item:last-child{margin-bottom:0}.fdc-conf-icon{font-size:16px}.fdc-conf-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.fdc-conf-valor{font-size:13px;color:#333;font-weight:700}.fdc-conf-sub{font-size:11px;color:#666}.fdc-conf-msg-txt{font-size:12px;color:#333;font-style:italic;line-height:1.5}.fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:#444}",
+      "@media(max-width:820px){.fdc-v9-layout{grid-template-columns:1fr}.fdc-v9-side{position:static}.fdc-v9-progress{grid-template-columns:repeat(2,1fr)}}",
+      "@media(max-width:560px){.fdc-v9-head{padding:15px 14px}.fdc-v9-head h2{font-size:19px}.fdc-v9-progress{gap:5px}.fdc-v9-step{padding:8px 7px;font-size:10px}.fdc-v9-step .n{width:21px;height:21px}.fdc-v9-card{padding:14px;margin-bottom:10px}.fdc-v9-receber{grid-template-columns:1fr}.fdc-v9-toggle{gap:6px}.fdc-toggle-btn{font-size:11px;padding:11px 7px}.fdc-modal{width:96%;max-height:94vh;border-radius:12px}.fdc-modal-body{grid-template-columns:1fr}.fdc-per-lado{border-left:0;border-top:1px solid #eee}.fdc-cal-lado,.fdc-per-lado{padding:12px}.fdc-day{padding:8px 1px;font-size:10px}.fdc-periodo{min-height:50px;padding:10px}.fdc-modal-resumo{grid-template-columns:1fr}.fdc-v9-summary{padding:13px}}"
     ].join("");
-    var s=document.createElement("style");s.innerHTML=css;document.head.appendChild(s);
+    var s=document.createElement("style");s.id="fdc-v9-css";s.innerHTML=css;document.head.appendChild(s);
   }
-
   function montarBloco(){
     var div=document.createElement("div");
     div.id="fdc-bloco";div.className="fdc-bloco";
     var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
+
     div.innerHTML=[
-      '<div class="fdc-titulo">🌸 Como deseja receber seu pedido?</div>',
-      '<div class="fdc-toggle">',
-        '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
-        '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
-      '</div>',
-      '<div id="fdc-bloco-cep">',
-        '<div class="fdc-sec">CEP de Entrega</div>',
-        '<div class="fdc-campo fdc-cep-wrap">',
-          '<label>Informe o CEP de destino<small>Validaremos se atendemos seu endereço</small></label>',
-          '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
-          '<span id="fdc-cep-status"></span>',
-          '<div id="fdc-cep-aviso" class="fdc-cep-aviso">⚠️ <strong>Atenção:</strong> este CEP não está incluído na nossa área de entrega para o Dia dos Namorados (12/06).</div>',
-          '<div id="fdc-cep-parcial" class="fdc-cep-parcial">',
-            '<span>⚠️ <strong>Atenção:</strong> Neste CEP funciona também o <strong id="fdc-cep-parcial-local">—</strong>, local onde infelizmente não realizamos entregas por dificuldade de acesso. Se a entrega for para outro endereço deste CEP, pode seguir normalmente. Se for para o <span id="fdc-cep-parcial-local2">—</span>, o pedido será cancelado.</span>',
-            '<label class="fdc-cep-parcial-check"><input type="checkbox" id="fdc-cep-parcial-check" onchange="fdcToggleCienteParcial()"/> Estou ciente</label>',
-          '</div>',
+      '<section class="fdc-v9-head">',
+        '<h2>Seu pedido está quase pronto! 🌷</h2>',
+        '<p>Confira os dados abaixo e escolha quando e como deseja receber seu pedido.</p>',
+        '<div class="fdc-v9-progress">',
+          '<div class="fdc-v9-step active"><span class="n">1</span><span>Entrega</span></div>',
+          '<div class="fdc-v9-step"><span class="n">2</span><span>Agendamento</span></div>',
+          '<div class="fdc-v9-step"><span class="n">3</span><span>Personalização</span></div>',
+          '<div class="fdc-v9-step"><span class="n">4</span><span>Revisão</span></div>',
         '</div>',
-      '</div>',
-      '<div id="fdc-bloco-trava" class="fdc-bloco-trava">',
-        '<div class="fdc-sec">Quando receber seu pedido</div>',
-        '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">📅 Escolher data e período</button>',
-        '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
-          '<div class="fdc-resumo-ag-grid">',
-            '<div class="fdc-resumo-ag-item"><label>📅 Data</label><strong id="fdc-res-data">—</strong><span id="fdc-res-diasem"></span></div>',
-            '<div class="fdc-resumo-ag-item"><label>🕐 Período</label><strong id="fdc-res-per">—</strong><span id="fdc-res-hora"></span></div>',
-          '</div>',
-          '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
-        '</div>',
-        '<div id="fdc-bloco-pres">',
-          '<div class="fdc-sec">Quem vai receber?</div>',
-          '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
-          '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
-        '</div>',
-        '<div id="fdc-bloco-pick" style="display:none">',
-          '<div class="fdc-sec">🎀 Pick Decorativa</div>',
-          '<button class="fdc-btn-ag" id="fdc-btn-pick" onclick="fdcAbrirModalPick()" style="border:2px solid #72cd41">🎀 Brinde: Escolha a sua pick decorativa</button>',
-          '<div id="fdc-resumo-pick" style="display:none" class="fdc-resumo-ag">',
-            '<div class="fdc-resumo-ag-grid" style="grid-template-columns:1fr">',
-              '<div class="fdc-resumo-ag-item"><label>🎀 Pick escolhida</label><strong id="fdc-res-pick-cod">—</strong><span id="fdc-res-pick-frase"></span></div>',
+      '</section>',
+
+      '<div class="fdc-v9-layout">',
+        '<div class="fdc-v9-main">',
+
+          '<section class="fdc-v9-card">',
+            '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">📍 Como deseja receber seu pedido?</h3></div>',
+            '<div class="fdc-v9-toggle">',
+              '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
+              '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
             '</div>',
-            '<button class="fdc-btn-alt" onclick="fdcAlterarPick()">Alterar pick</button>',
+            '<div id="fdc-bloco-cep">',
+              '<p class="fdc-v9-cep-title">CEP de entrega</p>',
+              '<div class="fdc-campo fdc-cep-wrap">',
+                '<label>Informe o CEP de destino<small>Validaremos se atendemos seu endereço</small></label>',
+                '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
+                '<span id="fdc-cep-status"></span>',
+                '<div id="fdc-cep-aviso" class="fdc-cep-aviso">⚠️ <strong>Atenção:</strong> este CEP não está incluído na nossa área de entrega para o Dia dos Namorados (12/06).</div>',
+                '<div id="fdc-cep-parcial" class="fdc-cep-parcial">',
+                  '<span>⚠️ <strong>Atenção:</strong> Neste CEP funciona também o <strong id="fdc-cep-parcial-local">—</strong>, local onde infelizmente não realizamos entregas por dificuldade de acesso. Se a entrega for para outro endereço deste CEP, pode seguir normalmente. Se for para o <span id="fdc-cep-parcial-local2">—</span>, o pedido será cancelado.</span>',
+                  '<label class="fdc-cep-parcial-check"><input type="checkbox" id="fdc-cep-parcial-check" onchange="fdcToggleCienteParcial()"/> Estou ciente</label>',
+                '</div>',
+              '</div>',
+            '</div>',
+          '</section>',
+
+          '<section id="fdc-bloco-trava" class="fdc-v9-card fdc-bloco-trava">',
+            '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">📅 Quando receber seu pedido?</h3></div>',
+            '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">Escolher data e período</button>',
+            '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
+              '<div class="fdc-resumo-ag-grid">',
+                '<div class="fdc-resumo-ag-item"><label>📅 Data</label><strong id="fdc-res-data">—</strong><span id="fdc-res-diasem"></span></div>',
+                '<div class="fdc-resumo-ag-item"><label>🕐 Período</label><strong id="fdc-res-per">—</strong><span id="fdc-res-hora"></span></div>',
+              '</div>',
+              '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
+            '</div>',
+
+            '<div id="fdc-bloco-pres" class="fdc-v9-card" style="padding:0;border:0;margin:14px 0 0">',
+              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🎁 Quem vai receber?</h3></div>',
+              '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
+              '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador antes.</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
+            '</div>',
+
+            '<div id="fdc-bloco-pick" style="display:none" class="fdc-v9-card" style="padding:0;border:0">',
+              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🎀 Personalização</h3></div>',
+              '<button class="fdc-btn-ag" id="fdc-btn-pick" onclick="fdcAbrirModalPick()" style="border:1.5px solid #72cd41">Brinde: escolha sua pick decorativa</button>',
+              '<div id="fdc-resumo-pick" style="display:none" class="fdc-resumo-ag">',
+                '<div class="fdc-resumo-ag-grid" style="grid-template-columns:1fr">',
+                  '<div class="fdc-resumo-ag-item"><label>🎀 Pick escolhida</label><strong id="fdc-res-pick-cod">—</strong><span id="fdc-res-pick-frase"></span></div>',
+                '</div>',
+                '<button class="fdc-btn-alt" onclick="fdcAlterarPick()">Alterar pick</button>',
+              '</div>',
+            '</div>',
+
+            '<div class="fdc-v9-card" style="padding:0;border:0;margin-top:16px">',
+              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">💌 Mensagem do cartão</h3></div>',
+              '<div class="fdc-campo">',
+                '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
+                '<div class="fdc-msg-footer">',
+                  '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
+                  '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
+                '</div>',
+              '</div>',
+            '</div>',
+
+            '<div class="fdc-v9-card" style="padding:0;border:0;margin-top:16px">',
+              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🔒 Termos e confirmações</h3></div>',
+              '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
+                '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
+                '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
+              '</div>',
+            '</div>',
+
+            '<div class="fdc-v9-status">',
+              '<div class="fdc-v9-status-title">Checklist do pedido</div>',
+              '<div class="fdc-status-items">',
+                '<div class="fdc-st" id="fdc-st-cep">CEP</div>',
+                '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
+                '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
+                '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
+                '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
+              '</div>',
+            '</div>',
+
+            '<div class="fdc-box-ok" id="fdc-box-ok">',
+              '<div class="fdc-box-ok-inner">',
+                '<div class="fdc-box-ok-icon">✅</div>',
+                '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
+              '</div>',
+            '</div>',
+
+          '</section>',
+        '</div>',
+
+        '<aside class="fdc-v9-side">',
+          '<div class="fdc-v9-summary">',
+            '<h3>Revisão do pedido</h3>',
+            '<div class="fdc-v9-summary-row"><span>Recebimento</span><strong id="fdc-v9-receb">Entrega</strong></div>',
+            '<div class="fdc-v9-summary-row"><span>Agendamento</span><strong id="fdc-v9-ag">Ainda não escolhido</strong></div>',
+            '<div class="fdc-v9-summary-row"><span>Destinatário</span><strong id="fdc-v9-nome">Ainda não preenchido</strong></div>',
+            '<div class="fdc-v9-summary-row"><span>WhatsApp</span><strong id="fdc-v9-tel">Ainda não preenchido</strong></div>',
+            '<div class="fdc-v9-summary-row"><span>Mensagem</span><strong id="fdc-v9-msg">Não preenchida</strong></div>',
+            '<div class="fdc-v9-summary-row"><span>Termos</span><strong id="fdc-v9-termos">Aguardando</strong></div>',
+            '<div class="fdc-v9-check">🔒 <b>Seus dados estão seguros.</b><br>Usamos estas informações para garantir a preparação correta do seu pedido.</div>',
+            '<div style="margin-top:11px;font-size:10px;color:#888;line-height:1.45">Ao concluir, você seguirá para o pagamento.</div>',
           '</div>',
-        '</div>',
-        '<div class="fdc-sec">Mensagem do Cartãozinho</div>',
-        '<div class="fdc-campo">',
-          '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
-          '<div class="fdc-msg-footer">',
-            '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-            '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
-          '</div>',
-        '</div>',
-        '<div class="fdc-sec">Termos</div>',
-        '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
-          '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
-          '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
-        '</div>',
-        '<div class="fdc-status">',
-          '<p>Para finalizar, preencha todos os campos obrigatórios:</p>',
-          '<div class="fdc-status-items">',
-            '<div class="fdc-st" id="fdc-st-cep">CEP</div>',
-            '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
-            '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
-            '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
-            '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
-          '</div>',
-        '</div>',
-        '<div class="fdc-box-ok" id="fdc-box-ok">',
-          '<div class="fdc-box-ok-inner">',
-            '<div class="fdc-box-ok-icon">✅</div>',
-            '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
-          '</div>',
-        '</div>',
-      '</div>',
+        '</aside>',
+      '</div>'
     ].join("");
     return div;
   }
+
 
   function montarPopup(){
     var div=document.createElement("div");
@@ -1298,6 +1246,7 @@
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
     atualizarTrava();
+    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");steps.forEach(function(s){s.classList.remove("active","done");});if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("active");
     salvarSessao();fdcVerificar();
   };
 
@@ -1324,6 +1273,24 @@
     salvarSessao();fdcVerificar();
   };
 
+  function fdcV9AtualizarResumo(){
+    var el=function(id){return document.getElementById(id);};
+    var rb=el("fdc-v9-receb"),ag=el("fdc-v9-ag"),nm=el("fdc-v9-nome"),tel=el("fdc-v9-tel"),msg=el("fdc-v9-msg"),ter=el("fdc-v9-termos");
+    if(rb)rb.textContent=tipo==="entrega"?"Entrega":"Retirada na loja";
+    if(ag){
+      if(dataSel&&periodoSel){
+        var lista=getPeriodosParaDow(dataSel.getDay(),dataSel);
+        var p=lista.find(function(x){return x.id===periodoSel;});
+        ag.textContent=dataSel.toLocaleDateString("pt-BR")+" · "+(p?p.hora:"");
+      }else ag.textContent="Ainda não escolhido";
+    }
+    var n=(el("fdc-nome")||{}).value||"", t=(el("fdc-tel")||{}).value||"", m=(el("fdc-msg")||{}).value||"";
+    if(nm)nm.textContent=n.trim()||"Ainda não preenchido";
+    if(tel)tel.textContent=t.trim()||"Ainda não preenchido";
+    if(msg)msg.textContent=(semMensagem?"Sem mensagem":(m.trim()?m.trim().slice(0,28)+(m.trim().length>28?"…":""):"Não preenchida"));
+    if(ter)ter.textContent=termoAceito?"✓ Aceitos":"Aguardando";
+  }
+
   window.fdcVerificar=function(){
     function st(id,ok){var e=document.getElementById(id);if(e)e.className="fdc-st"+(ok?" ok":"");}
     var tudoOk=agConfirmado&&termoAceito;
@@ -1338,6 +1305,13 @@
     st("fdc-st-ag",agConfirmado);
     st("fdc-st-termo",termoAceito);
     document.getElementById("fdc-box-ok").style.display=tudoOk?"block":"none";
+    fdcV9AtualizarResumo();
+    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");
+    if(tudoOk){
+      steps.forEach(function(s){s.classList.remove("active","done");});
+      if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("done");if(steps[2])steps[2].classList.add("done");if(steps[3])steps[3].classList.add("active");
+    }
+
   };
 
   window.fdcAbrirModal=function(){
@@ -1372,7 +1346,8 @@
     document.getElementById("fdc-res-hora").textContent=p.hora;
     document.getElementById("fdc-btn-ag").style.display="none";
     document.getElementById("fdc-resumo-ag").style.display="block";
-    fdcFecharModal();salvarSessao();fdcVerificar();
+    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");steps.forEach(function(s){s.classList.remove("active","done");});if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("done");if(steps[2])steps[2].classList.add("active");
+fdcFecharModal();salvarSessao();fdcVerificar();
   };
 
   window.fdcAlterar=function(){
