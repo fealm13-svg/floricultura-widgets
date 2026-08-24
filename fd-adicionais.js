@@ -381,6 +381,11 @@
     return null;
   }
 
+  function fdFotoTemEditor10x15(titulo){
+    var t=(titulo||"").toLowerCase().replace(/\s+/g,"");
+    return t.indexOf("10x15")!==-1;
+  }
+
   function fdFotoExtrairQuantidade(texto){
     var t=(texto||"").toLowerCase();
     var m=t.match(/\b(\d+)\s*(?:fotos?|polaroids?)\b/i);
@@ -458,7 +463,7 @@
   function fdFotoAddPendingId(id){var a=fdFotoGetPendingIds();if(a.indexOf(id)===-1)a.push(id);fdFotoSetPendingIds(a);}
 
   function fdFotoEstadoVazio(){
-    return {blob:null,fileName:"",xNorm:0,yNorm:0,scale:1,ins:false,text:"",font:"Dancing Script",fontScale:.75};
+    return {blob:null,fileName:"",xNorm:0,yNorm:0,scale:1,orientation:"vertical",ins:false,text:"",font:"Dancing Script",fontScale:.75};
   }
 
   function fdFotoQuantidadeTotal(tipo,titulo){
@@ -541,9 +546,17 @@
       ".fdp-body{display:grid;grid-template-columns:minmax(300px,1fr) 340px;gap:20px;padding:18px}",
       ".fdp-stagearea{background:#f5f5f5;border-radius:12px;padding:18px;display:flex;justify-content:center;align-items:center;min-height:560px}",
       ".fdp-stage{width:min(380px,72vw);background:#fff;padding:10px 10px 19px;box-shadow:0 10px 28px #0002}",
-      ".fdp-photo{position:relative;aspect-ratio:3/3.5;overflow:hidden;background:#ddd;touch-action:none;user-select:none;cursor:grab}",
-      ".fdp-photo img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none}",
+      ".fdp-photo{position:relative;overflow:hidden;background:#ddd;touch-action:none;user-select:none;cursor:grab}",
+      ".fdp-photo-polaroid{aspect-ratio:3/3.5}",
+      ".fdp-photo-10x15{aspect-ratio:2/3}",
+      ".fdp-photo-10x15.fdp-orient-horizontal{aspect-ratio:3/2}",
+      ".fdp-photo img{position:absolute;left:50%;top:50%;max-width:none;pointer-events:none;user-select:none;transform-origin:center}",
       ".fdp-caption{height:62px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 9px;line-height:1;white-space:nowrap;overflow:visible;width:100%}",
+      ".fdp-orient-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:15px}",
+      ".fdp-orient{border:1px solid #ddd;background:#fff;border-radius:8px;padding:10px 8px;font-weight:800;cursor:pointer;color:#333}",
+      ".fdp-orient small{display:block;font-size:10px;font-weight:400;color:#777;margin-top:3px}",
+      ".fdp-orient.sel{border-color:#a91537;color:#a91537;box-shadow:0 0 0 2px #a9153715}",
+      "#fd-foto-personalizador .fdp-upload .fdp-btn-main{display:inline-flex;align-items:center;justify-content:center;min-width:150px;max-width:100%;white-space:nowrap}",
       ".fdp-lab{font-size:13px;font-weight:800;margin:0 0 7px}",
       ".fdp-zoom{display:flex;align-items:center;gap:9px}.fdp-zoom input{flex:1}.fdp-pct{width:48px;text-align:right;font-size:12px;color:#666}",
       ".fdp-text{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 11px}",
@@ -559,58 +572,223 @@
     if(document.getElementById("fd-foto-personalizador"))return;
     fdFotoCSS();
     var box=document.createElement("div");box.id="fd-foto-personalizador";
+    var editor10=fdFotoTemEditor10x15(titulo);
     box.innerHTML=(tipo==="polaroid"?
       '<div class="fdp-title">Personalize suas fotos Polaroid</div><div class="fdp-sub">Ajuste cada foto como quiser antes de adicionar ao carrinho.</div>':
-      '<div class="fdp-title">Envie sua foto</div><div class="fdp-sub">Envie uma foto JPG ou PNG para impressão 10x15.</div>')+
+      (editor10?
+        '<div class="fdp-title">Personalize sua foto 10x15</div><div class="fdp-sub">Escolha a orientação e ajuste o enquadramento antes de adicionar ao carrinho.</div>':
+        '<div class="fdp-title">Envie sua foto</div><div class="fdp-sub">Envie uma foto JPG ou PNG para este produto.</div>'))+
       '<div class="fdp-grid" id="fdp-grid"></div>';
     var anchor=document.querySelector(".produto-comprar, .acao-produto, .acoes-produto, .info-principal-produto")||document.querySelector(".produto")||document.querySelector("main");
     if(anchor)anchor.parentNode.insertBefore(box,anchor);
   }
 
-  function fdFotoAbrirEditor(state,index,onApply,onCancel){
-    var overlay=document.createElement("div");overlay.className="fdp-overlay open";overlay.id="fdp-editor-overlay";
-    overlay.innerHTML='<div class="fdp-editor"><div class="fdp-head"><span>Ajuste da Foto '+index+'</span><button type="button" id="fdp-close" class="fdp-btn">×</button></div>'+
-      '<div class="fdp-body"><div class="fdp-stagearea"><div><div class="fdp-stage"><div class="fdp-photo" id="fdp-stage"><img id="fdp-stage-img"></div><div class="fdp-caption" id="fdp-caption"></div></div><div class="fdp-small" style="text-align:center;margin-top:8px">Arraste com mouse ou dedo. No celular, use dois dedos para zoom.</div></div></div>'+
-      '<div><div style="background:#faf5f7;border-radius:9px;padding:11px;font-size:12px;line-height:1.5;color:#555;margin-bottom:14px"><b>Como ajustar:</b><br>• arraste para posicionar<br>• pinça para zoom<br>• use o controle para ajuste fino</div>'+
-      '<p class="fdp-lab">Zoom da foto</p><div class="fdp-zoom"><input id="fdp-zoom" type="range" min="1" max="3.2" step=".01" value="1"><span class="fdp-pct" id="fdp-zoom-pct">100%</span></div>'+
-      '<div style="height:16px"></div><p class="fdp-lab">Inscrição na borda</p><label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center"><input id="fdp-ins" type="checkbox"> Adicionar inscrição</label>'+
-      '<input id="fdp-text" class="fdp-text" maxlength="20" placeholder="Ex.: FELIZ DIA DAS MÃES" style="display:none;margin-top:8px"><div id="fdp-count" style="display:none;text-align:right;font-size:11px;color:#777">0/20</div>'+
-      '<div id="fdp-font-block" style="display:none;margin-top:15px"><p class="fdp-lab">Fonte</p><div class="fdp-fonts">'+Object.keys(FD_FONTES).map(function(f,idx){return '<button type="button" class="fdp-font '+(idx===0?'sel':'')+'" data-font="'+f+'">'+["Manuscrita","Elegante","Jornal","Clássica","Moderna"][idx]+'</button>';}).join("")+'</div><p class="fdp-lab" style="margin-top:14px">Tamanho da inscrição</p><div class="fdp-zoom"><button type="button" id="fdp-font-minus" class="fdp-btn">−</button><input id="fdp-font-size" type="range" min="50" max="150" value="75"><button type="button" id="fdp-font-plus" class="fdp-btn">+</button><span class="fdp-pct" id="fdp-font-pct">75%</span></div></div></div></div>'+
-      '<div class="fdp-foot"><button type="button" id="fdp-cancel" class="fdp-btn">Cancelar</button><button type="button" id="fdp-apply" class="fdp-btn fdp-btn-main">✓ Confirmar esta foto</button></div></div>';
+  function fdFotoAbrirEditor(state,index,onApply,onCancel,modo){
+    var is10x15=modo==="foto10x15";
+    var overlay=document.createElement("div");
+    overlay.className="fdp-overlay open";
+    overlay.id="fdp-editor-overlay";
+
+    var polaroidFonts =
+      '<div id="fdp-font-block" style="display:none;margin-top:15px"><p class="fdp-lab">Fonte</p><div class="fdp-fonts">'+
+      Object.keys(FD_FONTES).map(function(f,idx){
+        var nomes=["Manuscrita","Elegante","Jornal","Clássica","Moderna"];
+        var familias=["Dancing Script","Cormorant Garamond","Special Elite","Libre Baskerville","Montserrat"];
+        return '<button type="button" class="fdp-font" data-font="'+f+'" style="font-family:\''+familias[idx]+'\',sans-serif;">'+nomes[idx]+'</button>';
+      }).join("")+
+      '</div><p class="fdp-lab" style="margin-top:14px">Tamanho da inscrição</p>'+
+      '<div class="fdp-zoom"><button type="button" id="fdp-font-minus" class="fdp-btn">−</button>'+
+      '<input id="fdp-font-size" type="range" min="50" max="150" value="75">'+
+      '<button type="button" id="fdp-font-plus" class="fdp-btn">+</button>'+
+      '<span class="fdp-pct" id="fdp-font-pct">75%</span></div></div>';
+
+    var controls10 =
+      '<p class="fdp-lab">Orientação da impressão</p>'+
+      '<div class="fdp-orient-grid">'+
+      '<button type="button" class="fdp-orient sel" data-orient="vertical">Vertical<small>10 × 15 cm</small></button>'+
+      '<button type="button" class="fdp-orient" data-orient="horizontal">Horizontal<small>15 × 10 cm</small></button>'+
+      '</div>';
+
+    var controlsPol =
+      '<div style="height:16px"></div><p class="fdp-lab">Inscrição na borda</p>'+
+      '<label style="font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center"><input id="fdp-ins" type="checkbox"> Adicionar inscrição</label>'+
+      '<input id="fdp-text" class="fdp-text" maxlength="20" placeholder="Ex.: FELIZ DIA DAS MÃES" style="display:none;margin-top:8px">'+
+      '<div id="fdp-count" style="display:none;text-align:right;font-size:11px;color:#777">0/20</div>'+polaroidFonts;
+
+    overlay.innerHTML =
+      '<div class="fdp-editor">'+
+        '<div class="fdp-head"><span>Ajuste da Foto '+index+'</span><button type="button" id="fdp-close" class="fdp-btn">×</button></div>'+
+        '<div class="fdp-body">'+
+          '<div class="fdp-stagearea"><div>'+
+            '<div class="fdp-stage">'+
+              '<div class="fdp-photo '+(is10x15?'fdp-photo-10x15 fdp-orient-vertical':'fdp-photo-polaroid')+'" id="fdp-stage"><img id="fdp-stage-img"></div>'+
+              (is10x15?'':'<div class="fdp-caption" id="fdp-caption"></div>')+
+            '</div>'+
+            '<div class="fdp-small" style="text-align:center;margin-top:8px">Arraste com mouse ou dedo. No celular, use dois dedos para ampliar ou reduzir.</div>'+
+          '</div></div>'+
+          '<div>'+
+            '<div style="background:#faf5f7;border-radius:9px;padding:11px;font-size:12px;line-height:1.5;color:#555;margin-bottom:14px"><b>Como ajustar:</b><br>• arraste para posicionar<br>• pinça para zoom<br>• use o controle para ajuste fino.</div>'+
+            (is10x15?controls10:controlsPol)+
+            '<p class="fdp-lab" style="margin-top:16px">Zoom da foto</p>'+
+            '<div class="fdp-zoom"><input id="fdp-zoom" type="range" min="1" max="3.2" step=".01" value="1"><span class="fdp-pct" id="fdp-zoom-pct">100%</span></div>'+
+          '</div>'+
+        '</div>'+
+        '<div class="fdp-foot"><button type="button" id="fdp-cancel" class="fdp-btn">Cancelar</button><button type="button" id="fdp-apply" class="fdp-btn fdp-btn-main">✓ Confirmar esta foto</button></div>'+
+      '</div>';
+
     document.body.appendChild(overlay);
 
-    // IMPORTANTE: shallow copy preserva o Blob. JSON.parse(JSON.stringify(...)) destruía o Blob.
     var draft=Object.assign(fdFotoEstadoVazio(),state);
-    var img=overlay.querySelector("#fdp-stage-img"),stage=overlay.querySelector("#fdp-stage"),caption=overlay.querySelector("#fdp-caption");
-    var objectUrl=URL.createObjectURL(state.blob);img.src=objectUrl;
+    if(!draft.orientation)draft.orientation="vertical";
+    var img=overlay.querySelector("#fdp-stage-img");
+    var stage=overlay.querySelector("#fdp-stage");
+    var caption=overlay.querySelector("#fdp-caption");
+    var objectUrl=URL.createObjectURL(state.blob);
+    img.src=objectUrl;
+
     var pts={},drag=null,pinch=null;
-    function fit(){if(!img.naturalWidth)return;var r=Math.max(stage.clientWidth/img.naturalWidth,stage.clientHeight/img.naturalHeight);draft.baseW=img.naturalWidth*r;draft.baseH=img.naturalHeight*r;transform();captionRender();}
-    function transform(){img.style.width=draft.baseW+"px";img.style.height=draft.baseH+"px";img.style.transform='translate(calc(-50% + '+(draft.xNorm||0)*stage.clientWidth+'px),calc(-50% + '+(draft.yNorm||0)*stage.clientHeight+'px)) scale('+(draft.scale||1)+')';overlay.querySelector("#fdp-zoom-pct").textContent=Math.round((draft.scale||1)*100)+"%";}
-    function capSize(){return fdFotoAdaptiveSize(draft.text||"",draft.font,draft.fontScale||.75,caption.clientWidth-18);}
-    function captionRender(){var on=draft.ins,text=draft.text||"";caption.textContent=on?text:"";caption.style.fontFamily='"'+draft.font+'"';caption.style.fontWeight=(FD_FONTES[draft.font]||FD_FONTES["Dancing Script"]).weight;var px=on?capSize():0;caption.style.fontSize=px?px+"px":"0px";draft.captionRatio=px?px/Math.max(1,caption.clientWidth):0;}
-    function setFont(f){draft.font=f;overlay.querySelectorAll(".fdp-font").forEach(function(b){b.classList.toggle("sel",b.dataset.font===f);});captionRender();}
-    overlay.querySelector("#fdp-ins").checked=!!draft.ins;overlay.querySelector("#fdp-text").value=draft.text||"";overlay.querySelector("#fdp-zoom").value=draft.scale||1;overlay.querySelector("#fdp-font-size").value=Math.round((draft.fontScale||.75)*100);overlay.querySelector("#fdp-font-pct").textContent=Math.round((draft.fontScale||.75)*100)+"%";
-    function toggle(){var on=overlay.querySelector("#fdp-ins").checked;draft.ins=on;overlay.querySelector("#fdp-text").style.display=on?"block":"none";overlay.querySelector("#fdp-count").style.display=on?"block":"none";overlay.querySelector("#fdp-font-block").style.display=on?"block":"none";captionRender();}
-    overlay.querySelector("#fdp-ins").addEventListener("change",toggle);
-    overlay.querySelector("#fdp-text").addEventListener("input",function(){draft.text=this.value.slice(0,20);this.value=draft.text;overlay.querySelector("#fdp-count").textContent=draft.text.length+"/20";captionRender();});
-    overlay.querySelectorAll(".fdp-font").forEach(function(b){b.addEventListener("click",function(){setFont(b.dataset.font);});});
-    overlay.querySelector("#fdp-font-size").addEventListener("input",function(){draft.fontScale=parseInt(this.value,10)/100;overlay.querySelector("#fdp-font-pct").textContent=this.value+"%";captionRender();});
-    overlay.querySelector("#fdp-font-minus").addEventListener("click",function(){var el=overlay.querySelector("#fdp-font-size");el.value=Math.max(50,parseInt(el.value,10)-5);el.dispatchEvent(new Event("input"));});
-    overlay.querySelector("#fdp-font-plus").addEventListener("click",function(){var el=overlay.querySelector("#fdp-font-size");el.value=Math.min(150,parseInt(el.value,10)+5);el.dispatchEvent(new Event("input"));});
-    overlay.querySelector("#fdp-zoom").addEventListener("input",function(){draft.scale=parseFloat(this.value);transform();});
-    stage.addEventListener("pointerdown",function(e){pts[e.pointerId]={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId);var ids=Object.keys(pts);if(e.pointerType==="touch"&&ids.length===2){var a=pts[ids[0]],b=pts[ids[1]];pinch={dist:Math.hypot(b.x-a.x,b.y-a.y),scale:draft.scale};drag=null;}else{drag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:draft.xNorm||0,oy:draft.yNorm||0};}});
-    stage.addEventListener("pointermove",function(e){if(pts[e.pointerId])pts[e.pointerId]={x:e.clientX,y:e.clientY};var ids=Object.keys(pts);if(ids.length===2&&pinch){var a=pts[ids[0]],b=pts[ids[1]],dist=Math.hypot(b.x-a.x,b.y-a.y);draft.scale=Math.min(3.2,Math.max(1,pinch.scale*dist/pinch.dist));overlay.querySelector("#fdp-zoom").value=draft.scale;transform();return;}if(drag&&drag.id===e.pointerId){draft.xNorm=(drag.ox||0)+(e.clientX-drag.x)/Math.max(1,stage.clientWidth);draft.yNorm=(drag.oy||0)+(e.clientY-drag.y)/Math.max(1,stage.clientHeight);transform();}});
-    function end(e){delete pts[e.pointerId];if(Object.keys(pts).length<2)pinch=null;if(drag&&drag.id===e.pointerId)drag=null;}stage.addEventListener("pointerup",end);stage.addEventListener("pointercancel",end);
-    stage.addEventListener("wheel",function(e){e.preventDefault();draft.scale=Math.min(3.2,Math.max(1,draft.scale+(e.deltaY<0?.08:-.08)));overlay.querySelector("#fdp-zoom").value=draft.scale;transform();},{passive:false});
-    function closeEditor(accepted){URL.revokeObjectURL(objectUrl);overlay.remove();if(accepted)onApply(draft);else if(onCancel)onCancel();}
+
+    function setOrientation(){
+      if(!is10x15)return;
+      overlay.querySelectorAll(".fdp-orient").forEach(function(b){
+        b.classList.toggle("sel",b.dataset.orient===draft.orientation);
+      });
+      stage.classList.toggle("fdp-orient-horizontal",draft.orientation==="horizontal");
+      stage.classList.toggle("fdp-orient-vertical",draft.orientation!=="horizontal");
+      stage.style.aspectRatio=draft.orientation==="horizontal"?"3/2":"2/3";
+      setTimeout(fit,30);
+    }
+    function fit(){
+      if(!img.naturalWidth)return;
+      var r=Math.max(stage.clientWidth/img.naturalWidth,stage.clientHeight/img.naturalHeight);
+      draft.baseW=img.naturalWidth*r;draft.baseH=img.naturalHeight*r;
+      transform();
+      if(caption)captionRender();
+    }
+    function transform(){
+      img.style.width=draft.baseW+"px";img.style.height=draft.baseH+"px";
+      img.style.transform='translate(calc(-50% + '+(draft.xNorm||0)*stage.clientWidth+'px),calc(-50% + '+(draft.yNorm||0)*stage.clientHeight+'px)) scale('+(draft.scale||1)+')';
+      overlay.querySelector("#fdp-zoom-pct").textContent=Math.round((draft.scale||1)*100)+"%";
+    }
+    function capSize(){return fdFotoAdaptiveSize(draft.text||"",draft.font,draft.fontScale||.75,(caption?.clientWidth||300)-18);}
+    function captionRender(){
+      if(!caption)return;
+      var on=draft.ins,text=draft.text||"";
+      caption.textContent=on?text:"";
+      caption.style.fontFamily='"'+draft.font+'"';
+      caption.style.fontWeight=(FD_FONTES[draft.font]||FD_FONTES["Dancing Script"]).weight;
+      var px=on?capSize():0;
+      caption.style.fontSize=px?px+"px":"0px";
+      draft.captionRatio=px?px/Math.max(1,caption.clientWidth):0;
+    }
+
+    if(is10x15){
+      overlay.querySelectorAll(".fdp-orient").forEach(function(b){
+        b.addEventListener("click",function(){
+          draft.orientation=b.dataset.orient;
+          setOrientation();
+        });
+      });
+    }else{
+      overlay.querySelector("#fdp-ins").checked=!!draft.ins;
+      overlay.querySelector("#fdp-text").value=draft.text||"";
+      overlay.querySelector("#fdp-font-size").value=Math.round((draft.fontScale||.75)*100);
+      overlay.querySelector("#fdp-font-pct").textContent=Math.round((draft.fontScale||.75)*100)+"%";
+
+      function toggle(){
+        var on=overlay.querySelector("#fdp-ins").checked;
+        draft.ins=on;
+        overlay.querySelector("#fdp-text").style.display=on?"block":"none";
+        overlay.querySelector("#fdp-count").style.display=on?"block":"none";
+        overlay.querySelector("#fdp-font-block").style.display=on?"block":"none";
+        captionRender();
+      }
+      overlay.querySelector("#fdp-ins").addEventListener("change",toggle);
+      overlay.querySelector("#fdp-text").addEventListener("input",function(){
+        draft.text=this.value.slice(0,20);this.value=draft.text;
+        overlay.querySelector("#fdp-count").textContent=draft.text.length+"/20";
+        captionRender();
+      });
+      overlay.querySelectorAll(".fdp-font").forEach(function(b){
+        b.addEventListener("click",async function(){
+          draft.font=b.dataset.font;
+          overlay.querySelectorAll(".fdp-font").forEach(function(x){x.classList.toggle("sel",x===b);});
+          await fdFotoCarregarFonte(draft.font);
+          captionRender();
+        });
+      });
+      overlay.querySelector("#fdp-font-size").addEventListener("input",function(){
+        draft.fontScale=parseInt(this.value,10)/100;
+        overlay.querySelector("#fdp-font-pct").textContent=this.value+"%";
+        captionRender();
+      });
+      overlay.querySelector("#fdp-font-minus").addEventListener("click",function(){
+        var el=overlay.querySelector("#fdp-font-size");el.value=Math.max(50,parseInt(el.value,10)-5);el.dispatchEvent(new Event("input"));
+      });
+      overlay.querySelector("#fdp-font-plus").addEventListener("click",function(){
+        var el=overlay.querySelector("#fdp-font-size");el.value=Math.min(150,parseInt(el.value,10)+5);el.dispatchEvent(new Event("input"));
+      });
+      toggle();
+    }
+
+    overlay.querySelector("#fdp-zoom").addEventListener("input",function(){
+      draft.scale=parseFloat(this.value);transform();
+    });
+
+    stage.addEventListener("pointerdown",function(e){
+      pts[e.pointerId]={x:e.clientX,y:e.clientY};stage.setPointerCapture(e.pointerId);
+      var ids=Object.keys(pts);
+      if(e.pointerType==="touch"&&ids.length===2){
+        var a=pts[ids[0]],b=pts[ids[1]];
+        pinch={dist:Math.hypot(b.x-a.x,b.y-a.y),scale:draft.scale};
+        drag=null;
+      }else{
+        drag={id:e.pointerId,x:e.clientX,y:e.clientY,ox:draft.xNorm||0,oy:draft.yNorm||0};
+      }
+    });
+    stage.addEventListener("pointermove",function(e){
+      if(pts[e.pointerId])pts[e.pointerId]={x:e.clientX,y:e.clientY};
+      var ids=Object.keys(pts);
+      if(ids.length===2&&pinch){
+        var a=pts[ids[0]],b=pts[ids[1]],dist=Math.hypot(b.x-a.x,b.y-a.y);
+        draft.scale=Math.min(3.2,Math.max(1,pinch.scale*dist/pinch.dist));
+        overlay.querySelector("#fdp-zoom").value=draft.scale;transform();return;
+      }
+      if(drag&&drag.id===e.pointerId){
+        draft.xNorm=(drag.ox||0)+(e.clientX-drag.x)/Math.max(1,stage.clientWidth);
+        draft.yNorm=(drag.oy||0)+(e.clientY-drag.y)/Math.max(1,stage.clientHeight);
+        transform();
+      }
+    });
+    function end(e){
+      delete pts[e.pointerId];
+      if(Object.keys(pts).length<2)pinch=null;
+      if(drag&&drag.id===e.pointerId)drag=null;
+    }
+    stage.addEventListener("pointerup",end);
+    stage.addEventListener("pointercancel",end);
+    stage.addEventListener("wheel",function(e){
+      e.preventDefault();
+      draft.scale=Math.min(3.2,Math.max(1,draft.scale+(e.deltaY<0?.08:-.08)));
+      overlay.querySelector("#fdp-zoom").value=draft.scale;transform();
+    },{passive:false});
+
+    function closeEditor(accepted){
+      URL.revokeObjectURL(objectUrl);overlay.remove();
+      if(accepted)onApply(draft);else if(onCancel)onCancel();
+    }
     overlay.querySelector("#fdp-close").onclick=overlay.querySelector("#fdp-cancel").onclick=function(){closeEditor(false);};
     overlay.querySelector("#fdp-apply").onclick=function(){closeEditor(true);};
-    toggle();setTimeout(fit,80);
+
+    setOrientation();
+    if(!is10x15)fdFotoCarregarFonte(draft.font).then(function(){captionRender();});
+    setTimeout(fit,80);
   }
+
 
   function fdFotoIniciarPersonalizador(){
     if(FD_FOTO_MODULE_READY)return;
-    var titulo=fdFotoTitulo(),tipo=fdFotoTipo(titulo);if(!tipo)return;
+    var titulo=fdFotoTitulo(),tipo=fdFotoTipo(titulo),editor10x15=fdFotoTemEditor10x15(titulo);if(!tipo)return;
     FD_FOTO_MODULE_READY=true;
     fdFotoCriarUI(titulo,tipo);
     var states=[];
@@ -625,13 +803,13 @@
       if(!selected)return;
       if(s.blob){
         selected.style.display="block";add.style.display="none";name.textContent=s.fileName||"Foto selecionada";status.textContent="✓ pronta";
-        if(tipo==="foto10x15"){
-          if(edit)edit.style.display="none";
-          if(rem)rem.textContent="Trocar foto";
-          mini.style.display="block";mini.innerHTML="<div style=\"font-size:11px;color:#666;margin-bottom:4px\">Prévia</div><img src=\""+URL.createObjectURL(s.blob)+"\">";
+        var usaEditor=(tipo==="polaroid" || editor10x15);
+        if(edit)edit.style.display=usaEditor?"inline-block":"none";
+        if(rem)rem.textContent="Trocar foto";
+        if(!usaEditor){
+          mini.style.display="block";
+          mini.innerHTML='<div style="font-size:11px;color:#666;margin-bottom:4px">Prévia</div><img src="'+URL.createObjectURL(s.blob)+'">';
         }else{
-          if(edit)edit.style.display="inline-block";
-          if(rem)rem.textContent="Trocar foto";
           mini.style.display="none";
         }
       }else{
@@ -648,9 +826,9 @@
           if(!/^image\/(jpeg|png)$/.test(f.type)){alert("Escolha uma imagem JPG ou PNG.");return;}
           if(f.size>10*1024*1024){alert("A imagem deve ter no máximo 10 MB.");return;}
           var s=states[idx-1]=fdFotoEstadoVazio();s.blob=f;s.fileName=f.name;refresh(idx);
-          if(tipo==="polaroid")edit.click();
+          if(tipo==="polaroid" || editor10x15)edit.click();
         };
-        if(edit)edit.onclick=function(){if(states[idx-1]&&states[idx-1].blob&&tipo==="polaroid")fdFotoAbrirEditor(states[idx-1],idx,function(d){states[idx-1]=d;refresh(idx);},function(){});};
+        if(edit)edit.onclick=function(){if(states[idx-1]&&states[idx-1].blob&&(tipo==="polaroid" || editor10x15))fdFotoAbrirEditor(states[idx-1],idx,function(d){states[idx-1]=d;refresh(idx);},function(){},editor10x15?"foto10x15":"polaroid");};
         if(rem)rem.onclick=function(){input.click();};
         refresh(idx);
       })(i);
@@ -665,20 +843,51 @@
           '<div class="fdp-upload"><input id="fdp-file-'+i+'" type="file" accept="image/jpeg,image/png">'+
           '<button type="button" class="fdp-btn fdp-btn-main" id="fdp-add-'+i+'">Escolher foto</button><div class="fdp-small" style="margin-top:7px">JPG ou PNG • até 10 MB</div>'+
           '<div id="fdp-selected-'+i+'" style="display:none;margin-top:10px"><div class="fdp-file" id="fdp-name-'+i+'"></div><div class="fdp-actions">'+
-          (tipo==="polaroid"?'<button type="button" class="fdp-btn" id="fdp-edit-'+i+'">Ajustar foto</button>':'')+
+          ((tipo==="polaroid" || editor10x15)?'<button type="button" class="fdp-btn" id="fdp-edit-'+i+'">Ajustar foto</button>':'')+
           '<button type="button" class="fdp-btn" id="fdp-remove-'+i+'">Trocar foto</button></div></div><div class="fdp-mini" id="fdp-mini-'+i+'"></div></div></div>';
         grid.appendChild(item);
       }
       bindCardEvents();
     }
     function todosProntos(){for(var i=0;i<states.length;i++)if(!states[i].blob)return false;return true;}
+
+    function fdFotoGerar10x15Final(s){
+      return new Promise(function(resolve,reject){
+        if(!s||!s.blob){reject(new Error("Foto não encontrada."));return;}
+        var W=s.orientation==="horizontal"?1772:1181;
+        var H=s.orientation==="horizontal"?1181:1772;
+        var c=document.createElement("canvas");c.width=W;c.height=H;
+        var ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+        var url=URL.createObjectURL(s.blob),img=new Image();
+        img.onload=function(){
+          try{
+            var cover=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+            var dw=img.naturalWidth*cover*(s.scale||1);
+            var dh=img.naturalHeight*cover*(s.scale||1);
+            var dx=W/2+(s.xNorm||0)*W-dw/2;
+            var dy=H/2+(s.yNorm||0)*H-dh/2;
+            ctx.save();ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();ctx.drawImage(img,dx,dy,dw,dh);ctx.restore();
+            URL.revokeObjectURL(url);
+            c.toBlob(function(blob){blob?resolve(blob):reject(new Error("Falha ao gerar a foto 10x15."));},"image/jpeg",0.95);
+          }catch(e){URL.revokeObjectURL(url);reject(e);}
+        };
+        img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("Falha ao carregar a foto."));};
+        img.src=url;
+      });
+    }
+
     function gravarNoDB(){
       var protocol=fdFotoGerarProtocolo(),group="fdg-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),perUnit=(tipo==="polaroid"?fdFotoQuantidadePorUnidade(titulo):1),promises=[];
       try{sessionStorage.setItem("fd_fotos_grupo_atual",group);}catch(e){}
       states.forEach(function(s,idx){
         var id=group+"-"+(idx+1);
-        var record={id:id,protocolo:protocol,produto:titulo,tipo:tipo,unidade:Math.floor(idx/perUnit)+1,foto:(idx%perUnit)+1,blob:s.blob,fileName:s.fileName||"foto",xNorm:s.xNorm||0,yNorm:s.yNorm||0,scale:s.scale||1,ins:!!s.ins,text:s.text||"",font:s.font||"Dancing Script",fontScale:s.fontScale||.75,captionRatio:s.captionRatio||0,createdAt:Date.now(),ttl:Date.now()+6*60*60*1000};
-        promises.push(fdFotoDBPut(record).then(function(){fdFotoAddPendingId(id);}));
+        var recordBase={id:id,protocolo:protocol,produto:titulo,tipo:tipo,unidade:Math.floor(idx/perUnit)+1,foto:(idx%perUnit)+1,blob:s.blob,fileName:s.fileName||"foto",xNorm:s.xNorm||0,yNorm:s.yNorm||0,scale:s.scale||1,orientation:s.orientation||"vertical",ins:!!s.ins,text:s.text||"",font:s.font||"Dancing Script",fontScale:s.fontScale||.75,captionRatio:s.captionRatio||0,createdAt:Date.now(),ttl:Date.now()+6*60*60*1000};
+        var p=(editor10x15?fdFotoGerar10x15Final(s).then(function(finalBlob){
+          recordBase.blob=finalBlob;
+          recordBase.fileName=(s.fileName||"foto").replace(/\.[^.]+$/,"")+".jpg";
+          return recordBase;
+        }):Promise.resolve(recordBase));
+        promises.push(p.then(function(record){return fdFotoDBPut(record);}).then(function(){fdFotoAddPendingId(id);}));
       });
       return Promise.all(promises);
     }
