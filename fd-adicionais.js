@@ -465,9 +465,43 @@
     return tipo==="polaroid" ? fdFotoQuantidadePorUnidade(titulo)*fdFotoQuantidadeProduto() : fdFotoQuantidadeProduto();
   }
 
-  function fdFotoCarregarFonte(font){
-    if(document.fonts&&document.fonts.load)return document.fonts.load("600 120px \""+font+"\"").catch(function(){});
-    return Promise.resolve();
+    var FD_FONT_CSS_ID="fd-foto-google-fonts";
+  function fdFotoGarantirFontes(){
+    if(!document.getElementById(FD_FONT_CSS_ID)){
+      var l=document.createElement("link");
+      l.id=FD_FONT_CSS_ID;
+      l.rel="stylesheet";
+      l.href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&family=Dancing+Script:wght@500;600;700&family=Libre+Baskerville:wght@400;700&family=Montserrat:wght@500;600&family=Special+Elite&display=swap";
+      document.head.appendChild(l);
+    }
+    return new Promise(function(resolve){
+      var tentativas=0;
+      function done(){
+        if(document.fonts&&document.fonts.ready){
+          document.fonts.ready.then(function(){resolve();}).catch(function(){resolve();});
+        }else{
+          resolve();
+        }
+      }
+      (function check(){
+        if(document.fonts && document.fonts.check('20px "Dancing Script"')){
+          done();
+          return;
+        }
+        tentativas++;
+        if(tentativas>=30){done();return;}
+        setTimeout(check,100);
+      })();
+    });
+  }
+
+  async function fdFotoCarregarFonte(font){
+    await fdFotoGarantirFontes();
+    if(document.fonts&&document.fonts.load){
+      try{
+        await document.fonts.load("600 120px \"" + font + "\"");
+      }catch(e){}
+    }
   }
 
   function fdFotoAdaptiveSize(text,font,scale,maxWidth){
@@ -735,4 +769,5 @@
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
+  fdFotoGarantirFontes();
 })();
