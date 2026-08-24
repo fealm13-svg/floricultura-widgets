@@ -389,7 +389,7 @@
     if(m)return Math.max(1,Math.min(12,parseInt(m[1],10)));
     var words=Object.keys(FD_NUMEROS_PT);
     for(var i=0;i<words.length;i++){
-      var re=new RegExp("\\b"+words[i]+"\s*(?:fotos?|polaroids?)\\b","i");
+      var re=new RegExp("\\b"+words[i]+"\\s*(?:fotos?|polaroids?)\\b","i");
       if(re.test(t))return FD_NUMEROS_PT[words[i]];
     }
     return 1;
