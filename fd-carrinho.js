@@ -1719,9 +1719,14 @@
   function fdCheckoutPolaroid(item){return new Promise(async function(resolve,reject){try{var W=1772,H=2362,c=document.createElement("canvas");c.width=W;c.height=H;var ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);var side=116,pw=W-side*2,ph=Math.round(pw*(3.5/3)),px=side,py=116,url=URL.createObjectURL(item.blob),img=new Image();img.onload=async function(){try{var cover=Math.max(pw/img.naturalWidth,ph/img.naturalHeight),dw=img.naturalWidth*cover*(item.scale||1),dh=img.naturalHeight*cover*(item.scale||1),dx=W/2+(item.xNorm||0)*pw-dw/2,dy=py+ph/2+(item.yNorm||0)*ph-dh/2;ctx.save();ctx.beginPath();ctx.rect(px,py,pw,ph);ctx.clip();ctx.drawImage(img,dx,dy,dw,dh);ctx.restore();if(item.ins&&item.text&&item.text.trim()){await fdCheckoutFontReady(item.font);var F=fdCheckoutFonts(),size=fdCheckoutSize(item.text.trim(),item.font,item.fontScale||.75,W-220,item.captionRatio||0);ctx.fillStyle="#222";ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=(F[item.font]||F["Dancing Script"]).weight+" "+size+'px "'+item.font+'"';var top=py+ph;ctx.fillText(item.text.trim(),W/2,top+(H-top)/2);}URL.revokeObjectURL(url);c.toBlob(function(blob){blob?resolve(blob):reject(new Error("Falha ao gerar a Polaroid."));},"image/png");}catch(e){URL.revokeObjectURL(url);reject(e);}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("Falha ao carregar a foto."));};img.src=url;}catch(e){reject(e);}});}
   function fdCheckoutUpload(item,blob,index,total,btn){
     var fd=new FormData(),protocol=fdCheckoutProtocol();
-    var safe=(item.produto||"produto").replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase();
-    var ctxProduto=String(item.produto||"").replace(/[|=\r\n]/g," ").slice(0,140);
-    var context="protocolo="+protocol+"|produto="+ctxProduto+"|tipo="+(item.tipo||"")+"|unidade="+(item.unidade||1)+"|foto="+(item.foto||index);
+    var safe=(item.produto||"produto").normalize?String(item.produto||"produto").normalize("NFD").replace(/[\u0300-\u036f]/g,""):String(item.produto||"produto");
+    safe=safe.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase();
+
+    // Context mínimo e seguro para o primeiro teste:
+    // o protocolo é a chave de ligação com o pedido.
+    // O produto/unidade/foto já ficam também no nome do arquivo.
+    var context="protocolo="+String(protocol).replace(/[|=\\\r\n]/g,"-");
+
     fd.append("file",blob,"fd-"+protocol+"-"+safe+"-u"+item.unidade+"-f"+item.foto+"."+(item.tipo==="polaroid"?"png":"jpg"));
     fd.append("upload_preset",FD_FOTO_PRESET);
     fd.append("context",context);
@@ -1736,8 +1741,8 @@
   }
   function fdNormalizarNomeProduto(nome){
     var s=String(nome||"").toLowerCase().replace(/\u00a0/g," ");
-    try{ s=s.normalize("NFD").replace(/[\\u0300-\\u036f]/g,""); }catch(e){}
-    s=s.replace(/[^a-z0-9]+/g," ").replace(/\\s+/g," ").trim();
+    try{ s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,""); }catch(e){}
+    s=s.replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
     return s;
   }
 
@@ -1757,16 +1762,51 @@
   async function fdCheckoutSelecionarItensDoCarrinho(items){
     var cart=fdLerCarrinho();
     var produtos=cart&&cart.produtos?cart.produtos:[];
-    if(!produtos.length)return items;
-    var usados={};var selecionados=[];
-    produtos.forEach(function(p){
-      var candidatos=items.filter(function(item){return !usados[item.id] && fdFotoNomeCompativel(item.produto,p.nome);}).sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
-      if(!candidatos.length)return;
-      var precisa=1;
-      if(candidatos[0].tipo==="polaroid")precisa=Math.max(1,fdNumeroNomeProduto(p.nome))*Math.max(1,parseInt(p.qtd||1,10));
-      else precisa=Math.max(1,parseInt(p.qtd||1,10));
-      candidatos.slice(0,precisa).forEach(function(item){usados[item.id]=true;selecionados.push(item);});
+    if(!produtos.length)return [];
+
+    var usados={};
+    var selecionados=[];
+
+    // Primeiro identificamos somente os produtos de foto que realmente estão no carrinho.
+    var fotoProdutos=produtos.filter(function(p){
+      var n=fdNormalizarNomeProduto(p.nome);
+      return n.indexOf("foto")!==-1;
     });
+
+    fotoProdutos.forEach(function(p){
+      var nomeCart=fdNormalizarNomeProduto(p.nome);
+      var qtdProduto=Math.max(1,parseInt(p.qtd||1,10));
+
+      var tipoEsperado=nomeCart.indexOf("polaroid")!==-1 ? "polaroid" : "foto10x15";
+      var candidatos=items.filter(function(item){
+        if(usados[item.id] || item.tipo!==tipoEsperado)return false;
+        var nomeItem=fdNormalizarNomeProduto(item.produto);
+
+        // Para o primeiro teste, se existir apenas UM produto daquele tipo
+        // no carrinho, usamos todos os registros daquele tipo do grupo atual.
+        // Isso evita depender de pequenas diferenças no nome exibido pela Loja Integrada.
+        var mesmaFamilia=(
+          fotoProdutos.filter(function(fp){
+            return fdNormalizarNomeProduto(fp.nome).indexOf(tipoEsperado==="polaroid"?"polaroid":"foto")!==-1 &&
+                   (tipoEsperado!=="polaroid" || fdNormalizarNomeProduto(fp.nome).indexOf("polaroid")!==-1);
+          }).length===1
+        );
+
+        return mesmaFamilia || fdFotoNomeCompativel(nomeItem,nomeCart);
+      }).sort(function(a,b){return (b.createdAt||0)-(a.createdAt||0);});
+
+      if(!candidatos.length)return;
+
+      var precisa=tipoEsperado==="polaroid"
+        ? Math.max(1,fdNumeroNomeProduto(p.nome))*qtdProduto
+        : qtdProduto;
+
+      candidatos.slice(0,precisa).forEach(function(item){
+        usados[item.id]=true;
+        selecionados.push(item);
+      });
+    });
+
     return selecionados;
   }
 
@@ -1801,7 +1841,7 @@
       return true;
     }catch(e){
       if(btn)btn.textContent="Tentar novamente";
-      console.error("[FD FOTO] erro no upload:",e);
+      console.error("[FD FOTO] erro no upload:",e); console.error("[FD FOTO] item que falhou:",item);
       alert("Não conseguimos concluir o envio das fotos. Verifique sua conexão e tente novamente.\n\nErro técnico: "+(e&&e.message?e.message:"erro desconhecido"));
       return false;
     }
