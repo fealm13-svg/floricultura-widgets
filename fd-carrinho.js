@@ -1753,10 +1753,25 @@
   }
   function fdNumeroNomeProduto(nome){
     var t=(nome||"").toLowerCase();
-    var m=t.match(/\b(\d+)\s*(?:fotos?|polaroids?)\b/i);if(m)return parseInt(m[1],10)||1;
+
+    // 1) "2 Fotos", "4 Polaroids", etc.
+    var m=t.match(/\b(\d+)\s*(?:fotos?|polaroids?)\b/i);
+    if(m)return parseInt(m[1],10)||1;
+
+    // 2) "2 Unidades", "2 un.", "2 unid." mesmo quando NÃO estão entre parênteses.
+    m=t.match(/(?:^|\s|[-–—(])\s*(\d+)\s*(?:un|unid|unidades?)\.?(?:\s|$|[)])/i);
+    if(m)return parseInt(m[1],10)||1;
+
+    // 3) Números por extenso antes de foto/polaroid.
     var words={uma:1,um:1,duas:2,dois:2,tres:3,três:3,quatro:4,cinco:5,seis:6,sete:7,oito:8,nove:9,dez:10};
-    for(var k in words){if(new RegExp("\\b"+k+"\\s*(?:fotos?|polaroids?)\\b","i").test(t))return words[k];}
-    m=t.match(/\((\d+)\s*(?:un|unid|unidades?)\.?\)/i);if(m)return parseInt(m[1],10)||1;
+    for(var k in words){
+      if(new RegExp("\\b"+k+"\\s*(?:fotos?|polaroids?)\\b","i").test(t))return words[k];
+    }
+
+    // 4) Formato "(2 unidades)".
+    m=t.match(/\((\d+)\s*(?:un|unid|unidades?)\.?\)/i);
+    if(m)return parseInt(m[1],10)||1;
+
     return 1;
   }
   async function fdCheckoutSelecionarItensDoCarrinho(items){
@@ -1797,9 +1812,9 @@
 
       if(!candidatos.length)return;
 
-      var precisa=tipoEsperado==="polaroid"
-        ? Math.max(1,fdNumeroNomeProduto(p.nome))*qtdProduto
-        : qtdProduto;
+      var fotosPorUnidade=tipoEsperado==="polaroid" ? Math.max(1,fdNumeroNomeProduto(p.nome)) : 1;
+      var precisa=fotosPorUnidade*qtdProduto;
+      console.log("[FD FOTO] produto:",p.nome,"→ fotos/unidade:",fotosPorUnidade,"qtd:",qtdProduto,"→ esperado:",precisa);
 
       candidatos.slice(0,precisa).forEach(function(item){
         usados[item.id]=true;
