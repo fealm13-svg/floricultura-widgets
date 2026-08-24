@@ -1699,6 +1699,48 @@
     return "";
   }
 
+
+  // ─────────────────────────────────────────────
+  // MÓDULO FOTOS — upload somente ao clicar em "Continuar para o pagamento"
+  // ─────────────────────────────────────────────
+  var FD_FOTO_DB="fd_fotos_db_v1",FD_FOTO_STORE="personalizacoes",FD_FOTO_CLOUD="ccox0god",FD_FOTO_PRESET="floricultura_personalizados";
+
+  function fdCheckoutDB(){
+    return new Promise(function(resolve,reject){var r=indexedDB.open(FD_FOTO_DB,1);r.onupgradeneeded=function(){if(!r.result.objectStoreNames.contains(FD_FOTO_STORE))r.result.createObjectStore(FD_FOTO_STORE,{keyPath:"id"});};r.onsuccess=function(){resolve(r.result);};r.onerror=function(){reject(r.error);};});
+  }
+  function fdCheckoutGet(ids){return fdCheckoutDB().then(function(db){return new Promise(function(resolve){var tx=db.transaction(FD_FOTO_STORE,"readonly"),st=tx.objectStore(FD_FOTO_STORE),out=[],left=ids.length;if(!left){db.close();resolve(out);return;}ids.forEach(function(id,i){var r=st.get(id);r.onsuccess=function(){out[i]=r.result||null;if(--left===0){db.close();resolve(out);}};r.onerror=function(){if(--left===0){db.close();resolve(out);}};});});});}
+  function fdCheckoutDel(id){return fdCheckoutDB().then(function(db){return new Promise(function(resolve,reject){var tx=db.transaction(FD_FOTO_STORE,"readwrite");tx.objectStore(FD_FOTO_STORE).delete(id);tx.oncomplete=function(){db.close();resolve();};tx.onerror=function(){db.close();reject(tx.error);};});});}
+  function fdCheckoutIds(){try{return JSON.parse(sessionStorage.getItem("fd_fotos_pendentes")||"[]");}catch(e){return []}}
+  function fdCheckoutSetIds(ids){try{sessionStorage.setItem("fd_fotos_pendentes",JSON.stringify(ids));}catch(e){}}
+  function fdCheckoutProtocol(){var p=_protocoloSessao;try{p=p||sessionStorage.getItem("fdc_protocolo");}catch(e){}if(p)return p;var d=new Date();p="FD-"+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");try{sessionStorage.setItem("fdc_protocolo",p);}catch(e){}return p;}
+  function fdCheckoutFontReady(font){if(document.fonts&&document.fonts.load)return document.fonts.load('600 120px "'+font+'"').catch(function(){});return Promise.resolve();}
+  function fdCheckoutFonts(){return {"Dancing Script":{base:120,weight:600},"Cormorant Garamond":{base:110,weight:600},"Special Elite":{base:92,weight:400},"Libre Baskerville":{base:88,weight:700},"Montserrat":{base:90,weight:600}};}
+  function fdCheckoutSize(text,font,scale,maxWidth){var F=fdCheckoutFonts()[font]||fdCheckoutFonts()["Dancing Script"],probe=document.createElement("span");probe.style.position="fixed";probe.style.visibility="hidden";probe.style.whiteSpace="nowrap";probe.style.left="-99999px";probe.style.fontFamily='"'+font+'"';probe.style.fontWeight=F.weight;probe.textContent=text;document.body.appendChild(probe);var size=F.base*(scale||.75);while(size>24){probe.style.fontSize=size+"px";if(probe.getBoundingClientRect().width<=maxWidth)break;size-=1;}document.body.removeChild(probe);return Math.max(24,size);}
+  function fdCheckoutPolaroid(item){return new Promise(async function(resolve,reject){try{var W=1772,H=2362,c=document.createElement("canvas");c.width=W;c.height=H;var ctx=c.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);var side=116,pw=W-side*2,ph=Math.round(pw*(3.5/3)),px=side,py=116,url=URL.createObjectURL(item.blob),img=new Image();img.onload=async function(){try{var cover=Math.max(pw/img.naturalWidth,ph/img.naturalHeight),dw=img.naturalWidth*cover*(item.scale||1),dh=img.naturalHeight*cover*(item.scale||1),dx=W/2+(item.xNorm||0)*pw-dw/2,dy=py+ph/2+(item.yNorm||0)*ph-dh/2;ctx.save();ctx.beginPath();ctx.rect(px,py,pw,ph);ctx.clip();ctx.drawImage(img,dx,dy,dw,dh);ctx.restore();if(item.ins&&item.text&&item.text.trim()){await fdCheckoutFontReady(item.font);var F=fdCheckoutFonts(),size=fdCheckoutSize(item.text.trim(),item.font,item.fontScale||.75,W-220);ctx.fillStyle="#222";ctx.textAlign="center";ctx.textBaseline="middle";ctx.font=(F[item.font]||F["Dancing Script"]).weight+" "+size+'px "'+item.font+'"';var top=py+ph;ctx.fillText(item.text.trim(),W/2,top+(H-top)/2);}URL.revokeObjectURL(url);c.toBlob(function(blob){blob?resolve(blob):reject(new Error("Falha ao gerar a Polaroid."));},"image/png");}catch(e){URL.revokeObjectURL(url);reject(e);}};img.onerror=function(){URL.revokeObjectURL(url);reject(new Error("Falha ao carregar a foto."));};img.src=url;}catch(e){reject(e);}});}
+  function fdCheckoutUpload(item,blob,index,total,btn){var fd=new FormData(),protocol=fdCheckoutProtocol();fd.append("file",blob,"fd-"+protocol+"-"+item.produto.replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-u"+item.unidade+"-f"+item.foto+"."+(item.tipo==="polaroid"?"png":"jpg"));fd.append("upload_preset",FD_FOTO_PRESET);fd.append("context","protocolo="+protocol+"|produto="+(item.produto||"")+"|tipo="+(item.tipo||"")+"|unidade="+(item.unidade||1)+"|foto="+(item.foto||index));if(btn)btn.textContent="Enviando fotos ("+index+"/"+total+")…";return fetch("https://api.cloudinary.com/v1_1/"+FD_FOTO_CLOUD+"/image/upload",{method:"POST",body:fd}).then(function(r){return r.json().then(function(data){if(!r.ok)throw new Error(data&&data.error&&data.error.message||"Falha no upload da foto.");return data;});});}
+  async function enviarFotosAntesDoPagamento(){
+    var ids=fdCheckoutIds();if(!ids.length)return true;
+    var items=await fdCheckoutGet(ids);items=items.filter(Boolean);if(!items.length)return true;
+    var btn=document.getElementById("fdc-conf-btn");var protocolo=fdCheckoutProtocol();
+    try{
+      for(var i=0;i<items.length;i++){
+        var item=items[i];if(item.ttl&&item.ttl<Date.now())continue;
+        var blob=item.tipo==="polaroid"?await fdCheckoutPolaroid(item):item.blob;
+        await fdCheckoutUpload(item,blob,i+1,items.length,btn);
+        await fdCheckoutDel(item.id);
+        ids=ids.filter(function(x){return x!==item.id;});fdCheckoutSetIds(ids);
+      }
+      if(btn)btn.textContent="Continuando para o pagamento…";
+      console.log("[FD FOTO] uploads concluídos para",protocolo);
+      return true;
+    }catch(e){
+      if(btn)btn.textContent="Tentar novamente";
+      console.error("[FD FOTO] erro no upload:",e);
+      alert("Não conseguimos concluir o envio das fotos. Verifique sua conexão e tente novamente.");
+      return false;
+    }
+  }
+
   function mostrarModalConfirmacao(href){
     var bloco=document.getElementById("fdc-conf-bloco");
     // Reusa o protocolo da sessão (se existir), senão gera um novo
@@ -1778,9 +1820,11 @@
     var btn=document.getElementById("fdc-conf-btn");
     btn.disabled=false;
     btn.textContent="Continuar para o pagamento →";
-    btn.onclick=function(){
+    btn.onclick=async function(){
       btn.disabled=true;
-      btn.textContent="Enviando…";
+      btn.textContent="Preparando suas fotos…";
+      var okFotos=await enviarFotosAntesDoPagamento();
+      if(!okFotos){btn.disabled=false;return;}
       finalizarPedidoTracking(); // marca no Google Sheets
       enviarEmail(function(){window.location.href=href;});
     };
