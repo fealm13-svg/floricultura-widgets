@@ -1922,7 +1922,7 @@ fdcFecharModal();salvarSessao();fdcVerificar();
     btn.textContent="Finalizar compra →";
     btn.onclick=async function(){
       btn.disabled=true;
-      btn.textContent="Preparando suas fotos…";
+      btn.textContent="Preparando seu pedido...";
       var okFotos=await enviarFotosAntesDoPagamento();
       if(!okFotos){btn.disabled=false;return;}
       finalizarPedidoTracking(); // marca no Google Sheets
