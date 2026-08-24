@@ -432,6 +432,17 @@
       if(tipo==="entrega")return ENTREGA_NAMORADOS;
       return RETIRADA_NAMORADOS;
     }
+    // Cesta de café — lista própria de períodos (30 min)
+    if(isCestaCafe()){
+      var ehFds=(dow===0||dow===6);
+      if(tipo==="entrega"){
+        // Entrega: seg-sex tem manhãs+tardes; fds só manhãs
+        return ehFds?CESTACAFE_MANHAS.slice():CESTACAFE_MANHAS.concat(CESTACAFE_TARDES);
+      }else{
+        // Retirada: seg-sex tem manhãs+tardes; fds só manhãs
+        return ehFds?CESTACAFE_MANHAS.slice():CESTACAFE_MANHAS.concat(CESTACAFE_TARDES);
+      }
+    }
     if(tipo==="entrega"){
       if(dow===0||dow===6)return ENTREGA_FDS;
       if(dt){
@@ -454,8 +465,41 @@
     return false;
   }
 
+  // Detecta se algum produto do carrinho é uma cesta de café
+  function isCestaCafe(){
+    var itens=document.querySelectorAll(".nome-produto,.product-name,.item-name");
+    for(var i=0;i<itens.length;i++){
+      if(itens[i].innerText&&itens[i].innerText.toLowerCase().indexOf("cesta de café")!==-1)return true;
+    }
+    return false;
+  }
+
+  // Períodos específicos para Cesta de Café (slots de 30 minutos)
+  var CESTACAFE_MANHAS=[
+    {id:"cc_m1",nome:"Manhã I",hora:"8:30 – 9:00",ini:8.5,fim:9},
+    {id:"cc_m2",nome:"Manhã II",hora:"9:00 – 9:30",ini:9,fim:9.5},
+    {id:"cc_m3",nome:"Manhã III",hora:"9:30 – 10:00",ini:9.5,fim:10},
+    {id:"cc_m4",nome:"Manhã IV",hora:"10:00 – 10:30",ini:10,fim:10.5},
+    {id:"cc_m5",nome:"Manhã V",hora:"10:30 – 11:00",ini:10.5,fim:11}
+  ];
+  var CESTACAFE_TARDES=[
+    {id:"cc_t1",nome:"Tarde I",hora:"15:00 – 16:00",ini:15,fim:16},
+    {id:"cc_t2",nome:"Tarde II",hora:"16:00 – 17:00",ini:16,fim:17}
+  ];
+  // Ordem dos IDs para regra de antecedência "a partir de"
+  var CESTACAFE_ORDEM=["cc_m1","cc_m2","cc_m3","cc_m4","cc_m5","cc_t1","cc_t2"];
+
   function periodoMinimoCesta(){
     var h=new Date().getHours()+new Date().getMinutes()/60;
+    // Se for cesta de café, regra específica com novos IDs
+    if(isCestaCafe()){
+      // Após 22h: libera a partir da Manhã IV (10h00)
+      if(h>=22)return "cc_m4";
+      // Entre 18h-22h: libera a partir da Manhã I (8h30)
+      if(h>=18)return "cc_m1";
+      return null;
+    }
+    // Regra original para outras cestas
     if(tipo==="entrega"){
       if(h>=22)return "e13";
       if(h>=18)return "e9";
@@ -546,8 +590,13 @@
         var minPer=periodoMinimoCesta();
         if(minPer){
           var ordem;
-          if(tipo==="entrega")ordem=ordemFuturo;
-          else ordem=ordemRetirada;
+          if(isCestaCafe()){
+            ordem=CESTACAFE_ORDEM;
+          }else if(tipo==="entrega"){
+            ordem=ordemFuturo;
+          }else{
+            ordem=ordemRetirada;
+          }
           var idxMin=ordem.indexOf(minPer);
           var idxP=ordem.indexOf(p.id);
           if(idxMin===-1||idxP===-1)return Object.assign({},p,{ok:true});
@@ -938,7 +987,8 @@
     var divConf=document.createElement("div");
     divConf.id="fdc-popup-conf-overlay";divConf.className="fdc-popup-overlay";
     divConf.innerHTML=[
-      '<div class="fdc-popup fdc-popup-conf">',
+      '<div class="fdc-popup fdc-popup-conf" style="position:relative">',
+        '<button onclick="fdcFecharModalConfirmacao()" aria-label="Fechar" style="position:absolute;top:10px;right:12px;background:#f3f3f3;border:0;border-radius:50%;width:30px;height:30px;font-size:18px;color:#777;cursor:pointer;line-height:1;display:flex;align-items:center;justify-content:center;padding:0">&times;</button>',
         '<div style="text-align:center;margin-bottom:18px">',
           '<div style="font-size:42px;line-height:1;margin-bottom:6px">✅</div>',
           '<h3>Dados registrados com sucesso!</h3>',
@@ -970,6 +1020,7 @@
               '<div class="fdc-leg"><div class="fdc-leg-dot" style="background:#e7f5eb;border:1px solid #a9d5b6"></div>Disponível</div>',
               '<div class="fdc-leg"><div class="fdc-leg-dot" style="background:#fdeaea;border:1px solid #e7a1a1"></div>Indisponível</div>',
             '</div>',
+            '<div style="margin-top:10px;padding:9px 11px;background:#fff8e1;border-left:3px solid #e8a33d;border-radius:5px;font-size:11px;color:#7a5a1f;line-height:1.5">📌 <strong>Importante:</strong> escolha um período em que você tenha certeza de que alguém estará no local para receber.</div>',
           '</div>',
           '<div class="fdc-per-lado">',
             '<div class="fdc-per-titulo" id="fdc-per-titulo">Selecione uma data</div>',
@@ -1153,6 +1204,17 @@
 
   window.fdcFecharPopupBloq=function(){
     document.getElementById("fdc-popup-bloqueio-overlay").classList.remove("ativo");
+  };
+
+  window.fdcFecharModalConfirmacao=function(){
+    var overlay=document.getElementById("fdc-popup-conf-overlay");
+    if(overlay)overlay.classList.remove("ativo");
+    // Restaura o botão "Continuar" caso tenha ficado como "Enviando..."
+    var btn=document.getElementById("fdc-conf-btn");
+    if(btn){
+      btn.disabled=false;
+      btn.textContent="Continuar para o pagamento →";
+    }
   };
 
   window.fdcOptarRetiradaBloq=function(){
