@@ -701,180 +701,148 @@
 
   function injetarCSS(){
     var css=[
-      ".fdc-bloco{background:transparent;border:0;padding:0;margin:20px 0;font-family:inherit;box-shadow:none}",
-      ".fdc-v9-head{background:#fff;border:1px solid #e7e3e0;border-radius:14px;padding:18px 18px 16px;margin-bottom:14px}",
-      ".fdc-v9-head h2{margin:0;color:#a91537;font-size:21px;line-height:1.25}",
-      ".fdc-v9-head p{margin:5px 0 0;color:#777;font-size:12px;line-height:1.45}",
-      ".fdc-v9-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:15px}",
-      ".fdc-v9-step{display:flex;align-items:center;gap:7px;border:1px solid #e7e3e0;background:#fafafa;border-radius:9px;padding:8px 9px;font-size:11px;color:#8a8a8a}",
-      ".fdc-v9-step .n{width:23px;height:23px;border-radius:50%;background:#e9e7e6;display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}",
-      ".fdc-v9-step.done{background:#f4faf6;border-color:#d6e8dc;color:#3d7650}.fdc-v9-step.done .n{background:#3d875a;color:#fff}",
-      ".fdc-v9-step.active{background:#fff5f7;border-color:#dfb7c2;color:#a91537}.fdc-v9-step.active .n{background:#a91537;color:#fff}",
-      ".fdc-v9-layout{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}",
-      ".fdc-v9-card{background:#fff;border:1px solid #e7e3e0;border-radius:12px;padding:16px;margin-bottom:12px}",
-      ".fdc-v9-card-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}",
-      ".fdc-v9-card-title{margin:0;font-size:15px;font-weight:800;color:#2d2d2d}",
-      ".fdc-v9-edit{background:none;border:0;color:#a91537;font-size:11px;font-weight:800;cursor:pointer}",
-      ".fdc-v9-receber{display:grid;grid-template-columns:1fr 1fr;gap:9px}",
-      ".fdc-v9-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 13px}",
-      ".fdc-toggle-btn{min-height:48px;padding:12px 10px;background:#fff;border:1.5px solid #d8d3d0;border-radius:10px;font-size:12px;font-weight:800;cursor:pointer;color:#555;transition:all .2s}",
-      ".fdc-toggle-btn.ativo{background:#5a8966;color:#fff;border-color:#5a8966;box-shadow:0 2px 8px rgba(90,137,102,.18)}",
-      ".fdc-v9-cep-title{font-size:12px;font-weight:800;color:#444;margin:0 0 6px}",
-      ".fdc-campo{margin-bottom:11px}.fdc-campo label{display:block;font-size:12px;font-weight:700;color:#444;margin-bottom:5px}.fdc-campo label small{font-weight:400;color:#888;font-size:10px;display:block;margin-top:2px}",
-      ".fdc-campo input,.fdc-campo textarea{width:100%;box-sizing:border-box;border:1.5px solid #d0cbc8;border-radius:8px;padding:10px 11px;font-size:14px;font-family:inherit;background:#fff;color:#333;outline:none;transition:border-color .2s}.fdc-campo input:focus,.fdc-campo textarea:focus{border-color:#a91537}",
-      ".fdc-campo textarea{resize:vertical;min-height:88px}.fdc-campo textarea:disabled{background:#f5f5f5;color:#aaa}",
-      ".fdc-cep-wrap{position:relative}.fdc-cep-status{display:inline-block;margin-top:5px;font-size:11px;font-weight:600;padding:4px 8px;border-radius:5px}.fdc-cep-status.ok{background:#e8f5f0;color:#0a5c3a}.fdc-cep-status.erro{background:#fde8e8;color:#c0392b}",
-      ".fdc-cep-aviso,.fdc-cep-parcial{display:none;margin-top:7px;padding:8px 10px;border-radius:6px;font-size:11px;line-height:1.45}.fdc-cep-aviso{background:#fff4e0;border-left:3px solid #e8a33d;color:#7a5a1f}.fdc-cep-aviso.ativo{display:block}.fdc-cep-parcial{background:#fff1f0;border-left:3px solid #a91537;color:#6a1220}.fdc-cep-parcial.ativo{display:block}.fdc-cep-parcial-check{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;cursor:pointer;font-weight:600}.fdc-cep-parcial-check input{accent-color:#a91537;width:14px;height:14px}",
-      ".fdc-bloco-trava{position:relative}.fdc-bloco-trava.bloqueado{pointer-events:none;opacity:.48}",
-      ".fdc-sec{font-size:12px;font-weight:800;color:#a91537;margin:15px 0 9px;padding-bottom:6px;border-bottom:1px solid #eee}",
-      ".fdc-btn-ag{width:100%;background:#fff;color:#5a8966;border:1.5px solid #5a8966;padding:11px;border-radius:9px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:9px}.fdc-btn-ag:hover{background:#eef5ef}",
-      ".fdc-resumo-ag{background:#f7fbf8;border:1px solid #d8e7dc;border-radius:9px;padding:11px 12px;margin-bottom:10px}.fdc-resumo-ag-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}.fdc-resumo-ag-item label{font-size:10px;color:#888;display:block;margin-bottom:2px}.fdc-resumo-ag-item strong{font-size:12px;color:#333;display:block}.fdc-resumo-ag-item span{font-size:10px;color:#888}.fdc-btn-alt{background:#fff;border:1px solid #5a8966;color:#5a8966;border-radius:7px;padding:6px 11px;font-size:11px;font-weight:700;cursor:pointer}",
-      ".fdc-pick-item{display:flex;align-items:center;gap:10px;padding:11px 13px;border:1px solid #e8c9a0;border-radius:7px;margin-bottom:7px;cursor:pointer;transition:all .15s}.fdc-pick-item:hover{border-color:#a91537;background:#faf5eb}.fdc-pick-item.sel{border-color:#a91537;background:#fff5e1}.fdc-pick-item input{accent-color:#a91537;width:14px;height:14px;flex-shrink:0}.fdc-pick-cod{font-weight:700;color:#a91537;font-size:12px;font-family:monospace}.fdc-pick-frase{font-size:13px;color:#333}",
-      ".fdc-btn-ag:disabled{background:#aaa;cursor:not-allowed}",
-      ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}.fdc-contador{font-size:10px;color:#aaa}.fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:11px;color:#666;cursor:pointer;user-select:none}.fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px}",
-      ".fdc-termo-wrap{border-radius:9px;padding:13px 14px;margin-top:4px;background:#3a3a3a}.fdc-termo-wrap.aceito{background:#72cd41}.fdc-termo-lista{list-style:none;padding:0 4px 0 0;margin:0 0 10px;max-height:145px;overflow-y:auto;scrollbar-width:thin}.fdc-termo-lista li{font-size:11px;color:#fff;line-height:1.55;padding:4px 0 4px 17px;position:relative}.fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.65)}.fdc-termo-check{display:flex;align-items:center;gap:7px;font-size:11px;color:#fff;cursor:pointer;font-weight:700}.fdc-termo-check input{accent-color:#fff;width:14px;height:14px}",
-      ".fdc-v9-side{position:sticky;top:14px}.fdc-v9-summary{background:#fff;border:1px solid #e7e3e0;border-radius:12px;padding:15px}.fdc-v9-summary h3{margin:0 0 12px;font-size:14px}.fdc-v9-summary-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #eee;font-size:11px}.fdc-v9-summary-row:last-child{border-bottom:0}.fdc-v9-summary-row span{color:#777}.fdc-v9-summary-row strong{color:#333;text-align:right}.fdc-v9-check{margin-top:11px;background:#edf7f0;border-radius:8px;padding:10px;font-size:10px;line-height:1.45;color:#275d3c}.fdc-v9-status{margin-top:10px;background:#fafafa;border:1px solid #e8e5e3;border-radius:9px;padding:10px}.fdc-v9-status-title{font-size:11px;font-weight:800;margin-bottom:7px;color:#555}.fdc-status-items{display:flex;flex-wrap:wrap;gap:5px}.fdc-st{font-size:10px;padding:3px 8px;border-radius:20px;background:#efefef;color:#999}.fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
-      ".fdc-box-ok{display:none;background:#72cd41;border-radius:9px;padding:13px;margin-top:10px}.fdc-box-ok-inner{display:flex;align-items:flex-start;gap:10px}.fdc-box-ok-icon{font-size:20px}.fdc-box-ok-txt strong{font-size:13px;color:#fff;display:block;margin-bottom:4px}.fdc-box-ok-txt p{font-size:11px;color:#fff;line-height:1.45;margin:0}",
-      /* Modal: keep existing business logic/IDs, but optimize UX */
-      ".fdc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:99999;align-items:center;justify-content:center}.fdc-overlay.ativo{display:flex}",
-      ".fdc-modal{background:#fff;border-radius:14px;width:min(94%,680px);max-height:92vh;overflow:auto;box-shadow:0 18px 60px rgba(0,0,0,.25)}",
-      ".fdc-modal-header{padding:14px 17px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}.fdc-modal-header h4{font-size:15px;font-weight:700;color:#333;margin:0}.fdc-modal-fechar{background:#f3f3f3;border:0;border-radius:50%;width:32px;height:32px;font-size:20px;color:#777;cursor:pointer}",
-      ".fdc-modal-body{display:grid;grid-template-columns:1fr 1fr}.fdc-cal-lado{padding:15px}.fdc-per-lado{padding:15px;border-left:1px solid #eee}.fdc-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.fdc-cal-nav span{font-size:13px;font-weight:700}.fdc-cal-nav button{background:#fff;border:1px solid #ddd;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:17px;color:#666;display:flex;align-items:center;justify-content:center}.fdc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.fdc-dow{font-size:10px;color:#aaa;text-align:center;padding:2px}.fdc-day{font-size:11px;text-align:center;padding:8px 2px;border-radius:8px;border:1px solid #e7a1a1;background:#fdeaea;color:#a72d2d;width:100%;font-weight:600}.fdc-day.disp{background:#e7f5eb;color:#23663a;border-color:#a9d5b6;cursor:pointer;font-weight:800}.fdc-day.disp:hover{background:#d5eddd}.fdc-day.sel{background:#a91537;color:#fff;border-color:#a91537}.fdc-day.hj{outline:2px solid #a91537;outline-offset:-2px}.fdc-day.namorados-esgotado,.fdc-day.namorados-produto,.fdc-day.namorados-cep{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}.fdc-legenda{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}.fdc-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:#777}.fdc-leg-dot{width:11px;height:11px;border-radius:3px}.fdc-per-titulo{font-size:12px;font-weight:800;color:#555;margin-bottom:9px}.fdc-periodo{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1.5px solid #8fc49e;background:#edf8f1;color:#21613a;border-radius:9px;margin-bottom:7px;cursor:pointer;min-height:48px}.fdc-periodo.sel{border-color:#a91537;background:#fff;color:#a91537;box-shadow:0 0 0 2px rgba(169,21,55,.08)}.fdc-periodo.bloq{background:#fdeaea;border-color:#e7a1a1;color:#a72d2d;cursor:default;pointer-events:none}.fdc-periodo input{accent-color:#a91537;width:14px;height:14px}.fdc-per-nome{font-size:12px;font-weight:700;color:#333}.fdc-per-hora{font-size:10px;color:#888}.fdc-modal-resumo{border-top:1px solid #eee;padding:11px 17px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.fdc-modal-res label{font-size:10px;color:#888;margin-bottom:2px;display:block}.fdc-modal-res strong{font-size:12px;color:#333}.fdc-modal-res small{font-size:10px;color:#aaa;display:block}.fdc-btn-conf{width:calc(100% - 34px);margin:0 17px 15px;background:#a91537;color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-btn-conf:disabled{background:#ccc;cursor:default}",
-      ".fdc-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:999999;align-items:center;justify-content:center}.fdc-popup-overlay.ativo{display:flex}.fdc-popup{background:#fff;border-radius:13px;padding:26px 22px;width:90%;max-width:430px;text-align:center}.fdc-popup-icon{font-size:34px;margin-bottom:10px}.fdc-popup h3{font-size:16px;margin:0 0 8px}.fdc-popup p{font-size:12px;color:#666;line-height:1.55}.fdc-popup-btn{background:#a91537;color:#fff;border:0;padding:11px 26px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-popup-btn-sec{background:#5a8966}.fdc-popup-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}",
-      ".fdc-popup-conf{max-width:460px;text-align:left}.fdc-popup-conf h3{text-align:center}.fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:13px 14px;margin-bottom:13px}.fdc-conf-item{display:flex;gap:9px;margin-bottom:11px}.fdc-conf-item:last-child{margin-bottom:0}.fdc-conf-icon{font-size:16px}.fdc-conf-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.fdc-conf-valor{font-size:13px;color:#333;font-weight:700}.fdc-conf-sub{font-size:11px;color:#666}.fdc-conf-msg-txt{font-size:12px;color:#333;font-style:italic;line-height:1.5}.fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:#444}",
-      "@media(max-width:820px){.fdc-v9-layout{grid-template-columns:1fr}.fdc-v9-side{position:static}.fdc-v9-progress{grid-template-columns:repeat(2,1fr)}}",
-      "@media(max-width:560px){.fdc-v9-head{padding:15px 14px}.fdc-v9-head h2{font-size:19px}.fdc-v9-progress{gap:5px}.fdc-v9-step{padding:8px 7px;font-size:10px}.fdc-v9-step .n{width:21px;height:21px}.fdc-v9-card{padding:14px;margin-bottom:10px}.fdc-v9-receber{grid-template-columns:1fr}.fdc-v9-toggle{gap:6px}.fdc-toggle-btn{font-size:11px;padding:11px 7px}.fdc-modal{width:96%;max-height:94vh;border-radius:12px}.fdc-modal-body{grid-template-columns:1fr}.fdc-per-lado{border-left:0;border-top:1px solid #eee}.fdc-cal-lado,.fdc-per-lado{padding:12px}.fdc-day{padding:8px 1px;font-size:10px}.fdc-periodo{min-height:50px;padding:10px}.fdc-modal-resumo{grid-template-columns:1fr}.fdc-v9-summary{padding:13px}}"
+      ".fdc-bloco{background:transparent;border:0;padding:0;margin:18px 0;font-family:inherit;box-shadow:none}",
+      ".fdc-v10-head{background:#fff;border:1px solid #e6e2df;border-radius:14px;padding:16px;margin-bottom:11px}",
+      ".fdc-v10-head h2{margin:0;color:#a91537;font-size:20px;line-height:1.25}.fdc-v10-head p{margin:5px 0 0;color:#777;font-size:11px;line-height:1.45}",
+      ".fdc-v10-progress{display:grid;grid-template-columns:repeat(6,1fr);gap:5px;margin-top:13px}.fdc-v10-step{padding:7px 5px;border:1px solid #e6e2df;background:#fafafa;border-radius:8px;color:#8b8b8b;font-size:9px;display:flex;align-items:center;gap:5px}.fdc-v10-num{width:21px;height:21px;border-radius:50%;background:#e8e6e4;display:flex;align-items:center;justify-content:center;font-weight:800;flex:none}.fdc-v10-step.active{border-color:#deb9c5;background:#fff6f8;color:#a91537}.fdc-v10-step.active .fdc-v10-num{background:#a91537;color:#fff}.fdc-v10-step.done{border-color:#d2e7d8;background:#f4faf6;color:#39744f}.fdc-v10-step.done .fdc-v10-num{background:#3d875a;color:#fff}",
+      ".fdc-v10-content{background:#fff;border:1px solid #e6e2df;border-radius:14px;padding:0 16px 17px}",
+      ".fdc-v10-pane{display:none;padding-top:15px}.fdc-v10-pane.active{display:block}.fdc-v10-title{font-size:17px;font-weight:800;margin:0}.fdc-v10-sub{font-size:11px;color:#777;line-height:1.5;margin:5px 0 13px}.fdc-v10-receive{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fdc-v10-receive-btn{background:#fff;border:1.5px solid #d7d2cf;border-radius:10px;padding:13px;text-align:left;cursor:pointer}.fdc-v10-receive-btn strong{display:block;font-size:12px}.fdc-v10-receive-btn span{display:block;font-size:10px;color:#777;margin-top:4px}.fdc-v10-receive-btn.sel{border-color:#3d875a;background:#edf7f0;box-shadow:0 0 0 2px #3d875a12}",
+      ".fdc-v10-cep{margin-top:11px;border:1px solid #ddd8d5;border-radius:9px;padding:12px;background:#fff}.fdc-v10-cep-title{font-size:12px;font-weight:800}.fdc-v10-cep-highlight{font-size:11px;color:#a91537;font-weight:800;margin:3px 0 9px}.fdc-v10-cep-row{display:flex;gap:8px}.fdc-v10-cep-row input{flex:1;min-width:0;border:1.5px solid #d1ccca;border-radius:8px;padding:10px;font-size:14px}.fdc-v10-cep-btn{border:0;border-radius:8px;background:#a91537;color:#fff;padding:10px 14px;font-size:11px;font-weight:800;cursor:pointer}.fdc-v10-cep-msg{display:none;margin-top:8px;padding:8px 9px;border-radius:7px;font-size:10.5px;line-height:1.45}.fdc-v10-cep-msg.ok{display:block;background:#edf7f0;border:1px solid #9fd0ac;color:#2f6c43}.fdc-v10-cep-msg.bad{display:block;background:#fdeaea;border:1px solid #e8a1a1;color:#9d2d2d}",
+      ".fdc-v10-nav{display:flex;justify-content:space-between;gap:8px;margin-top:14px}.fdc-v10-nav button{border-radius:8px;padding:10px 15px;font-size:11px;font-weight:800;cursor:pointer}.fdc-v10-back{background:#fff;border:1px solid #a91537;color:#a91537}.fdc-v10-next{background:#a91537;border:1px solid #a91537;color:#fff}.fdc-v10-next:disabled{background:#d0d0d0;border-color:#d0d0d0;cursor:not-allowed}",
+      ".fdc-v10-calendar{border:1px solid #e0dcda;border-radius:10px;padding:11px}.fdc-v10-cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}.fdc-v10-cal-head strong{font-size:13px}.fdc-v10-cal-nav{width:29px;height:29px;border:1px solid #ddd;background:#fff;border-radius:7px;cursor:pointer}.fdc-v10-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.fdc-v10-cal-dow{font-size:9px;color:#999;text-align:center;padding:3px}.fdc-v10-day{font-size:10px;text-align:center;padding:8px 1px;border-radius:8px;border:1px solid #e7a1a1;background:#fdeaea;color:#a72d2d;font-weight:700;width:100%}.fdc-v10-day.disp{background:#edf7f0;color:#23663a;border-color:#9fd0ac;cursor:pointer;font-weight:800}.fdc-v10-day.sel{background:#a91537;color:#fff;border-color:#a91537}.fdc-v10-day.empty{visibility:hidden;border:0;background:transparent}.fdc-v10-legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:9px;color:#777}.fdc-v10-lg{display:flex;align-items:center;gap:4px}.fdc-v10-sw{width:10px;height:10px;border-radius:3px}.fdc-v10-sw.g{background:#edf7f0;border:1px solid #9fd0ac}.fdc-v10-sw.r{background:#fdeaea;border:1px solid #e7a1a1}.fdc-v10-sw.w{background:#a91537}",
+      ".fdc-v10-datehint{margin-top:9px;background:#fafafa;border:1px solid #ece9e7;padding:9px;border-radius:8px;font-size:10.5px;color:#666;line-height:1.45}.fdc-v10-times-title{font-size:11.5px;font-weight:900;margin:11px 0 7px}.fdc-v10-times{display:grid;gap:7px}.fdc-v10-time{display:flex;align-items:center;gap:9px;border:1.5px solid #9fd0ac;background:#edf7f0;color:#2e6b42;border-radius:9px;padding:10px;cursor:pointer}.fdc-v10-time.sel{border-color:#a91537;background:#fff3f6;color:#a91537}.fdc-v10-time.bloq{border-color:#e7a1a1;background:#fdeaea;color:#9d2d2d;cursor:default}.fdc-v10-mark{width:19px;height:19px;border-radius:50%;border:2px solid #67a877;background:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;flex:none}.fdc-v10-time.bloq .fdc-v10-mark{border:0;background:#b53333;color:#fff}.fdc-v10-time b{display:block;font-size:11.5px}.fdc-v10-time small{display:block;color:#777;font-size:9.5px;margin-top:2px}.fdc-v10-time.sel .fdc-v10-mark{border-color:#a91537;color:#a91537}",
+      ".fdc-v10-person-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fdc-v10-field-label{font-size:11px;font-weight:800;margin-bottom:4px}.fdc-v10-field{width:100%;border:1.5px solid #d1ccca;border-radius:8px;padding:10px;font-size:13px}.fdc-v10-helper{font-size:10px;color:#777;line-height:1.45;margin-top:6px}.fdc-v10-person-card{background:#fafafa;border:1px solid #e9e6e4;border-radius:9px;padding:10px;margin-bottom:8px}",
+      ".fdc-v10-person-title{font-size:12px;font-weight:800;margin-bottom:8px}",
+      ".fdc-v10-person-btn{width:100%;background:#fff;border:1px solid #a91537;color:#a91537;border-radius:8px;padding:9px;font-size:10.5px;font-weight:800;cursor:pointer}",
+      ".fdc-v10-msg textarea{width:100%;min-height:86px;border:1.5px solid #d1ccca;border-radius:8px;padding:10px;font-family:inherit;font-size:13px;resize:vertical}.fdc-v10-msg-foot{display:flex;justify-content:space-between;margin-top:5px;font-size:9.5px;color:#888}",
+      ".fdc-v10-terms{background:#3a3a3a;border-radius:9px;padding:12px}.fdc-v10-terms.aceito{background:#72cd41}.fdc-v10-terms ul{list-style:none;padding:0;margin:0 0 9px;max-height:170px;overflow-y:auto}.fdc-v10-terms li{font-size:10.5px;color:#fff;line-height:1.5;padding:4px 0 4px 16px;position:relative}.fdc-v10-terms li:before{content:'•';position:absolute;left:0;color:#bbb}.fdc-v10-check{display:flex;align-items:center;gap:6px;color:#fff;font-size:10.5px;font-weight:700;cursor:pointer}.fdc-v10-check input{accent-color:#fff}",
+      ".fdc-v10-review{border:1px solid #e4e0de;border-radius:9px;padding:10px}.fdc-v10-review-row{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid #eee;font-size:10.5px}.fdc-v10-review-row:last-child{border-bottom:0}.fdc-v10-review-row span{color:#777}.fdc-v10-review-row strong{text-align:right}.fdc-v10-secure{margin-top:10px;background:#edf7f0;border:1px solid #9fd0ac;border-radius:8px;padding:10px;font-size:10px;color:#2d6841;line-height:1.45}",
+      ".fdc-v10-summary-photo{margin-top:8px;background:#faf8f7;border:1px solid #ebe7e5;border-radius:8px;padding:9px;font-size:10px;color:#666}",
+      ".fdc-v10-status{margin-top:10px;border:1px solid #e4e0de;background:#fafafa;border-radius:8px;padding:9px}.fdc-v10-status-title{font-size:10.5px;font-weight:800;color:#555;margin-bottom:6px}",
+      ".fdc-status-items{display:flex;flex-wrap:wrap;gap:5px}.fdc-st{font-size:9px;padding:3px 7px;border-radius:16px;background:#eee;color:#999}.fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
+      ".fdc-box-ok{display:none;margin-top:10px;background:#72cd41;border-radius:8px;padding:11px}.fdc-box-ok-inner{display:flex;gap:9px}.fdc-box-ok-icon{font-size:18px}.fdc-box-ok-txt strong{font-size:12px;color:#fff}.fdc-box-ok-txt p{font-size:10px;line-height:1.4;color:#fff;margin:3px 0 0}",
+      ".fdc-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:999999;align-items:center;justify-content:center;padding:12px}.fdc-popup-overlay.ativo{display:flex}.fdc-popup{background:#fff;border-radius:13px;padding:24px 20px;width:90%;max-width:430px;text-align:center}.fdc-popup h3{font-size:16px;margin:0 0 7px}.fdc-popup p{font-size:12px;line-height:1.5;color:#666}.fdc-popup-btn{background:#a91537;color:#fff;border:0;padding:10px 20px;border-radius:8px;font-size:12px;font-weight:800;cursor:pointer}.fdc-popup-btn-sec{background:#5a8966}.fdc-popup-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}.fdc-popup-close{position:absolute;right:12px;top:12px;width:30px;height:30px;border:0;background:#f2f2f2;border-radius:50%;font-size:18px;cursor:pointer}.fdc-popup-conf{position:relative;max-width:460px;text-align:left}.fdc-popup-conf h3{text-align:center}.fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:12px;margin-bottom:12px}.fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:10px 11px;font-size:11px;line-height:1.5;color:#444}",
+      /* Keep hidden legacy modal styling/DOM safe. */
+      ".fdc-overlay{display:none!important}.fdc-v10-hidden{display:none!important}",
+      "@media(max-width:700px){.fdc-v10-progress{grid-template-columns:repeat(3,1fr)}.fdc-v10-content{padding:0 12px 15px}}",
+      "@media(max-width:520px){.fdc-v10-head{padding:14px 12px}.fdc-v10-head h2{font-size:18px}.fdc-v10-receive,.fdc-v10-person-grid{grid-template-columns:1fr}.fdc-v10-progress{grid-template-columns:repeat(2,1fr)}.fdc-v10-pane{padding-top:13px}.fdc-v10-cep-row{flex-direction:column}.fdc-v10-cep-btn{width:100%}.fdc-v10-nav{position:sticky;bottom:6px;background:#fff;padding-top:7px;z-index:4}.fdc-v10-day{padding:8px 1px;font-size:9.5px}}"
     ].join("");
-    var s=document.createElement("style");s.id="fdc-v9-css";s.innerHTML=css;document.head.appendChild(s);
+    var s=document.createElement("style");s.id="fdc-v10-css";s.innerHTML=css;document.head.appendChild(s);
   }
+
   function montarBloco(){
     var div=document.createElement("div");
     div.id="fdc-bloco";div.className="fdc-bloco";
     var termoItens=TERMOS.entrega.map(function(t){return '<li>'+t+'</li>';}).join("");
 
     div.innerHTML=[
-      '<section class="fdc-v9-head">',
+      '<div class="fdc-v10-head">',
         '<h2>Seu pedido está quase pronto! 🌷</h2>',
-        '<p>Confira os dados abaixo e escolha quando e como deseja receber seu pedido.</p>',
-        '<div class="fdc-v9-progress">',
-          '<div class="fdc-v9-step active"><span class="n">1</span><span>Entrega</span></div>',
-          '<div class="fdc-v9-step"><span class="n">2</span><span>Agendamento</span></div>',
-          '<div class="fdc-v9-step"><span class="n">3</span><span>Personalização</span></div>',
-          '<div class="fdc-v9-step"><span class="n">4</span><span>Revisão</span></div>',
-        '</div>',
-      '</section>',
+        '<p>Vamos confirmar tudo em algumas etapas rápidas.</p>',
+        '<div class="fdc-v10-progress" id="fdc-v10-progress"></div>',
+      '</div>',
+      '<div class="fdc-v10-content">',
 
-      '<div class="fdc-v9-layout">',
-        '<div class="fdc-v9-main">',
-
-          '<section class="fdc-v9-card">',
-            '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">📍 Como deseja receber seu pedido?</h3></div>',
-            '<div class="fdc-v9-toggle">',
-              '<button class="fdc-toggle-btn ativo" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\')">🚚 Entrega</button>',
-              '<button class="fdc-toggle-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\')">🏪 Retirada na loja</button>',
-            '</div>',
-            '<div id="fdc-bloco-cep">',
-              '<p class="fdc-v9-cep-title">CEP de entrega</p>',
-              '<div class="fdc-campo fdc-cep-wrap">',
-                '<label>Informe o CEP de destino<small>Validaremos se atendemos seu endereço</small></label>',
-                '<input type="text" id="fdc-cep" placeholder="00000-000" maxlength="9" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"/>',
-                '<span id="fdc-cep-status"></span>',
-                '<div id="fdc-cep-aviso" class="fdc-cep-aviso">⚠️ <strong>Atenção:</strong> este CEP não está incluído na nossa área de entrega para o Dia dos Namorados (12/06).</div>',
-                '<div id="fdc-cep-parcial" class="fdc-cep-parcial">',
-                  '<span>⚠️ <strong>Atenção:</strong> Neste CEP funciona também o <strong id="fdc-cep-parcial-local">—</strong>, local onde infelizmente não realizamos entregas por dificuldade de acesso. Se a entrega for para outro endereço deste CEP, pode seguir normalmente. Se for para o <span id="fdc-cep-parcial-local2">—</span>, o pedido será cancelado.</span>',
-                  '<label class="fdc-cep-parcial-check"><input type="checkbox" id="fdc-cep-parcial-check" onchange="fdcToggleCienteParcial()"/> Estou ciente</label>',
-                '</div>',
-              '</div>',
-            '</div>',
-          '</section>',
-
-          '<section id="fdc-bloco-trava" class="fdc-v9-card fdc-bloco-trava">',
-            '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">📅 Quando receber seu pedido?</h3></div>',
-            '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">Escolher data e período</button>',
-            '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
-              '<div class="fdc-resumo-ag-grid">',
-                '<div class="fdc-resumo-ag-item"><label>📅 Data</label><strong id="fdc-res-data">—</strong><span id="fdc-res-diasem"></span></div>',
-                '<div class="fdc-resumo-ag-item"><label>🕐 Período</label><strong id="fdc-res-per">—</strong><span id="fdc-res-hora"></span></div>',
-              '</div>',
-              '<button class="fdc-btn-alt" onclick="fdcAlterar()">Alterar agendamento</button>',
-            '</div>',
-
-            '<div id="fdc-bloco-pres" class="fdc-v9-card" style="padding:0;border:0;margin:14px 0 0">',
-              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🎁 Quem vai receber?</h3></div>',
-              '<div class="fdc-campo"><label>Nome completo de quem vai receber</label><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"/></div>',
-              '<div class="fdc-campo"><label>WhatsApp de quem vai receber<small>Só entramos em contato se não conseguirmos falar com o comprador antes.</small></label><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"/></div>',
-            '</div>',
-
-            '<div id="fdc-bloco-pick" style="display:none" class="fdc-v9-card" style="padding:0;border:0">',
-              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🎀 Personalização</h3></div>',
-              '<button class="fdc-btn-ag" id="fdc-btn-pick" onclick="fdcAbrirModalPick()" style="border:1.5px solid #72cd41">Brinde: escolha sua pick decorativa</button>',
-              '<div id="fdc-resumo-pick" style="display:none" class="fdc-resumo-ag">',
-                '<div class="fdc-resumo-ag-grid" style="grid-template-columns:1fr">',
-                  '<div class="fdc-resumo-ag-item"><label>🎀 Pick escolhida</label><strong id="fdc-res-pick-cod">—</strong><span id="fdc-res-pick-frase"></span></div>',
-                '</div>',
-                '<button class="fdc-btn-alt" onclick="fdcAlterarPick()">Alterar pick</button>',
-              '</div>',
-            '</div>',
-
-            '<div class="fdc-v9-card" style="padding:0;border:0;margin-top:16px">',
-              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">💌 Mensagem do cartão</h3></div>',
-              '<div class="fdc-campo">',
-                '<textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar()"></textarea>',
-                '<div class="fdc-msg-footer">',
-                  '<label class="fdc-sem-msg"><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg()"/> Sem mensagem de cartão</label>',
-                  '<span class="fdc-contador"><span id="fdc-faltam">500</span> caracteres restantes</span>',
-                '</div>',
-              '</div>',
-            '</div>',
-
-            '<div class="fdc-v9-card" style="padding:0;border:0;margin-top:16px">',
-              '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">🔒 Termos e confirmações</h3></div>',
-              '<div class="fdc-termo-wrap" id="fdc-termo-wrap">',
-                '<ul class="fdc-termo-lista" id="fdc-termo-lista">'+termoItens+'</ul>',
-                '<label class="fdc-termo-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"/> Estou ciente dos termos</label>',
-              '</div>',
-            '</div>',
-
-            '<div class="fdc-v9-status">',
-              '<div class="fdc-v9-status-title">Checklist do pedido</div>',
-              '<div class="fdc-status-items">',
-                '<div class="fdc-st" id="fdc-st-cep">CEP</div>',
-                '<div class="fdc-st" id="fdc-st-ag">Agendamento</div>',
-                '<div class="fdc-st" id="fdc-st-nome">Nome</div>',
-                '<div class="fdc-st" id="fdc-st-tel">Telefone</div>',
-                '<div class="fdc-st" id="fdc-st-termo">Termos</div>',
-              '</div>',
-            '</div>',
-
-            '<div class="fdc-box-ok" id="fdc-box-ok">',
-              '<div class="fdc-box-ok-inner">',
-                '<div class="fdc-box-ok-icon">✅</div>',
-                '<div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora avance para a tela de pagamento para preencher o endereço de entrega e finalizar seu pedido.</p></div>',
-              '</div>',
-            '</div>',
-
-          '</section>',
-        '</div>',
-
-        '<aside class="fdc-v9-side">',
-          '<div class="fdc-v9-summary">',
-            '<h3>Revisão do pedido</h3>',
-            '<div class="fdc-v9-summary-row"><span>Recebimento</span><strong id="fdc-v9-receb">Entrega</strong></div>',
-            '<div class="fdc-v9-summary-row"><span>Agendamento</span><strong id="fdc-v9-ag">Ainda não escolhido</strong></div>',
-            '<div class="fdc-v9-summary-row"><span>Destinatário</span><strong id="fdc-v9-nome">Ainda não preenchido</strong></div>',
-            '<div class="fdc-v9-summary-row"><span>WhatsApp</span><strong id="fdc-v9-tel">Ainda não preenchido</strong></div>',
-            '<div class="fdc-v9-summary-row"><span>Mensagem</span><strong id="fdc-v9-msg">Não preenchida</strong></div>',
-            '<div class="fdc-v9-summary-row"><span>Termos</span><strong id="fdc-v9-termos">Aguardando</strong></div>',
-            '<div class="fdc-v9-check">🔒 <b>Seus dados estão seguros.</b><br>Usamos estas informações para garantir a preparação correta do seu pedido.</div>',
-            '<div style="margin-top:11px;font-size:10px;color:#888;line-height:1.45">Ao concluir, você seguirá para o pagamento.</div>',
+        '<section class="fdc-v10-pane active" id="fdc-v10-s1">',
+          '<h3 class="fdc-v10-title">1. Como deseja receber seu pedido?</h3>',
+          '<p class="fdc-v10-sub">Primeiro escolha entrega ou retirada. Para entrega, o CEP será validado imediatamente.</p>',
+          '<div class="fdc-v10-receive">',
+            '<button class="fdc-v10-receive-btn sel" id="fdc-btn-ent" onclick="fdcSetTipo(\'entrega\');fdcV10Sync()">🚚 <strong>Entrega</strong><span>Receba no endereço informado.</span></button>',
+            '<button class="fdc-v10-receive-btn" id="fdc-btn-ret" onclick="fdcSetTipo(\'retirada\');fdcV10Sync()">🏪 <strong>Retirada na loja</strong><span>Al. Barão de Limeira, 998.</span></button>',
           '</div>',
-        '</aside>',
-      '</div>'
+          '<div id="fdc-bloco-cep" class="fdc-v10-cep">',
+            '<div class="fdc-v10-cep-title">CEP de entrega</div>',
+            '<div class="fdc-v10-cep-highlight">⚠️ Primeiro, confirme se entregamos no endereço que você precisa.</div>',
+            '<div class="fdc-v10-cep-row"><input id="fdc-cep" type="text" inputmode="numeric" autocomplete="postal-code" maxlength="9" placeholder="00000-000" oninput="fdcMascaraCep(this);fdcValidarCep();fdcSalvar()"><button type="button" class="fdc-v10-cep-btn" onclick="fdcValidarCep()">Validar CEP</button></div>',
+            '<div id="fdc-cep-status"></div>',
+            '<div id="fdc-cep-aviso" class="fdc-v10-cep-msg"></div>',
+            '<div id="fdc-cep-parcial" class="fdc-v10-cep-msg"><span>⚠️ <strong>Atenção:</strong> Neste CEP funciona também o <strong id="fdc-cep-parcial-local">—</strong>, local onde infelizmente não realizamos entregas por dificuldade de acesso. Se a entrega for para outro endereço deste CEP, pode seguir normalmente. Se for para o <span id="fdc-cep-parcial-local2">—</span>, o pedido será cancelado.</span><label class="fdc-cep-parcial-check"><input type="checkbox" id="fdc-cep-parcial-check" onchange="fdcToggleCienteParcial()"> Estou ciente</label></div>',
+          '</div>',
+          '<div id="fdc-v10-pickup-note" class="fdc-v10-summary-photo" style="display:none">Você escolheu retirada na loja. O CEP de entrega não é necessário.</div>',
+          '<div class="fdc-v10-nav"><span></span><button type="button" class="fdc-v10-next" id="fdc-v10-next1" disabled onclick="fdcV10Go(2)">Continuar →</button></div>',
+        '</section>',
+
+        '<section class="fdc-v10-pane" id="fdc-v10-s2">',
+          '<h3 class="fdc-v10-title">2. Escolha a melhor data para a entrega do pedido</h3>',
+          '<p class="fdc-v10-sub">Não se esqueça de confirmar se haverá alguém disponível para receber o pedido na data e horário escolhidos.</p>',
+          '<div class="fdc-v10-calendar">',
+            '<div class="fdc-v10-cal-head"><button type="button" class="fdc-v10-cal-nav" onclick="fdcV10MudarMes(-1)">‹</button><strong id="fdc-v10-mes-titulo">—</strong><button type="button" class="fdc-v10-cal-nav" onclick="fdcV10MudarMes(1)">›</button></div>',
+            '<div id="fdc-v10-cal-grid" class="fdc-v10-cal-grid"></div>',
+            '<div class="fdc-v10-legend"><span class="fdc-v10-lg"><i class="fdc-v10-sw w"></i>Selecionado</span><span class="fdc-v10-lg"><i class="fdc-v10-sw g"></i>Disponível</span><span class="fdc-v10-lg"><i class="fdc-v10-sw r"></i>Indisponível</span></div>',
+          '</div>',
+          '<div id="fdc-v10-periodos-wrap" style="display:none"><div id="fdc-v10-per-titulo" class="fdc-v10-times-title">Escolha o horário</div><div id="fdc-v10-periodos" class="fdc-v10-times"></div></div>',
+          '<div class="fdc-v10-nav"><button type="button" class="fdc-v10-back" onclick="fdcV10Go(1)">← Voltar</button><button type="button" class="fdc-v10-next" id="fdc-v10-next2" disabled onclick="fdcV10Go(3)">Continuar →</button></div>',
+        '</section>',
+
+        '<section class="fdc-v10-pane" id="fdc-v10-s3">',
+          '<h3 class="fdc-v10-title">3. Quem vai receber?</h3>',
+          '<p class="fdc-v10-sub">Preencha os dados da pessoa que receberá o pedido.</p>',
+          '<div id="fdc-bloco-pres">',
+            '<div class="fdc-v10-person-grid">',
+              '<div><div class="fdc-v10-field-label">Nome completo</div><div class="fdc-campo" style="margin:0"><input type="text" id="fdc-nome" placeholder="Ex.: Maria da Silva" maxlength="80" oninput="fdcSalvar();fdcVerificar()"></div></div>',
+              '<div><div class="fdc-v10-field-label">WhatsApp</div><div class="fdc-campo" style="margin:0"><input type="tel" id="fdc-tel" placeholder="(11) 98765-4321" maxlength="15" oninput="fdcMascaraTel(this);fdcSalvar();fdcVerificar()"></div></div>',
+            '</div>',
+            '<div class="fdc-v10-helper">Só entramos em contato se não conseguirmos falar com o comprador antes.</div>',
+          '</div>',
+          '<div class="fdc-v10-nav"><button type="button" class="fdc-v10-back" onclick="fdcV10Go(2)">← Voltar</button><button type="button" class="fdc-v10-next" id="fdc-v10-next3" onclick="fdcV10Go(4)">Continuar →</button></div>',
+        '</section>',
+
+        '<section class="fdc-v10-pane" id="fdc-v10-s4">',
+          '<h3 class="fdc-v10-title">4. Personalização</h3>',
+          '<p class="fdc-v10-sub">Confira as personalizações do seu pedido. As fotos personalizadas já foram preparadas na página do produto.</p>',
+          '<div id="fdc-bloco-pick" class="fdc-v10-person-card" style="display:none">',
+            '<div class="fdc-v10-person-title">🎀 Pick decorativa</div>',
+            '<button class="fdc-v10-person-btn" id="fdc-btn-pick" onclick="fdcAbrirModalPick()">Brinde: escolha sua pick decorativa</button>',
+            '<div id="fdc-resumo-pick" style="display:none" class="fdc-v10-summary-photo"><b>Pick escolhida:</b> <span id="fdc-res-pick-cod">—</span> — <span id="fdc-res-pick-frase"></span><br><button type="button" class="fdc-btn-alt" onclick="fdcAlterarPick()">Alterar pick</button></div>',
+          '</div>',
+          '<div class="fdc-v10-person-card">',
+            '<div class="fdc-v10-person-title">📸 Fotos personalizadas</div>',
+            '<div class="fdc-v10-helper">As fotos enviadas e os ajustes feitos no produto serão vinculados a este pedido e enviados ao Cloudinary somente na finalização.</div>',
+          '</div>',
+          '<div class="fdc-v10-person-card fdc-v10-msg">',
+            '<div class="fdc-v10-person-title">💌 Mensagem do cartão</div>',
+            '<div class="fdc-campo" style="margin:0"><textarea id="fdc-msg" maxlength="500" placeholder="Digite aqui sua mensagem de coração... não se esqueça de assinar a msg =)" oninput="fdcSalvar();fdcV10Sync()"></textarea></div>',
+            '<div class="fdc-v10-msg-foot"><label><input type="checkbox" id="fdc-sem-msg" onchange="fdcToggleSemMsg();fdcV10Sync()"> Sem mensagem de cartão</label><span><span id="fdc-faltam">500</span> caracteres restantes</span></div>',
+          '</div>',
+          '<div class="fdc-v10-nav"><button type="button" class="fdc-v10-back" onclick="fdcV10Go(3)">← Voltar</button><button type="button" class="fdc-v10-next" onclick="fdcV10Go(5)">Continuar →</button></div>',
+        '</section>',
+
+        '<section class="fdc-v10-pane" id="fdc-v10-s5">',
+          '<h3 class="fdc-v10-title">5. Termos e confirmações</h3>',
+          '<p class="fdc-v10-sub">Leia os termos e confirme que está de acordo para continuar.</p>',
+          '<div id="fdc-termo-wrap" class="fdc-v10-terms">',
+            '<ul id="fdc-termo-lista">'+termoItens+'</ul>',
+            '<label class="fdc-v10-check"><input type="checkbox" id="fdc-termo" onchange="fdcToggleTermo()"> Estou ciente dos termos</label>',
+          '</div>',
+          '<div class="fdc-v10-nav"><button type="button" class="fdc-v10-back" onclick="fdcV10Go(4)">← Voltar</button><button type="button" class="fdc-v10-next" id="fdc-v10-next5" disabled onclick="fdcV10Go(6)">Continuar →</button></div>',
+        '</section>',
+
+        '<section class="fdc-v10-pane" id="fdc-v10-s6">',
+          '<h3 class="fdc-v10-title">6. Revise seu pedido</h3>',
+          '<p class="fdc-v10-sub">Confira tudo antes de finalizar. Você poderá voltar e fazer qualquer ajuste.</p>',
+          '<div class="fdc-v10-review">',
+            '<div class="fdc-v10-review-row"><span>Recebimento</span><strong id="fdc-v10-r-receb">Entrega</strong></div>',
+            '<div class="fdc-v10-review-row"><span>CEP</span><strong id="fdc-v10-r-cep">—</strong></div>',
+            '<div class="fdc-v10-review-row"><span>Data e horário</span><strong id="fdc-v10-r-ag">—</strong></div>',
+            '<div class="fdc-v10-review-row"><span>Destinatário</span><strong id="fdc-v10-r-nome">—</strong></div>',
+            '<div class="fdc-v10-review-row"><span>WhatsApp</span><strong id="fdc-v10-r-tel">—</strong></div>',
+            '<div class="fdc-v10-review-row"><span>Personalização</span><strong>Mensagem + fotos + pick, quando aplicável</strong></div>',
+          '</div>',
+          '<div class="fdc-v10-secure">🔒 <b>Dados registrados com seu protocolo.</b><br>As informações de entrega e personalização ficam vinculadas ao seu pedido.</div>',
+          '<div class="fdc-v10-status"><div class="fdc-v10-status-title">Checklist</div><div class="fdc-status-items"><div class="fdc-st" id="fdc-st-cep">CEP</div><div class="fdc-st" id="fdc-st-ag">Agendamento</div><div class="fdc-st" id="fdc-st-nome">Nome</div><div class="fdc-st" id="fdc-st-tel">Telefone</div><div class="fdc-st" id="fdc-st-termo">Termos</div></div></div>',
+          '<div id="fdc-box-ok" class="fdc-box-ok"><div class="fdc-box-ok-inner"><div class="fdc-box-ok-icon">✅</div><div class="fdc-box-ok-txt"><strong>Tudo certo!</strong><p>Agora finalize e siga para o pagamento.</p></div></div></div>',
+          '<button type="button" class="fdc-v10-next" style="width:100%;margin-top:12px;padding:13px" onclick="fdcV10Finalizar()">✓ FINALIZAR COMPRA</button>',
+          '<div class="fdc-v10-nav"><button type="button" class="fdc-v10-back" onclick="fdcV10Go(5)">← Voltar e editar</button><span></span></div>',
+        '</section>',
+
+      '</div>',
+      /* hidden legacy elements still referenced by session/old functions */
+      '<div class="fdc-v10-hidden"><button id="fdc-btn-ag"></button><div id="fdc-resumo-ag"><span id="fdc-res-data"></span><span id="fdc-res-diasem"></span><span id="fdc-res-per"></span><span id="fdc-res-hora"></span></div><button id="fdc-btn-conf"></button><div id="fdc-mes-titulo"></div><div id="fdc-cal-grid"></div><div id="fdc-periodos"></div><div id="fdc-per-titulo"></div><span id="fdc-m-data"></span><span id="fdc-m-diasem"></span><span id="fdc-m-per"></span><span id="fdc-m-hora"></span></div>'
     ].join("");
     return div;
   }
 
-
+  
   function montarPopup(){
     var div=document.createElement("div");
     div.id="fdc-popup-overlay";div.className="fdc-popup-overlay";
@@ -938,7 +906,8 @@
     var divConf=document.createElement("div");
     divConf.id="fdc-popup-conf-overlay";divConf.className="fdc-popup-overlay";
     divConf.innerHTML=[
-      '<div class="fdc-popup fdc-popup-conf">',
+      '<div class="fdc-popup fdc-popup-conf" style="position:relative">',
+        '<button type="button" class="fdc-popup-close" aria-label="Fechar" onclick="fdcFecharConfirmacao()">×</button>',
         '<div style="text-align:center;margin-bottom:18px">',
           '<div style="font-size:42px;line-height:1;margin-bottom:6px">✅</div>',
           '<h3>Dados registrados com sucesso!</h3>',
@@ -1246,7 +1215,6 @@
     document.getElementById("fdc-btn-ag").style.display="block";
     document.getElementById("fdc-resumo-ag").style.display="none";
     atualizarTrava();
-    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");steps.forEach(function(s){s.classList.remove("active","done");});if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("active");
     salvarSessao();fdcVerificar();
   };
 
@@ -1273,23 +1241,51 @@
     salvarSessao();fdcVerificar();
   };
 
-  function fdcV9AtualizarResumo(){
+  function fdcV10RefreshReview(){
     var el=function(id){return document.getElementById(id);};
-    var rb=el("fdc-v9-receb"),ag=el("fdc-v9-ag"),nm=el("fdc-v9-nome"),tel=el("fdc-v9-tel"),msg=el("fdc-v9-msg"),ter=el("fdc-v9-termos");
-    if(rb)rb.textContent=tipo==="entrega"?"Entrega":"Retirada na loja";
-    if(ag){
-      if(dataSel&&periodoSel){
-        var lista=getPeriodosParaDow(dataSel.getDay(),dataSel);
-        var p=lista.find(function(x){return x.id===periodoSel;});
-        ag.textContent=dataSel.toLocaleDateString("pt-BR")+" · "+(p?p.hora:"");
-      }else ag.textContent="Ainda não escolhido";
-    }
-    var n=(el("fdc-nome")||{}).value||"", t=(el("fdc-tel")||{}).value||"", m=(el("fdc-msg")||{}).value||"";
-    if(nm)nm.textContent=n.trim()||"Ainda não preenchido";
-    if(tel)tel.textContent=t.trim()||"Ainda não preenchido";
-    if(msg)msg.textContent=(semMensagem?"Sem mensagem":(m.trim()?m.trim().slice(0,28)+(m.trim().length>28?"…":""):"Não preenchida"));
-    if(ter)ter.textContent=termoAceito?"✓ Aceitos":"Aguardando";
+    var p=dataSel&&periodoSel?getPeriodosParaDow(dataSel.getDay(),dataSel).find(function(x){return x.id===periodoSel;}):null;
+    if(el("fdc-v10-r-receb"))el("fdc-v10-r-receb").textContent=tipo==="entrega"?"Entrega":"Retirada na loja";
+    if(el("fdc-v10-r-cep"))el("fdc-v10-r-cep").textContent=tipo==="entrega"?((el("fdc-cep")||{}).value||"—"):"Não se aplica";
+    if(el("fdc-v10-r-ag"))el("fdc-v10-r-ag").textContent=(dataSel&&p)?dataSel.toLocaleDateString("pt-BR")+" · "+p.hora:"—";
+    if(el("fdc-v10-r-nome"))el("fdc-v10-r-nome").textContent=((el("fdc-nome")||{}).value||"—");
+    if(el("fdc-v10-r-tel"))el("fdc-v10-r-tel").textContent=((el("fdc-tel")||{}).value||"—");
   }
+
+  function fdcV10RenderProgress(){
+    var labels=["Recebimento","Data e horário","Destinatário","Personalização","Termos","Revisão"];
+    var c=document.getElementById("fdc-v10-progress");if(!c)return;
+    c.innerHTML=labels.map(function(label,i){var n=i+1,done=window.fdcV10CurrentStep>n,active=window.fdcV10CurrentStep===n;return '<div class="fdc-v10-step '+(done?"done ":"")+(active?"active":"")+'"><span class="fdc-v10-num">'+(done?"✓":n)+'</span><span>'+label+'</span></div>';}).join("");
+  }
+
+  window.fdcV10CurrentStep=1;
+  window.fdcV10Go=function(n){
+    if(n===2 && !(tipo==="retirada"||cepOk))return;
+    if(n===3 && !(agConfirmado&&dataSel&&periodoSel))return;
+    if(n===4 && tipo==="entrega"){
+      var nome=((document.getElementById("fdc-nome")||{}).value||"").trim();
+      var tel=((document.getElementById("fdc-tel")||{}).value||"").trim();
+      if(!nome||tel.length<14){fdcVerificar();return;}
+    }
+    if(n===5){ }
+    if(n===6 && !termoAceito){fdcVerificar();return;}
+    document.querySelectorAll(".fdc-v10-pane").forEach(function(p){p.classList.remove("active");});
+    var pane=document.getElementById("fdc-v10-s"+n);if(!pane)return;
+    pane.classList.add("active");window.fdcV10CurrentStep=n;
+    fdcV10RenderProgress();fdcV10RefreshReview();fdcV10Sync();
+    window.scrollTo({top:document.getElementById("fdc-bloco").getBoundingClientRect().top+window.scrollY-8,behavior:"smooth"});
+  };
+
+  window.fdcV10Sync=function(){
+    var next1=document.getElementById("fdc-v10-next1"),next2=document.getElementById("fdc-v10-next2"),next3=document.getElementById("fdc-v10-next3"),next5=document.getElementById("fdc-v10-next5");
+    if(next1)next1.disabled=!(tipo==="retirada"||cepOk);
+    if(next2)next2.disabled=!(dataSel&&periodoSel&&agConfirmado);
+    if(next3){
+      var nome=((document.getElementById("fdc-nome")||{}).value||"").trim(),tel=((document.getElementById("fdc-tel")||{}).value||"").trim();
+      next3.disabled=(tipo==="entrega"&&!nome&&false)?true:false;
+    }
+    if(next5)next5.disabled=!termoAceito;
+    var nCep=document.getElementById("fdc-v10-cep-status");
+  };
 
   window.fdcVerificar=function(){
     function st(id,ok){var e=document.getElementById(id);if(e)e.className="fdc-st"+(ok?" ok":"");}
@@ -1304,23 +1300,17 @@
     }
     st("fdc-st-ag",agConfirmado);
     st("fdc-st-termo",termoAceito);
-    document.getElementById("fdc-box-ok").style.display=tudoOk?"block":"none";
-    fdcV9AtualizarResumo();
-    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");
-    if(tudoOk){
-      steps.forEach(function(s){s.classList.remove("active","done");});
-      if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("done");if(steps[2])steps[2].classList.add("done");if(steps[3])steps[3].classList.add("active");
-    }
-
+    var box=document.getElementById("fdc-box-ok");if(box)box.style.display=tudoOk?"block":"none";
+    fdcV10RefreshReview();fdcV10Sync();
   };
 
   window.fdcAbrirModal=function(){
-    document.getElementById("fdc-overlay").classList.add("ativo");
-    fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();
+    // Mantém o nome da função por compatibilidade, mas o agendamento agora acontece inline.
+    fdcV10Go(2);fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();
   };
 
   window.fdcFecharModal=function(){
-    document.getElementById("fdc-overlay").classList.remove("ativo");
+    var o=document.getElementById("fdc-overlay");if(o)o.classList.remove("ativo");
   };
 
   window.fdcFecharPopup=function(){
@@ -1332,30 +1322,26 @@
     mesAtual+=d;
     if(mesAtual<0){mesAtual=11;anoAtual--;}
     if(mesAtual>11){mesAtual=0;anoAtual++;}
-    fdcRenderCal();
+    fdcRenderCal();fdcRenderPeriodos();
   };
+  window.fdcV10MudarMes=window.fdcMudarMes;
 
   window.fdcConfirmar=function(){
     if(!dataSel||!periodoSel)return;
     agConfirmado=true;
-    var lista=getPeriodosParaDow(dataSel.getDay(), dataSel);
+    var lista=getPeriodosParaDow(dataSel.getDay(),dataSel);
     var p=lista.find(function(x){return x.id===periodoSel;});
-    document.getElementById("fdc-res-data").textContent=dataSel.toLocaleDateString("pt-BR");
-    document.getElementById("fdc-res-diasem").textContent=DIASLONG[dataSel.getDay()];
-    document.getElementById("fdc-res-per").textContent=p.nome;
-    document.getElementById("fdc-res-hora").textContent=p.hora;
-    document.getElementById("fdc-btn-ag").style.display="none";
-    document.getElementById("fdc-resumo-ag").style.display="block";
-    var steps=document.querySelectorAll(".fdc-v9-progress .fdc-v9-step");steps.forEach(function(s){s.classList.remove("active","done");});if(steps[0])steps[0].classList.add("done");if(steps[1])steps[1].classList.add("done");if(steps[2])steps[2].classList.add("active");
-fdcFecharModal();salvarSessao();fdcVerificar();
+    var rd=document.getElementById("fdc-res-data");if(rd)rd.textContent=dataSel.toLocaleDateString("pt-BR");
+    var rs=document.getElementById("fdc-res-diasem");if(rs)rs.textContent=DIASLONG[dataSel.getDay()];
+    var rp=document.getElementById("fdc-res-per");if(rp)rp.textContent=p?p.nome:"—";
+    var rh=document.getElementById("fdc-res-hora");if(rh)rh.textContent=p?p.hora:"";
+    salvarSessao();fdcVerificar();
   };
 
   window.fdcAlterar=function(){
-    agConfirmado=false;
-    document.getElementById("fdc-btn-ag").style.display="block";
-    document.getElementById("fdc-resumo-ag").style.display="none";
-    fdcVerificar();fdcAbrirModal();
+    agConfirmado=false;fdcVerificar();fdcV10Go(2);fdcRenderCal();fdcRenderPeriodos();
   };
+
 
   window.fdcAbrirModalPick=function(){
     document.getElementById("fdc-overlay-pick").classList.add("ativo");
@@ -1399,120 +1385,88 @@ fdcFecharModal();salvarSessao();fdcVerificar();
   };
 
   function fdcRenderCal(){
-    document.getElementById("fdc-mes-titulo").textContent=MESES[mesAtual]+" "+anoAtual;
-    var grid=document.getElementById("fdc-cal-grid");grid.innerHTML="";
-    DIASABREV.forEach(function(d){var e=document.createElement("div");e.className="fdc-dow";e.textContent=d;grid.appendChild(e);});
+    var title=document.getElementById("fdc-v10-mes-titulo");
+    var grid=document.getElementById("fdc-v10-cal-grid");
+    if(!title||!grid)return;
+    title.textContent=MESES[mesAtual]+" "+anoAtual;
+    grid.innerHTML="";
+    DIASABREV.forEach(function(d){var e=document.createElement("div");e.className="fdc-v10-cal-dow";e.textContent=d;grid.appendChild(e);});
     var p=new Date(anoAtual,mesAtual,1).getDay();
-    for(var i=0;i<p;i++){var e=document.createElement("button");e.className="fdc-day";grid.appendChild(e);}
+    for(var i=0;i<p;i++){var e=document.createElement("button");e.className="fdc-v10-day empty";grid.appendChild(e);}
     var tot=new Date(anoAtual,mesAtual+1,0).getDate();
     var hj=hoje();
     var carrinhoNamorados=carrinhoEhNamorados();
-
     for(var d=1;d<=tot;d++){
       var dt=new Date(anoAtual,mesAtual,d);
-      var b=document.createElement("button");b.textContent=d;
+      var b=document.createElement("button");b.type="button";b.textContent=d;
       var isSel=dataSel&&dataSel.getDate()===d&&dataSel.getMonth()===mesAtual&&dataSel.getFullYear()===anoAtual;
-      var isHj=dt.getTime()===hj.getTime();
-      var ehNamorados=isDiaNamorados(dt);
-      var namoradosEsgotado=false;
-      var namoradosProduto=false;
-      var namoradosCep=false;
-
+      var ehNamorados=isDiaNamorados(dt), namoradosEsgotado=false,namoradosProduto=false,namoradosCep=false;
       if(ehNamorados){
-        // 1ª prioridade: verifica se já esgotou (prazo limite)
         if(tipo==="entrega"&&!entregaNamoradosDisponivel())namoradosEsgotado=true;
         if(tipo==="retirada"&&!retiradaNamoradosDisponivel())namoradosEsgotado=true;
-        // 2ª prioridade: se não esgotou, verifica CEP (só em entrega)
-        if(!namoradosEsgotado&&tipo==="entrega"&&cepOk&&!cepValidoDia12){
-          namoradosCep=true;
-        }
-        // 3ª prioridade: se não esgotou e CEP ok, verifica produto
-        if(!namoradosEsgotado&&!namoradosCep&&!carrinhoNamorados){
-          namoradosProduto=true;
-        }
+        if(!namoradosEsgotado&&tipo==="entrega"&&cepOk&&!cepValidoDia12)namoradosCep=true;
+        if(!namoradosEsgotado&&!namoradosCep&&!carrinhoNamorados)namoradosProduto=true;
       }
-
-      if(namoradosEsgotado){
-        b.className="fdc-day namorados-esgotado";
-        (function(){b.onclick=function(){mostrarPopupNamorados("esgotado");};})();
-      }else if(namoradosCep){
-        b.className="fdc-day namorados-cep";
-        (function(){b.onclick=function(){mostrarPopupNamorados("cep");};})();
-      }else if(namoradosProduto){
-        b.className="fdc-day namorados-produto";
-        (function(){b.onclick=function(){mostrarPopupNamorados("produto");};})();
+      if(namoradosEsgotado||namoradosCep||namoradosProduto){
+        b.className="fdc-v10-day";
+        if(namoradosEsgotado)b.title="Data indisponível";
+        else if(namoradosCep)b.title="CEP não atendido nesta data";
+        else b.title="Produto não disponível nesta data";
       }else if(isSel){
-        b.className="fdc-day sel";
+        b.className="fdc-v10-day selected";
       }else if(temDisp(dt)){
-        b.className="fdc-day disp";
-        (function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
+        b.className="fdc-v10-day available";
+        (function(dt2){b.onclick=function(){
+          dataSel=dt2;periodoSel=null;agConfirmado=false;mesAtual=dt2.getMonth();anoAtual=dt2.getFullYear();
+          fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();fdcV10Sync();
+        };})(new Date(dt));
       }else{
-        // Dias sem disponibilidade mas dentro do range válido — clicável para mostrar aviso
-        b.className="fdc-day";
-        var ddCheck=new Date(dt);ddCheck.setHours(0,0,0,0);
-        var minD=minData();minD.setHours(0,0,0,0);
-        var maxD=addDias(hoje(),30);maxD.setHours(0,0,0,0);
-        if(ddCheck>=minD&&ddCheck<=maxD&&!isFeriado(dt)){
-          // Não é feriado e está dentro do range — habilita clique
-          b.classList.add("indisp-clicavel");
-          (function(dt2){b.onclick=function(){dataSel=dt2;periodoSel=null;fdcRenderCal();fdcRenderPeriodos();fdcUpdRes();};})(new Date(dt));
-        }
+        b.className="fdc-v10-day";
       }
-      if(isHj&&!isSel)b.classList.add("hj");
       grid.appendChild(b);
     }
   }
 
   function fdcRenderPeriodos(){
-    var c=document.getElementById("fdc-periodos"),t=document.getElementById("fdc-per-titulo");
+    var c=document.getElementById("fdc-v10-periodos"),wrap=document.getElementById("fdc-v10-periodos-wrap"),t=document.getElementById("fdc-v10-per-titulo");
+    if(!c||!wrap)return;
     c.innerHTML="";
-    if(!dataSel){t.textContent="Selecione uma data";return;}
-
-    // Verifica disponibilidade real do dia (mesma regra do calendário)
+    if(!dataSel){wrap.style.display="none";return;}
+    wrap.style.display="block";
     var temDisponibilidade=temDisp(dataSel);
-
     if(!temDisponibilidade){
-      // Sem disponibilidade — mostra aviso
       t.textContent="Sem horários disponíveis";
       var ddSel=new Date(dataSel);ddSel.setHours(0,0,0,0);
-      var dowSel=ddSel.getDay();
-      var ehHoje=ddSel.getTime()===hoje().getTime();
-      var ehFds=(dowSel===0||dowSel===6);
-      var msg;
-      if(ehHoje){
-        msg="Não há mais horários disponíveis para hoje. Confira a partir de amanhã.";
-      }else if(ehFds){
-        msg="Não há mais horários disponíveis para esta data. Confira a partir de segunda-feira.";
-      }else{
-        msg="Não há mais horários disponíveis para esta data. Tente outra data.";
-      }
-      var aviso=document.createElement("div");
-      aviso.style.cssText="background:#fff4e0;border-left:3px solid #e8a33d;border-radius:6px;padding:12px 14px;font-size:13px;color:#7a5a1f;line-height:1.5";
-      aviso.innerHTML="ℹ️ "+msg;
-      c.appendChild(aviso);
+      var dowSel=ddSel.getDay(),ehHoje=ddSel.getTime()===hoje().getTime(),ehFds=(dowSel===0||dowSel===6);
+      var msg=ehHoje?"Não há mais horários disponíveis para hoje. Confira a partir de amanhã.":ehFds?"Não há mais horários disponíveis para esta data. Confira a partir de segunda-feira.":"Não há mais horários disponíveis para esta data. Tente outra data.";
+      c.innerHTML='<div class="fdc-v10-summary-photo">ℹ️ '+msg+'</div>';
       return;
     }
-
-    t.textContent="Períodos disponíveis";
+    t.textContent="Horários disponíveis para "+dataSel.toLocaleDateString("pt-BR");
     periodosParaDia(dataSel).forEach(function(p){
-      var d=document.createElement("div");
-      d.className="fdc-periodo"+(periodoSel===p.id?" sel":"")+(p.ok?"":" bloq");
-      d.innerHTML='<input type="radio" name="fdc-per"'+(periodoSel===p.id?" checked":"")+'/><div><div class="fdc-per-nome">'+p.nome+'</div><div class="fdc-per-hora">'+p.hora+'</div></div>';
-      if(p.ok)d.onclick=function(){periodoSel=p.id;fdcRenderPeriodos();fdcUpdRes();};
+      var d=document.createElement("button");d.type="button";d.className="fdc-v10-time"+(periodoSel===p.id?" sel":"")+(p.ok?"":" bloq");
+      d.innerHTML='<span class="fdc-v10-mark">'+(p.ok?(periodoSel===p.id?"✓":""):"×")+'</span><span><b>'+p.nome+'</b><small>'+p.hora+'</small></span>';
+      if(p.ok)d.onclick=function(){
+        periodoSel=p.id;agConfirmado=true;
+        fdcRenderPeriodos();fdcUpdRes();salvarSessao();fdcVerificar();fdcV10Sync();
+      };
       c.appendChild(d);
     });
   }
 
   function fdcUpdRes(){
-    var btn=document.getElementById("fdc-btn-conf");
-    document.getElementById("fdc-m-data").textContent=dataSel?dataSel.toLocaleDateString("pt-BR"):"—";
-    document.getElementById("fdc-m-diasem").textContent=dataSel?DIASLONG[dataSel.getDay()]:"";
-    var lista=dataSel?getPeriodosParaDow(dataSel.getDay(), dataSel):[];
+    var lista=dataSel?getPeriodosParaDow(dataSel.getDay(),dataSel):[];
     var p=periodoSel?lista.find(function(x){return x.id===periodoSel;}):null;
-    document.getElementById("fdc-m-per").textContent=p?p.nome:"—";
-    document.getElementById("fdc-m-hora").textContent=p?p.hora:"";
-    btn.disabled=!(dataSel&&periodoSel);
+    var map={
+      "fdc-m-data":dataSel?dataSel.toLocaleDateString("pt-BR"):"—",
+      "fdc-m-diasem":dataSel?DIASLONG[dataSel.getDay()]:"",
+      "fdc-m-per":p?p.nome:"—",
+      "fdc-m-hora":p?p.hora:""
+    };
+    Object.keys(map).forEach(function(id){var el=document.getElementById(id);if(el)el.textContent=map[id];});
+    var btn=document.getElementById("fdc-btn-conf");if(btn)btn.disabled=!(dataSel&&periodoSel);
   }
+
 
   function preCarregarEmailJS(){
     if(typeof emailjs!=="undefined"){emailjs.init({publicKey:CFG.emailjs_public_key});return;}
@@ -1841,6 +1795,26 @@ fdcFecharModal();salvarSessao();fdcVerificar();
     }
   }
 
+  window.fdcV10Finalizar=function(){
+    if(!termoAceito){fdcVerificar();fdcV10Go(5);return;}
+    var tudo=(agConfirmado&&termoAceito);
+    if(tipo==="entrega"){
+      var nome=((document.getElementById("fdc-nome")||{}).value||"").trim();
+      var tel=((document.getElementById("fdc-tel")||{}).value||"").trim();
+      tudo=tudo&&cepOk&&!!nome&&tel.length>=14;
+    }
+    if(!tudo){fdcVerificar();return;}
+    var href=window.location.href;
+    mostrarModalConfirmacao(href);
+  };
+
+  window.fdcFecharConfirmacao=function(){
+    var o=document.getElementById("fdc-popup-conf-overlay");
+    if(o)o.classList.remove("ativo");
+    var b=document.getElementById("fdc-conf-btn");
+    if(b&&!b.disabled)b.textContent="Continuar para o pagamento →";
+  };
+
   function mostrarModalConfirmacao(href){
     var bloco=document.getElementById("fdc-conf-bloco");
     // Reusa o protocolo da sessão (se existir), senão gera um novo
@@ -1961,6 +1935,10 @@ fdcFecharModal();salvarSessao();fdcVerificar();
     preCarregarEmailJS();
     restaurarSessao();
     atualizarTrava();
+    fdcV10RenderProgress();
+    fdcV10Sync();
+    fdcRenderCal();
+    fdcRenderPeriodos();
 
     // Mostra a seção de pick se algum produto do carrinho for elegível
     if(carrinhoTemPick()){
