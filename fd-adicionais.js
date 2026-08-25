@@ -347,34 +347,38 @@
     "cinco":5,"seis":6,"sete":7,"oito":8,"nove":9,"dez":10,"onze":11,"doze":12
   };
 
+  function fdFotoTexto(el){
+    return el ? (el.innerText||el.textContent||"").replace(/\s+/g," ").trim() : "";
+  }
+
+  // Aceita "foto" e "fotos" como palavras completas, sem ativar em trechos
+  // de outras palavras (por exemplo, "fotografia").
+  function fdFotoTemPalavraFoto(titulo){
+    return /(^|[^a-zà-ÿ0-9])fotos?(?=$|[^a-zà-ÿ0-9])/i.test(titulo||"");
+  }
+
   function fdFotoTitulo(){
-    var candidatos=[];
-    var sels=[".info-principal-produto h1",".span12.produto h1","h1[itemprop='name']","main h1",".pagina-produto h1","h1.titulo"];
-    for(var i=0;i<sels.length;i++){
-      var els=document.querySelectorAll(sels[i]);
-      for(var j=0;j<els.length;j++){
-        var txt=(els[j].innerText||els[j].textContent||"").replace(/\s+/g," ").trim();
-        if(txt)candidatos.push(txt);
+    // Procura somente o título do produto exibido na página. A implementação
+    // anterior varria todos os H1 e preferia qualquer texto com "foto" — por
+    // exemplo, um produto recomendado — mesmo quando o produto atual não era
+    // uma foto.
+    var containers=[".info-principal-produto",".produto-principal",".span12.produto",".pagina-produto .produto"];
+    var sels=["h1[itemprop='name']","h1",".nome-produto",".titulo-produto"];
+    for(var i=0;i<containers.length;i++){
+      var main=document.querySelector(containers[i]);
+      if(!main)continue;
+      for(var j=0;j<sels.length;j++){
+        var el=main.querySelector(sels[j]),txt=fdFotoTexto(el);
+        if(txt)return txt;
       }
     }
-    for(var k=0;k<candidatos.length;k++){
-      var t=candidatos[k].toLowerCase();
-      if(t.indexOf("foto")!==-1||t.indexOf("polaroid")!==-1)return candidatos[k];
-    }
-    var main=document.querySelector(".info-principal-produto,.produto-principal,.pagina-produto,.produto");
-    if(main){
-      var els2=main.querySelectorAll(".nome-produto,.titulo-produto");
-      for(var x=0;x<els2.length;x++){
-        var txt2=(els2[x].innerText||els2[x].textContent||"").replace(/\s+/g," ").trim();
-        if(txt2)return txt2;
-      }
-    }
-    return candidatos[0]||"";
+    var fallback=document.querySelector("h1[itemprop='name'], h1.titulo");
+    return fdFotoTexto(fallback);
   }
 
   function fdFotoTipo(titulo){
     var t=(titulo||"").toLowerCase();
-    var temFoto=t.indexOf("foto")!==-1;
+    var temFoto=fdFotoTemPalavraFoto(titulo);
     var temPolaroid=t.indexOf("polaroid")!==-1;
     if(temFoto&&temPolaroid)return "polaroid";
     if(temFoto)return "foto10x15";
@@ -919,8 +923,8 @@
     var tentativas=0;
     var timer=setInterval(function(){
       tentativas++;
-      var tt=fdFotoTitulo(),ttLow=(tt||"").toLowerCase();
-      if(tt&&(ttLow.indexOf("foto")!==-1||ttLow.indexOf("polaroid")!==-1)&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
+      var tt=fdFotoTitulo();
+      if(fdFotoTemPalavraFoto(tt)&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
         clearInterval(timer);fdFotoIniciarPersonalizador();
       }else if(tentativas>40){clearInterval(timer);}
     },300);
