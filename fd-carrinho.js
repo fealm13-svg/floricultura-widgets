@@ -423,6 +423,7 @@
   var cepValidoDia12=false; // se o CEP atual também é válido no dia 12
   var pickSel=null; // objeto pick escolhida ou null
   var cienteAlertaParcial=false; // check do aviso de CEP com local problemático
+  var _personalizacoesResumo="Não se aplica"; // preenchido antes do envio do e-mail
 
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
@@ -790,7 +791,7 @@
       ".fdc-modal-header{padding:14px 17px;border-bottom:1px solid #eee;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#fff;z-index:2}.fdc-modal-header h4{font-size:15px;font-weight:700;color:#333;margin:0}.fdc-modal-fechar{background:#f3f3f3;border:0;border-radius:50%;width:32px;height:32px;font-size:20px;color:#777;cursor:pointer}",
       ".fdc-modal-body{display:grid;grid-template-columns:1fr 1fr}.fdc-cal-lado{padding:15px}.fdc-per-lado{padding:15px;border-left:1px solid #eee}.fdc-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.fdc-cal-nav span{font-size:13px;font-weight:700}.fdc-cal-nav button{background:#fff;border:1px solid #ddd;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:17px;color:#666;display:flex;align-items:center;justify-content:center}.fdc-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.fdc-dow{font-size:10px;color:#aaa;text-align:center;padding:2px}.fdc-day{font-size:11px;text-align:center;padding:8px 2px;border-radius:8px;border:1px solid #e7a1a1;background:#fdeaea;color:#a72d2d;width:100%;font-weight:600}.fdc-day.disp{background:#e7f5eb;color:#23663a;border-color:#a9d5b6;cursor:pointer;font-weight:800}.fdc-day.disp:hover{background:#d5eddd}.fdc-day.sel{background:#026dfb;color:#fff;border-color:#026dfb}.fdc-day.hj{outline:2px solid #a91537;outline-offset:-2px}.fdc-day.namorados-esgotado,.fdc-day.namorados-produto,.fdc-day.namorados-cep{background:#fdeaea;color:#a72d2d;border-color:#e7a1a1;cursor:pointer;font-weight:700}.fdc-legenda{display:flex;gap:9px;margin-top:10px;flex-wrap:wrap}.fdc-leg{display:flex;align-items:center;gap:5px;font-size:9px;color:#777}.fdc-leg-dot{width:11px;height:11px;border-radius:3px}.fdc-per-titulo{font-size:12px;font-weight:800;color:#555;margin-bottom:9px};.fdc-periodos-scroll{max-height:256px;overflow-y:auto;padding-right:4px}.fdc-periodo{display:flex;align-items:center;gap:9px;padding:10px 11px;border:1.5px solid #8fc49e;background:#edf8f1;color:#21613a;border-radius:9px;margin-bottom:7px;cursor:pointer;min-height:48px}.fdc-periodo.sel{border-color:#026dfb;background:#fff;box-shadow:0 0 0 2px rgba(2,109,251,.08)}.fdc-periodo.bloq{background:#fdeaea;border-color:#e7a1a1;color:#a72d2d;cursor:default;pointer-events:none}.fdc-periodo input{accent-color:#026dfb;width:14px;height:14px}.fdc-per-nome{font-size:12px;font-weight:700;color:#333}.fdc-per-hora{font-size:10px;color:#888}.fdc-modal-resumo{border-top:1px solid #eee;padding:11px 17px;display:grid;grid-template-columns:1fr 1fr;gap:8px}.fdc-modal-res label{font-size:10px;color:#888;margin-bottom:2px;display:block}.fdc-modal-res strong{font-size:12px;color:#333}.fdc-modal-res small{font-size:10px;color:#aaa;display:block}.fdc-btn-conf{width:calc(100% - 34px);margin:0 17px 15px;background:#a91537;color:#fff;border:none;padding:12px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-btn-conf:disabled{background:#ccc;cursor:default}",
       ".fdc-popup-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:999999;align-items:center;justify-content:center}.fdc-popup-overlay.ativo{display:flex}.fdc-popup{background:#fff;border-radius:13px;padding:26px 22px;width:90%;max-width:430px;text-align:center}.fdc-popup-icon{font-size:34px;margin-bottom:10px}.fdc-popup h3{font-size:16px;margin:0 0 8px}.fdc-popup p{font-size:12px;color:#666;line-height:1.55}.fdc-popup-btn{background:#a91537;color:#fff;border:0;padding:11px 26px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer}.fdc-popup-btn-sec{background:#5a8966}.fdc-popup-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}",
-      ".fdc-popup-conf{max-width:460px;text-align:left}.fdc-popup-conf h3{text-align:center}.fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:13px 14px;margin-bottom:13px}.fdc-conf-item{display:flex;gap:9px;margin-bottom:11px}.fdc-conf-item:last-child{margin-bottom:0}.fdc-conf-icon{font-size:16px}.fdc-conf-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.fdc-conf-valor{font-size:13px;color:#333;font-weight:700}.fdc-conf-sub{font-size:11px;color:#666}.fdc-conf-msg-txt{font-size:12px;color:#333;font-style:italic;line-height:1.5}.fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:#444}",
+      ".fdc-popup-conf{max-width:460px;text-align:left}.fdc-popup-conf h3{text-align:center}.fdc-conf-bloco{background:#fff5e1;border:1px solid #f5e0b8;border-radius:8px;padding:13px 14px;margin-bottom:13px}.fdc-conf-item{display:flex;gap:9px;margin-bottom:11px}.fdc-conf-item:last-child{margin-bottom:0}.fdc-conf-icon{font-size:16px}.fdc-conf-label{font-size:10px;color:#888;font-weight:600;text-transform:uppercase;letter-spacing:.4px}.fdc-conf-valor{font-size:13px;color:#333;font-weight:700}.fdc-conf-sub{font-size:11px;color:#666;white-space:pre-line}.fdc-conf-msg-txt{font-size:12px;color:#333;font-style:italic;line-height:1.5}.fdc-conf-aviso{background:#f1efe8;border-left:3px solid #95a37b;border-radius:6px;padding:10px 12px;font-size:11.5px;line-height:1.5;color:#444}",
       "@media(max-width:820px){.fdc-v9-layout{grid-template-columns:1fr}.fdc-v9-side{position:static}.fdc-v9-progress{grid-template-columns:repeat(2,1fr)}}",
       "@media(max-width:560px){.fdc-v9-head{padding:15px 14px}.fdc-v9-head h2{font-size:19px}.fdc-v9-progress{gap:5px}.fdc-v9-step{padding:8px 7px;font-size:10px}.fdc-v9-step .n{width:21px;height:21px}.fdc-v9-card{padding:14px;margin-bottom:10px}.fdc-v9-receber{grid-template-columns:1fr}.fdc-v9-toggle{gap:6px}.fdc-toggle-btn{font-size:11px;padding:11px 7px}.fdc-modal{width:96%;max-height:94vh;border-radius:12px}.fdc-modal-body{grid-template-columns:1fr}.fdc-per-lado{border-left:0;border-top:1px solid #eee}.fdc-cal-lado,.fdc-per-lado{padding:12px}.fdc-day{padding:8px 1px;font-size:10px}.fdc-periodo{min-height:50px;padding:10px}.fdc-modal-resumo{grid-template-columns:1fr}.fdc-v9-summary{padding:13px}}"
     ].join("");
@@ -1659,6 +1660,7 @@ fdcFecharModal();salvarSessao();fdcVerificar();
       cep_entrega:tipo==="entrega"?(cepDigitado||"(não informado)"):"(retirada na loja)",
       nome_presenteado:tipo==="entrega"?((document.getElementById("fdc-nome")||{}).value||"(não informado)"):"(retirada na loja)",
       tel_presenteado:tipo==="entrega"?((document.getElementById("fdc-tel")||{}).value||"(não informado)"):"(retirada na loja)",
+      personalizacoes:_personalizacoesResumo||"Não se aplica",
       pick_decorativa:pickTxt,
       mensagem:semMensagem?"(sem mensagem de cartão)":((document.getElementById("fdc-msg")||{}).value||"(não informada)"),
       data_entrega:dataSel?dataSel.toLocaleDateString("pt-BR"):"(não informado)",
@@ -1813,7 +1815,42 @@ fdcFecharModal();salvarSessao();fdcVerificar();
   function fdCheckoutDel(id){return fdCheckoutDB().then(function(db){return new Promise(function(resolve,reject){var tx=db.transaction(FD_FOTO_STORE,"readwrite");tx.objectStore(FD_FOTO_STORE).delete(id);tx.oncomplete=function(){db.close();resolve();};tx.onerror=function(){db.close();reject(tx.error);};});});}
   function fdCheckoutIds(){try{return JSON.parse(sessionStorage.getItem("fd_fotos_pendentes")||"[]");}catch(e){return [];}}
   function fdCheckoutSetIds(ids){try{sessionStorage.setItem("fd_fotos_pendentes",JSON.stringify(ids));}catch(e){}}
+  function fdCheckoutGroups(){try{return JSON.parse(sessionStorage.getItem("fd_fotos_grupos_atuais")||"[]");}catch(e){return [];}}
+  function fdCheckoutSetGroups(groups){try{sessionStorage.setItem("fd_fotos_grupos_atuais",JSON.stringify(groups||[]));}catch(e){}}
   function fdCheckoutProtocol(){var p=_protocoloSessao;try{p=p||sessionStorage.getItem("fdc_protocolo");}catch(e){}if(p)return p;var d=new Date();p="FD-"+d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"-"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0");try{sessionStorage.setItem("fdc_protocolo",p);}catch(e){}return p;}
+  function fdCheckoutResumo(items){
+    if(!items||!items.length)return "Não se aplica";
+    var grupos={},ordem=[];
+    items.forEach(function(item){
+      var chave=String(item.produto||"Produto")+"|"+String(item.unidade||1);
+      if(!grupos[chave]){grupos[chave]={produto:item.produto||"Produto",unidade:item.unidade||1,nome:item.nome||"",frase:item.frase||"",cor:item.cor||"",fotos:[]};ordem.push(chave);}
+      var g=grupos[chave];
+      if(item.nome)g.nome=item.nome;
+      if(item.frase)g.frase=item.frase;
+      if(item.cor)g.cor=item.cor;
+      if(item.blob||item.tipo==="polaroid"||item.tipo==="foto10x15")g.fotos.push(item.fileName||("foto "+(item.foto||g.fotos.length+1)));
+    });
+    var quantidadePorProduto={};
+    ordem.forEach(function(chave){var produto=grupos[chave].produto;quantidadePorProduto[produto]=(quantidadePorProduto[produto]||0)+1;});
+    return ordem.map(function(chave){
+      var g=grupos[chave],partes=[];
+      if(g.nome)partes.push("Nome: "+g.nome);
+      if(g.frase)partes.push("Frase: "+g.frase);
+      if(g.cor)partes.push("Cor do balão: "+g.cor);
+      if(g.fotos.length)partes.push("Foto(s): "+g.fotos.join(", "));
+      return (quantidadePorProduto[g.produto]>1?"Unidade "+g.unidade+" — ":"")+g.produto+" — "+(partes.join("; ")||"personalização registrada");
+    }).join("\n");
+  }
+  function fdCheckoutResumoPendente(){
+    var ids=fdCheckoutIds();
+    if(!ids.length)return Promise.resolve("Não se aplica");
+    return fdCheckoutGet(ids).then(function(items){
+      var grupos=fdCheckoutGroups(),grupoAtual=null;try{grupoAtual=sessionStorage.getItem("fd_fotos_grupo_atual");}catch(e){}
+      if(grupos.length)items=items.filter(function(x){return x&&grupos.some(function(g){return (x.id||"").indexOf(g+"-")===0;});});
+      else if(grupoAtual)items=items.filter(function(x){return x&&(x.id||"").indexOf(grupoAtual+"-")===0;});
+      return fdCheckoutResumo(items);
+    });
+  }
   function fdCheckoutFontReady(font){if(document.fonts&&document.fonts.load)return document.fonts.load('600 120px "'+font+'"').catch(function(){});return Promise.resolve();}
   function fdCheckoutFonts(){return {"Dancing Script":{base:120,weight:600},"Cormorant Garamond":{base:110,weight:600},"Special Elite":{base:92,weight:400},"Libre Baskerville":{base:88,weight:700},"Montserrat":{base:90,weight:600}};}
   function fdCheckoutSize(text,font,scale,maxWidth,captionRatio){var F=fdCheckoutFonts()[font]||fdCheckoutFonts()["Dancing Script"];if(captionRatio&&captionRatio>0)return Math.max(24,Math.min(maxWidth,captionRatio*maxWidth));var probe=document.createElement("span");probe.style.position="fixed";probe.style.visibility="hidden";probe.style.whiteSpace="nowrap";probe.style.left="-99999px";probe.style.fontFamily='"'+font+'"';probe.style.fontWeight=F.weight;probe.textContent=text;document.body.appendChild(probe);var size=F.base*(scale||.75);while(size>24){probe.style.fontSize=size+"px";if(probe.getBoundingClientRect().width<=maxWidth)break;size-=1;}document.body.removeChild(probe);return Math.max(24,size);}
@@ -1929,16 +1966,21 @@ fdcFecharModal();salvarSessao();fdcVerificar();
   async function enviarFotosAntesDoPagamento(){
     var ids=fdCheckoutIds();if(!ids.length)return true;
     var all=await fdCheckoutGet(ids);all=all.filter(function(x){return x&&(!x.ttl||x.ttl>=Date.now());});if(!all.length)return true;
-    var grupoAtual=null;try{grupoAtual=sessionStorage.getItem("fd_fotos_grupo_atual");}catch(e){}
-    if(grupoAtual)all=all.filter(function(x){return (x.id||"").indexOf(grupoAtual+"-")===0;});
+    var grupos=fdCheckoutGroups(),grupoAtual=null;try{grupoAtual=sessionStorage.getItem("fd_fotos_grupo_atual");}catch(e){}
+    if(grupos.length)all=all.filter(function(x){return grupos.some(function(g){return (x.id||"").indexOf(g+"-")===0;});});
+    else if(grupoAtual)all=all.filter(function(x){return (x.id||"").indexOf(grupoAtual+"-")===0;});
     if(!all.length)return true;
-    var items=await fdCheckoutSelecionarItensDoCarrinho(all);
+    _personalizacoesResumo=fdCheckoutResumo(all);
+    var items=await fdCheckoutSelecionarItensDoCarrinho(all.filter(function(x){return !x.fdPersonalizacao;}));
+    var itensPersonalizadosComFoto=all.filter(function(x){return x.fdPersonalizacao&&x.blob;});
+    items=items.concat(itensPersonalizadosComFoto);
     console.log("[FD FOTO] pendentes:", all.map(function(x){return {id:x.id,produto:x.produto,tipo:x.tipo,unidade:x.unidade,foto:x.foto};}));
     console.log("[FD FOTO] selecionados para o carrinho:", items.map(function(x){return {id:x.id,produto:x.produto,tipo:x.tipo,unidade:x.unidade,foto:x.foto};}));
     if(!items.length){
-      // Não há personalizações compatíveis com os produtos atuais do carrinho.
-      // Limpa apenas referências antigas/órfãs da sessão para não tentar enviá-las.
-      fdCheckoutSetIds([]);
+      // Personalizações somente textuais não precisam de upload, mas devem ser
+      // removidas do armazenamento após serem incluídas no resumo do e-mail.
+      await Promise.all(all.map(function(x){return fdCheckoutDel(x.id);}));
+      fdCheckoutSetIds([]);fdCheckoutSetGroups([]);
       return true;
     }
     var btn=document.getElementById("fdc-conf-btn"),protocolo=fdCheckoutProtocol();
@@ -1952,6 +1994,9 @@ fdcFecharModal();salvarSessao();fdcVerificar();
         ids=ids.filter(function(x){return x!==item.id;});
         fdCheckoutSetIds(ids);
       }
+      var enviados={};items.forEach(function(x){enviados[x.id]=true;});
+      await Promise.all(all.filter(function(x){return !enviados[x.id];}).map(function(x){return fdCheckoutDel(x.id);}));
+      fdCheckoutSetIds([]);fdCheckoutSetGroups([]);
       if(btn)btn.textContent="Continuando para o pagamento…";
       console.log("[FD FOTO] uploads concluídos para",protocolo,items.length);
       return true;
@@ -2037,7 +2082,18 @@ fdcFecharModal();salvarSessao();fdcVerificar();
       '</div>';
     }
 
+    html+='<div class="fdc-conf-item">'+
+      '<div class="fdc-conf-icon">🎨</div>'+
+      '<div style="flex:1">'+
+        '<div class="fdc-conf-label">Personalizações dos produtos</div>'+
+        '<div class="fdc-conf-sub" id="fdc-conf-personalizacoes">Consultando…</div>'+
+      '</div>'+
+    '</div>';
+
     bloco.innerHTML=html;
+    fdCheckoutResumoPendente().then(function(txt){
+      var el=document.getElementById("fdc-conf-personalizacoes");if(el)el.textContent=txt;
+    });
 
     var btn=document.getElementById("fdc-conf-btn");
     btn.disabled=false;
