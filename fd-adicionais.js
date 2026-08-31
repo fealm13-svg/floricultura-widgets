@@ -465,6 +465,14 @@
   function fdFotoGetPendingIds(){try{return JSON.parse(sessionStorage.getItem("fd_fotos_pendentes")||"[]");}catch(e){return [];}}
   function fdFotoSetPendingIds(ids){try{sessionStorage.setItem("fd_fotos_pendentes",JSON.stringify(ids));}catch(e){}}
   function fdFotoAddPendingId(id){var a=fdFotoGetPendingIds();if(a.indexOf(id)===-1)a.push(id);fdFotoSetPendingIds(a);}
+  function fdFotoAddPendingGroup(group){
+    try{
+      var a=JSON.parse(sessionStorage.getItem("fd_fotos_grupos_atuais")||"[]");
+      if(a.indexOf(group)===-1)a.push(group);
+      sessionStorage.setItem("fd_fotos_grupos_atuais",JSON.stringify(a));
+      sessionStorage.setItem("fd_fotos_grupo_atual",group);
+    }catch(e){}
+  }
 
   function fdFotoEstadoVazio(){
     return {blob:null,fileName:"",xNorm:0,yNorm:0,scale:1,orientation:"vertical",ins:false,text:"",font:"Dancing Script",fontScale:.75};
@@ -882,7 +890,7 @@
 
     function gravarNoDB(){
       var protocol=fdFotoGerarProtocolo(),group="fdg-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),perUnit=(tipo==="polaroid"?fdFotoQuantidadePorUnidade(titulo):1),promises=[];
-      try{sessionStorage.setItem("fd_fotos_grupo_atual",group);}catch(e){}
+      fdFotoAddPendingGroup(group);
       states.forEach(function(s,idx){
         var id=group+"-"+(idx+1);
         var recordBase={id:id,protocolo:protocol,produto:titulo,tipo:tipo,unidade:Math.floor(idx/perUnit)+1,foto:(idx%perUnit)+1,blob:s.blob,fileName:s.fileName||"foto",xNorm:s.xNorm||0,yNorm:s.yNorm||0,scale:s.scale||1,orientation:s.orientation||"vertical",ins:!!s.ins,text:s.text||"",font:s.font||"Dancing Script",fontScale:s.fontScale||.75,captionRatio:s.captionRatio||0,createdAt:Date.now(),ttl:Date.now()+6*60*60*1000};
@@ -919,12 +927,212 @@
     window.FD_FOTO_PERSONALIZADOR={titulo:titulo,tipo:tipo,getTotal:function(){return states.length;},estaPronto:todosProntos};
   }
 
+  // ─────────────────────────────────────────────
+  // MÓDULO — PERSONALIZAÇÕES DE PRODUTOS E KITS
+  // ─────────────────────────────────────────────
+  // O produto é identificado por uma regra explícita. Assim, palavras como
+  // "caneca" ou "polaroid" não ativam campos em produtos que não precisam
+  // deles. Novos produtos podem ser cadastrados nesta lista.
+  var FD_PERSONALIZACAO_CONFIGS=[
+    {id:"kit-vermont",match:function(t){return t.indexOf("kit vermont")!==-1;},titulo:"Personalize seu Kit Vermont",campos:[
+      {id:"nome",tipo:"texto",rotulo:"Nome para a caneca",max:20,obrigatorio:true},
+      {id:"foto",tipo:"foto",rotulo:"Foto para a Polaroid",obrigatorio:true}
+    ]},
+    {id:"bubble",match:function(t){return /(^| )bubble( |$)/.test(t);},titulo:"Personalize seu Bubble",campos:[
+      {id:"frase",tipo:"select",rotulo:"Frase da ocasião",obrigatorio:true,opcoes:["Feliz aniversário","Eu te amo","Parabéns","Dia das Mães","Dia dos Pais","Hoje é seu dia","Boa sorte","Melhoras","Obrigado(a)","Bem-vindo(a)","Você é especial","Outra frase"],livre:"fraseLivre",maxLivre:25},
+      {id:"nome",tipo:"texto",rotulo:"Nome da pessoa presenteada",max:15,obrigatorio:true},
+      {id:"cor",tipo:"select",rotulo:"Cor do balão interno",obrigatorio:true,opcoes:["Rosa","Azul","Vermelho","Dourado","Preto"]}
+    ]},
+    {id:"caneca-foto",match:function(t){return t.indexOf("caneca")!==-1&&fdPersonalizacaoTemPalavra(t,"foto");},titulo:"Personalize sua caneca",campos:[
+      {id:"foto",tipo:"foto",rotulo:"Foto para a caneca",obrigatorio:true}
+    ]},
+    {id:"caneca-nome",match:function(t){return t.indexOf("caneca")!==-1&&!fdPersonalizacaoTemPalavra(t,"foto")&&(t.indexOf("personaliz")!==-1||t.indexOf("com nome")!==-1);},titulo:"Personalize sua caneca",campos:[
+      {id:"nome",tipo:"texto",rotulo:"Nome para a caneca",max:20,obrigatorio:true}
+    ]},
+    {id:"copo-450ml",match:function(t){return t.indexOf("copo")!==-1&&t.indexOf("450")!==-1;},titulo:"Personalize seu copo 450 ml",campos:[
+      {id:"nome",tipo:"texto",rotulo:"Nome para o copo",max:20,obrigatorio:true}
+    ]}
+  ];
+  var FD_PERSONALIZACAO_MODULE_READY=false;
+  var FD_PERSONALIZACAO_QTY_TIMER=null;
+
+  function fdPersonalizacaoNormalizar(v){
+    var s=String(v||"").toLowerCase().replace(/\u00a0/g," ");
+    try{s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}
+    return s.replace(/[^a-z0-9]+/g," ").replace(/\s+/g," ").trim();
+  }
+  function fdPersonalizacaoTemPalavra(t,p){return new RegExp("(^| )"+p+"s?( |$)","i").test(t||"");}
+  function fdPersonalizacaoConfig(titulo){
+    var t=fdPersonalizacaoNormalizar(titulo);
+    for(var i=0;i<FD_PERSONALIZACAO_CONFIGS.length;i++)if(FD_PERSONALIZACAO_CONFIGS[i].match(t))return FD_PERSONALIZACAO_CONFIGS[i];
+    return null;
+  }
+  function fdPersonalizacaoCSS(){
+    if(document.getElementById("fd-personalizacao-css"))return;
+    var s=document.createElement("style");s.id="fd-personalizacao-css";s.innerHTML=[
+      "#fd-personalizacao-produto{margin:22px 0;padding:18px;border:1px solid #e4e0de;border-radius:12px;background:#fff;position:relative;z-index:5;font-family:'Helvetica Neue',Arial,sans-serif}",
+      "#fd-personalizacao-produto .fdg-title{font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:#a91537;margin:0 0 5px}",
+      "#fd-personalizacao-produto .fdg-sub{font-size:12px;color:#777;margin:0 0 15px}",
+      "#fd-personalizacao-produto .fdg-unit{border-top:1px solid #eee;padding-top:14px;margin-top:14px}",
+      "#fd-personalizacao-produto .fdg-unit-title{font-family:Georgia,'Times New Roman',serif;font-size:14px;font-weight:700;color:#444;margin:0 0 11px}",
+      "#fd-personalizacao-produto .fdg-label{display:block;font-size:13px;font-weight:700;color:#333;margin:10px 0 6px}",
+      "#fd-personalizacao-produto .fdg-input,#fd-personalizacao-produto .fdg-select{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 11px;background:#fff;color:#333;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px}",
+      "#fd-personalizacao-produto .fdg-upload{border:2px dashed #d95d78;background:#fffafb;border-radius:9px;padding:12px}",
+      "#fd-personalizacao-produto .fdg-upload input{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;max-width:100%}",
+      "#fd-personalizacao-produto .fdg-file{font-size:12px;color:#555;margin-top:7px;overflow-wrap:anywhere}",
+      "#fd-personalizacao-produto .fdg-summary{margin-top:15px;padding:11px;border-radius:8px;background:#faf6f7;font-size:12px;color:#555;line-height:1.5}",
+      "#fd-personalizacao-produto .fdg-status{min-height:18px;margin-top:8px;font-size:12px;font-weight:700;color:#a91537}",
+      "#fd-personalizacao-produto .fdg-status.ok{color:#217448}",
+      "#fd-personalizacao-produto .fdg-note{font-size:11px;color:#777;margin-top:10px;line-height:1.4}",
+      "#fd-personalizacao-produto .fdg-custom{display:none;margin-top:7px}",
+      "#fd-personalizacao-produto .fdg-custom.visible{display:block}"
+    ].join("");document.head.appendChild(s);
+  }
+
+  function fdPersonalizacaoIniciar(){
+    if(FD_PERSONALIZACAO_MODULE_READY)return;
+    var titulo=fdFotoTitulo(),config=fdPersonalizacaoConfig(titulo);
+    if(!config)return;
+    FD_PERSONALIZACAO_MODULE_READY=true;
+    fdPersonalizacaoCSS();
+    var box=document.createElement("section");box.id="fd-personalizacao-produto";
+    var anchor=document.querySelector(".produto-comprar, .acao-produto, .acoes-produto, .info-principal-produto")||document.querySelector(".produto")||document.querySelector("main");
+    if(!anchor){FD_PERSONALIZACAO_MODULE_READY=false;return;}
+    anchor.parentNode.insertBefore(box,anchor);
+    var estados=[];
+    function quantidade(){return Math.max(1,fdFotoQuantidadeProduto());}
+    function ajustarEstados(q){while(estados.length<q)estados.push({});if(estados.length>q)estados.length=q;}
+    function idCampo(u,id){return "fdg-"+u+"-"+id;}
+    function campoMarkup(field,u,state){
+      var id=idCampo(u,field.id),html='<label class="fdg-label" for="'+id+'">'+fdFotoEsc(field.rotulo)+(field.obrigatorio?' *':'')+'</label>';
+      if(field.tipo==="texto"){
+        html+='<input class="fdg-input" id="'+id+'" data-fd-unit="'+u+'" data-fd-field="'+field.id+'" type="text" maxlength="'+field.max+'" autocomplete="off">';
+      }else if(field.tipo==="select"){
+        html+='<select class="fdg-select" id="'+id+'" data-fd-unit="'+u+'" data-fd-field="'+field.id+'"><option value="">Selecione uma opção</option>';
+        field.opcoes.forEach(function(op){html+='<option value="'+fdFotoEsc(op)+'">'+fdFotoEsc(op)+'</option>';});
+        html+='</select>';
+        if(field.livre)html+='<div class="fdg-custom" id="'+idCampo(u,field.livre)+'-wrap"><input class="fdg-input" id="'+idCampo(u,field.livre)+'" data-fd-unit="'+u+'" data-fd-field="'+field.livre+'" type="text" maxlength="'+field.maxLivre+'" placeholder="Digite sua frase (até '+field.maxLivre+' caracteres)"></div>';
+      }else if(field.tipo==="foto"){
+        html+='<div class="fdg-upload"><input id="'+id+'" data-fd-unit="'+u+'" data-fd-field="'+field.id+'" type="file" accept="image/jpeg,image/png"><div class="fdg-file" id="'+id+'-name">JPG ou PNG · até 10 MB</div></div>';
+      }
+      return html;
+    }
+    function render(){
+      ajustarEstados(quantidade());
+      var html='<div class="fdg-title">'+fdFotoEsc(config.titulo)+'</div><p class="fdg-sub">Preencha os dados de personalização antes de adicionar o produto ao carrinho.</p>';
+      estados.forEach(function(state,u){
+        html+=(estados.length>1?'<div class="fdg-unit"><div class="fdg-unit-title">Unidade '+(u+1)+'</div>':'');
+        config.campos.forEach(function(field){html+=campoMarkup(field,u,state);});
+        if(estados.length>1)html+='</div>';
+      });
+      html+='<div class="fdg-summary" id="fdg-summary"></div><div class="fdg-status" id="fdg-status" aria-live="polite"></div><div class="fdg-note">A prévia, quando exibida, é ilustrativa. A arte final será preparada pela nossa equipe.</div>';
+      box.innerHTML=html;
+      estados.forEach(function(state,u){
+        config.campos.forEach(function(field){
+          var el=box.querySelector("[data-fd-unit='"+u+"'][data-fd-field='"+field.id+"']");
+          if(!el)return;
+          if(field.tipo!=="foto")el.value=state[field.id]||"";
+          else if(state[field.id])box.querySelector("#"+idCampo(u,field.id)+"-name").textContent=state[field.id].name;
+          el.addEventListener(field.tipo==="foto"?"change":(field.tipo==="select"?"change":"input"),function(){
+            if(field.tipo==="foto"){
+              var f=el.files&&el.files[0];
+              if(!f)return;
+              if(!/^image\/(jpeg|png)$/.test(f.type)){alert("Escolha uma imagem JPG ou PNG.");el.value="";return;}
+              if(f.size>10*1024*1024){alert("A imagem deve ter no máximo 10 MB.");el.value="";return;}
+              state[field.id]=f;box.querySelector("#"+idCampo(u,field.id)+"-name").textContent=f.name;
+            }else state[field.id]=el.value;
+            atualizar();
+          });
+          if(field.livre){
+            var livreEl=box.querySelector("[data-fd-unit='"+u+"'][data-fd-field='"+field.livre+"']");
+            if(livreEl){
+              livreEl.value=state[field.livre]||"";
+              livreEl.addEventListener("input",function(){state[field.livre]=livreEl.value;atualizar();});
+            }
+          }
+        });
+      });
+      atualizar();
+    }
+    function validar(){
+      for(var u=0;u<estados.length;u++){
+        var state=estados[u];
+        for(var i=0;i<config.campos.length;i++){
+          var f=config.campos[i];
+          if(!f.obrigatorio)continue;
+          if(f.tipo==="foto"&&!state[f.id])return false;
+          if(f.tipo!=="foto"&&!String(state[f.id]||"").trim())return false;
+          if(f.livre&&state[f.id]==="Outra frase"&&!String(state[f.livre]||"").trim())return false;
+        }
+      }
+      return true;
+    }
+    function resumo(){
+      var linhas=[];
+      estados.forEach(function(state,u){
+        var p=[];
+        config.campos.forEach(function(f){
+          var val=state[f.id];
+          if(f.livre&&val==="Outra frase")val=state[f.livre]||"Outra frase";
+          if(f.tipo==="foto")p.push(f.rotulo+": "+(val?val.name:"não enviada"));
+          else if(val)p.push(f.rotulo+": "+val);
+        });
+        linhas.push((estados.length>1?"Unidade "+(u+1)+" — ":"")+p.join(" · "));
+      });
+      return linhas.join("<br>");
+    }
+    function atualizar(){
+      var ok=validar(),sum=box.querySelector("#fdg-summary"),status=box.querySelector("#fdg-status");
+      if(sum)sum.innerHTML="<strong>Resumo:</strong><br>"+resumo();
+      if(status){status.textContent=ok?"Personalização preenchida. Você já pode adicionar o produto.":"Preencha todos os campos obrigatórios para continuar.";status.classList.toggle("ok",ok);}
+      config.campos.forEach(function(f){
+        if(!f.livre)return;
+        estados.forEach(function(state,u){var wrap=box.querySelector("#"+idCampo(u,f.livre)+"-wrap");if(wrap)wrap.classList.toggle("visible",state[f.id]==="Outra frase");});
+      });
+    }
+    function gravar(){
+      var protocol=fdFotoGerarProtocolo(),group="fdg-"+Date.now()+"-"+Math.random().toString(36).slice(2,8),promises=[];
+      fdFotoAddPendingGroup(group);
+      estados.forEach(function(state,u){
+        var fotoField=config.campos.find(function(f){return f.tipo==="foto";}),foto=fotoField?state[fotoField.id]:null;
+        var frase=state.frase==="Outra frase"?(state.fraseLivre||""):(state.frase||"");
+        var id=group+"-"+(u+1),record={id:id,protocolo:protocol,produto:titulo,tipo:"custom",fdPersonalizacao:true,personalizacaoId:config.id,unidade:u+1,foto:foto?1:0,blob:foto||null,fileName:foto?foto.name:"",nome:state.nome||"",frase:frase,cor:state.cor||"",createdAt:Date.now(),ttl:Date.now()+6*60*60*1000};
+        promises.push(fdFotoDBPut(record).then(function(){fdFotoAddPendingId(id);}));
+      });
+      return Promise.all(promises);
+    }
+    render();
+    if(FD_PERSONALIZACAO_QTY_TIMER)clearInterval(FD_PERSONALIZACAO_QTY_TIMER);
+    var ultimaQuantidade=quantidade();
+    FD_PERSONALIZACAO_QTY_TIMER=setInterval(function(){var q=quantidade();if(q!==ultimaQuantidade){ultimaQuantidade=q;render();}},500);
+    var buySelectors=[".botao-comprar",".botao.principal",".adicionar-carrinho","#btn-comprar",".btn-comprar","button[type='submit']","input[type='submit']"];
+    document.addEventListener("click",function(ev){
+      var el=ev.target;while(el&&el!==document.body&&!(el.matches&&buySelectors.some(function(s){try{return el.matches(s);}catch(e){return false;}})))el=el.parentElement;
+      if(!el||el===document.body)return;
+      if(!validar()){ev.preventDefault();ev.stopPropagation();alert("Preencha toda a personalização antes de adicionar o produto ao carrinho.");return;}
+      if(el.dataset.fdPersonalizacaoGenericaOk==="1")return;
+      ev.preventDefault();ev.stopPropagation();el.dataset.fdPersonalizacaoGenericaOk="1";
+      gravar().then(function(){el.click();}).catch(function(e){el.dataset.fdPersonalizacaoGenericaOk="";alert("Não foi possível guardar a personalização. Tente novamente.");console.error(e);});
+    },true);
+    window.FD_PERSONALIZACAO={produto:titulo,config:config.id,pronto:validar};
+  }
+
+  function iniciarModuloPersonalizacao(){
+    var tentativas=0,timer=setInterval(function(){
+      tentativas++;
+      var tt=fdFotoTitulo();
+      if(fdPersonalizacaoConfig(tt)&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
+        clearInterval(timer);fdPersonalizacaoIniciar();
+      }else if(tentativas>40)clearInterval(timer);
+    },300);
+  }
+
   function iniciarModuloFotos(){
     var tentativas=0;
     var timer=setInterval(function(){
       tentativas++;
       var tt=fdFotoTitulo();
-      if(fdFotoTemPalavraFoto(tt)&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
+      if(fdFotoTemPalavraFoto(tt)&&!fdPersonalizacaoConfig(tt)&&document.querySelector(".abas-custom, .info-principal-produto, .produto")){
         clearInterval(timer);fdFotoIniciarPersonalizador();
       }else if(tentativas>40){clearInterval(timer);}
     },300);
@@ -956,6 +1164,7 @@
     aplicarTagProduto();
     construirComplementos();
     corrigirMensagensFrete();
+    iniciarModuloPersonalizacao();
     iniciarModuloFotos();
   }
 
@@ -976,6 +1185,7 @@
         aplicarTagProduto();
         construirComplementos();
         corrigirMensagensFrete();
+        iniciarModuloPersonalizacao();
         iniciarModuloFotos();
       }, 400);
     });
