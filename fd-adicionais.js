@@ -591,6 +591,15 @@
     document.head.appendChild(s);
   }
 
+  function fdEncontrarElementoVisivel(seletor){
+    var lista=document.querySelectorAll(seletor),fallback=lista[0]||null;
+    for(var i=0;i<lista.length;i++){
+      var el=lista[i],estilo=window.getComputedStyle?window.getComputedStyle(el):null;
+      if(!estilo|| (estilo.display!=="none"&&estilo.visibility!=="hidden"&&(el.offsetParent!==null||estilo.position==="fixed")))return el;
+    }
+    return fallback;
+  }
+
   function fdFotoCriarUI(titulo,tipo){
     if(document.getElementById("fd-foto-personalizador"))return;
     fdFotoCSS();
@@ -602,8 +611,11 @@
         '<div class="fdp-title">Personalize sua foto 10x15</div><div class="fdp-sub">Escolha a orientação e ajuste o enquadramento antes de adicionar ao carrinho.</div>':
         '<div class="fdp-title">Envie sua foto</div><div class="fdp-sub">Envie uma foto JPG ou PNG para este produto.</div>'))+
       '<div class="fdp-grid" id="fdp-grid"></div>';
-    var anchor=document.querySelector(".produto-comprar, .acao-produto, .acoes-produto, .info-principal-produto")||document.querySelector(".produto")||document.querySelector("main");
-    if(anchor)anchor.parentNode.insertBefore(box,anchor);
+    var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
+    var anchor=infoProduto||fdEncontrarElementoVisivel(".produto-comprar, .acao-produto, .acoes-produto");
+    if(infoProduto&&infoProduto.parentNode)infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
+    else if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(box,anchor);
+    else{anchor=document.querySelector(".produto")||document.querySelector("main");if(anchor&&anchor.parentNode)anchor.parentNode.appendChild(box);}
   }
 
   function fdFotoAbrirEditor(state,index,onApply,onCancel,modo){
@@ -981,13 +993,13 @@
   function fdPersonalizacaoCSS(){
     if(document.getElementById("fd-personalizacao-css"))return;
     var s=document.createElement("style");s.id="fd-personalizacao-css";s.innerHTML=[
-      "#fd-personalizacao-produto{margin:22px 0;padding:18px;border:1px solid #e4e0de;border-radius:12px;background:#fff;position:relative;z-index:5;font-family:'Helvetica Neue',Arial,sans-serif}",
+      "#fd-personalizacao-produto{clear:both;display:block;width:100%;max-width:100%;box-sizing:border-box;overflow:visible!important;float:none!important;margin:22px 0;padding:18px;border:1px solid #e4e0de;border-radius:12px;background:#fff;position:relative!important;z-index:20;font-family:'Helvetica Neue',Arial,sans-serif}",
       "#fd-personalizacao-produto .fdg-title{font-family:Georgia,'Times New Roman',serif;font-size:18px;font-weight:700;color:#a91537;margin:0 0 5px}",
       "#fd-personalizacao-produto .fdg-sub{font-size:12px;color:#777;margin:0 0 15px}",
       "#fd-personalizacao-produto .fdg-unit{border-top:1px solid #eee;padding-top:14px;margin-top:14px}",
       "#fd-personalizacao-produto .fdg-unit-title{font-family:Georgia,'Times New Roman',serif;font-size:14px;font-weight:700;color:#444;margin:0 0 11px}",
       "#fd-personalizacao-produto .fdg-label{display:block;font-size:13px;font-weight:700;color:#333;margin:10px 0 6px}",
-      "#fd-personalizacao-produto .fdg-input,#fd-personalizacao-produto .fdg-select{width:100%;border:1px solid #ccc;border-radius:8px;padding:10px 11px;background:#fff;color:#333;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px}",
+      "#fd-personalizacao-produto .fdg-input,#fd-personalizacao-produto .fdg-select{display:block;width:100%;min-height:44px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;padding:10px 11px;background:#fff;color:#333;font-family:'Helvetica Neue',Arial,sans-serif;font-size:14px;line-height:1.35}",
       "#fd-personalizacao-produto .fdg-upload{border:2px dashed #d95d78;background:#fffafb;border-radius:9px;padding:12px}",
       "#fd-personalizacao-produto .fdg-upload input{font-family:'Helvetica Neue',Arial,sans-serif;font-size:12px;max-width:100%}",
       "#fd-personalizacao-produto .fdg-file{font-size:12px;color:#555;margin-top:7px;overflow-wrap:anywhere}",
@@ -1007,9 +1019,20 @@
     FD_PERSONALIZACAO_MODULE_READY=true;
     fdPersonalizacaoCSS();
     var box=document.createElement("section");box.id="fd-personalizacao-produto";
-    var anchor=document.querySelector(".produto-comprar, .acao-produto, .acoes-produto, .info-principal-produto")||document.querySelector(".produto")||document.querySelector("main");
-    if(!anchor){FD_PERSONALIZACAO_MODULE_READY=false;return;}
-    anchor.parentNode.insertBefore(box,anchor);
+    // O personalizador deve vir depois da identificação do produto (foto,
+    // título, preço e CEP) e antes dos blocos seguintes do anúncio.
+    // Inserir antes do .info-principal-produto fazia o módulo subir para o
+    // topo no mobile e ficar sobre os dados no desktop.
+    var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
+    var anchor=infoProduto||fdEncontrarElementoVisivel(".produto-comprar, .acao-produto, .acoes-produto");
+    if(anchor){
+      if(infoProduto&&infoProduto.parentNode)infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
+      else if(anchor.parentNode)anchor.parentNode.insertBefore(box,anchor);
+    }else{
+      anchor=document.querySelector(".produto")||document.querySelector("main");
+      if(anchor&&anchor.parentNode)anchor.parentNode.appendChild(box);
+    }
+    if(!box.parentNode){FD_PERSONALIZACAO_MODULE_READY=false;return;}
     var estados=[];
     function quantidade(){return Math.max(1,fdFotoQuantidadeProduto());}
     function ajustarEstados(q){while(estados.length<q)estados.push({});if(estados.length>q)estados.length=q;}
