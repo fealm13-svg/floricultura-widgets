@@ -9,6 +9,24 @@
     tracking_url:"https://script.google.com/macros/s/AKfycbzTOokehlacD7nIpETyqHEkJRay8Pz2vRrStALijA37MytIZ-egF91zLy-hMevUZdmR/exec"
   };
 
+  // ── Campanha de desconto progressivo ────────────────────────────────
+  // Altere apenas "ativo" para habilitar ou desabilitar a campanha.
+  // Os cupons continuam sendo validados pela plataforma no checkout.
+  var DESCONTO_PROGRESSIVO={
+    ativo:true,
+    niveis:[
+      {min:120,percentual:5,codigo:"PRIMEIRA5"},
+      {min:200,percentual:7,codigo:"PRIMEIRA7"},
+      {min:300,percentual:10,codigo:"PRIMEIRA10"}
+    ]
+  };
+
+  // Produtos personalizados precisam de pelo menos um dia útil de antecedência.
+  var PRAZO_PERSONALIZADOS_DIAS_UTEIS=1;
+  var FD_DESCONTO_TIMER=null;
+  var FD_ULTIMO_SUBTOTAL_DESCONTO=null;
+  var FD_ULTIMO_ESTADO_DESCONTO=null;
+
   // ── Estado de tracking (registro de CEPs) ────────────────────────────
   var _protocoloSessao=null; // gerado no primeiro CEP válido, mantido pela sessão
   var _ultimoCepRegistrado=null; // último CEP enviado pro tracking
@@ -428,6 +446,39 @@
   function hoje(){var d=new Date();d.setHours(0,0,0,0);return d;}
   function addDias(d,n){var r=new Date(d);r.setDate(r.getDate()+n);return r;}
 
+  function fdNormalizarTexto(v){
+    var s=String(v||"").toLowerCase();
+    try{s=s.normalize("NFD").replace(/[\u0300-\u036f]/g,"");}catch(e){}
+    return s.replace(/\s+/g," ").trim();
+  }
+
+  function fdProdutoPersonalizadoPrazo(nome){
+    var t=fdNormalizarTexto(nome);
+    return /(^|[^a-z0-9])bubble([^a-z0-9]|$)/i.test(t) || /(^|[^a-z0-9])caneca\s+personalizada([^a-z0-9]|$)/i.test(t);
+  }
+
+  function carrinhoTemPrazoPersonalizado(){
+    var nomes=[];
+    try{
+      var c=fdLerCarrinho();
+      if(c&&c.produtos) c.produtos.forEach(function(p){if(p&&p.nome)nomes.push(p.nome);});
+    }catch(e){}
+    if(!nomes.length){
+      try{nomes=lerItensCarrinhoArray();}catch(e){}
+    }
+    return nomes.some(fdProdutoPersonalizadoPrazo);
+  }
+
+  function adicionarDiasUteis(data,quantidade){
+    var r=new Date(data);r.setHours(0,0,0,0);
+    var restantes=Math.max(0,parseInt(quantidade,10)||0);
+    while(restantes>0){
+      r=addDias(r,1);
+      if(r.getDay()!==0&&r.getDay()!==6&&!isFeriado(r))restantes--;
+    }
+    return r;
+  }
+
   function getPeriodosParaDow(dow, dt){
     if(dt&&isDiaNamorados(dt)){
       if(tipo==="entrega")return ENTREGA_NAMORADOS;
@@ -530,8 +581,14 @@
   }
 
   function minData(){
+    if(carrinhoTemPrazoPersonalizado())return adicionarDiasUteis(hoje(),PRAZO_PERSONALIZADOS_DIAS_UTEIS);
     if(isCesta())return addDias(hoje(),1);
     return hoje();
+  }
+
+  function atualizarAvisoPrazoPersonalizado(){
+    var el=document.getElementById("fdc-prazo-personalizado");
+    if(el)el.classList.toggle("ativo",carrinhoTemPrazoPersonalizado());
   }
 
   function periodosParaDia(d){
@@ -666,6 +723,91 @@
     return itens.length>0?itens.join("\n"):"(não identificado)";
   }
 
+  function fdSubtotalParaDesconto(){
+    try{
+      var carrinho=fdLerCarrinho();
+      if(carrinho&&carrinho.valor_total>0)return Math.round(carrinho.valor_total*100)/100;
+    }catch(e){}
+    var seletores=["[data-subtotal]",".subtotal .valor",".valor-subtotal",".total-produtos",".subtotal strong",".subtotal .price"];
+    for(var i=0;i<seletores.length;i++){
+      var el=document.querySelector(seletores[i]);
+      if(!el)continue;
+      var raw=el.getAttribute("data-subtotal")||el.textContent||"";
+      var n=fdNumero(raw);
+      if(n>0)return Math.round(n*100)/100;
+    }
+    return 0;
+  }
+
+  function fdAtualizarDescontoProgressivo(){
+    var box=document.getElementById("fdc-desconto-box");
+    if(!box)return;
+    var cfg=DESCONTO_PROGRESSIVO||{};
+    var niveis=Array.isArray(cfg.niveis)?cfg.niveis:[];
+    var ativo=cfg.ativo!==false;
+    var subtotal=fdSubtotalParaDesconto();
+    var chave=(ativo?"1":"0")+"|"+subtotal+"|"+JSON.stringify(niveis);
+    if(chave===FD_ULTIMO_ESTADO_DESCONTO)return;
+    FD_ULTIMO_ESTADO_DESCONTO=chave;
+    var msg=document.getElementById("fdc-desconto-msg");
+    var fill=document.getElementById("fdc-desconto-fill");
+    var track=fill?fill.parentElement:null;
+    var status=document.getElementById("fdc-desconto-status");
+    var codigo=document.getElementById("fdc-desconto-codigo");
+    var copiar=document.getElementById("fdc-desconto-copiar");
+    var atual=null,proximo=null;
+    for(var i=0;i<niveis.length;i++){
+      if(subtotal>=Number(niveis[i].min))atual=niveis[i];
+      else if(!proximo)proximo=niveis[i];
+    }
+    var maximo=niveis.length?Number(niveis[niveis.length-1].min):300;
+    var progresso=maximo>0?Math.min(subtotal/maximo,1):0;
+    if(fill)fill.style.width=(ativo?Math.round(progresso*100):0)+"%";
+    if(track)track.setAttribute("aria-valuenow",String(Math.min(subtotal,maximo)));
+    box.classList.toggle("desativado",!ativo);
+    if(status)status.textContent=ativo?"Ativo":"Desativado";
+    ["120","200","300"].forEach(function(v){
+      var el=document.getElementById("fdc-desconto-level-"+v),mark=document.getElementById("fdc-desconto-mark-"+v);
+      if(el)el.classList.remove("atual","bloq");
+      if(mark)mark.classList.remove("ok");
+    });
+    if(!ativo){
+      if(msg)msg.textContent="Campanha de desconto indisponível no momento.";
+      if(codigo)codigo.textContent="—";
+      if(copiar)copiar.disabled=true;
+    }else{
+      niveis.forEach(function(nivel){
+        var id=String(nivel.min),el=document.getElementById("fdc-desconto-level-"+id),mark=document.getElementById("fdc-desconto-mark-"+id);
+        if(el){if(subtotal>=Number(nivel.min))el.classList.add("atual");else el.classList.add("bloq");}
+        if(mark&&subtotal>=Number(nivel.min))mark.classList.add("ok");
+      });
+      if(!atual&&proximo){
+        if(msg)msg.innerHTML="Faltam <strong>"+(Number(proximo.min)-subtotal).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})+"</strong> para liberar "+proximo.percentual+"% com "+proximo.codigo+".";
+        if(codigo)codigo.textContent=proximo.codigo;
+        if(copiar)copiar.disabled=true;
+      }else if(atual&&proximo){
+        if(msg)msg.innerHTML="<strong>"+atual.percentual+"% liberado</strong> com "+atual.codigo+". Faltam <strong>"+(Number(proximo.min)-subtotal).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})+"</strong> para chegar a "+proximo.percentual+"%.";
+        if(codigo)codigo.textContent=atual.codigo;
+        if(copiar)copiar.disabled=false;
+      }else if(atual){
+        if(msg)msg.innerHTML="<strong>"+atual.percentual+"% liberado!</strong> Você atingiu o maior desconto da campanha.";
+        if(codigo)codigo.textContent=atual.codigo;
+        if(copiar)copiar.disabled=false;
+      }else{
+        if(msg)msg.textContent="Adicione produtos ao carrinho para conferir seu desconto.";
+        if(codigo)codigo.textContent="—";
+        if(copiar)copiar.disabled=true;
+      }
+    }
+    FD_ULTIMO_SUBTOTAL_DESCONTO=subtotal;
+  }
+
+  function iniciarDescontoProgressivo(){
+    fdAtualizarDescontoProgressivo();
+    if(FD_DESCONTO_TIMER)clearInterval(FD_DESCONTO_TIMER);
+    FD_DESCONTO_TIMER=setInterval(fdAtualizarDescontoProgressivo,800);
+  }
+
   function salvarSessao(){
     try{
       sessionStorage.setItem("fdc_carrinho",JSON.stringify({
@@ -753,6 +895,7 @@
     var css=[
       ".fdc-bloco{background:transparent;border:0;padding:0;margin:20px 0;font-family:inherit;box-shadow:none}",
       ".fdc-v9-head{background:#fff;border:1px solid #e7e3e0;border-radius:14px;padding:18px 18px 16px;margin-bottom:14px}",
+      ".fdc-prazo-personalizado{display:none;margin:0 0 11px;padding:9px 11px;border-left:3px solid #7b2cbf;border-radius:6px;background:#f7effa;color:#633174;font-size:11px;line-height:1.45}.fdc-prazo-personalizado.ativo{display:block}",
       ".fdc-v9-head h2{margin:0;color:#a91537;font-size:21px;line-height:1.25}",
       ".fdc-v9-head p{margin:5px 0 0;color:#777;font-size:12px;line-height:1.45}",
       ".fdc-v9-progress{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:15px}",
@@ -784,6 +927,7 @@
       ".fdc-msg-footer{display:flex;align-items:center;justify-content:space-between;margin-top:6px;flex-wrap:wrap;gap:4px}.fdc-contador{font-size:10px;color:#aaa}.fdc-sem-msg{display:flex;align-items:center;gap:6px;font-size:11px;color:#666;cursor:pointer;user-select:none}.fdc-sem-msg input{accent-color:#5a8966;width:14px;height:14px}",
       ".fdc-termo-wrap{border-radius:9px;padding:13px 14px;margin-top:4px;background:#3a3a3a}.fdc-termo-wrap.aceito{background:#72cd41}.fdc-termo-lista{list-style:none;padding:0 4px 0 0;margin:0 0 10px;max-height:145px;overflow-y:auto;scrollbar-width:thin}.fdc-termo-lista li{font-size:11px;color:#fff;line-height:1.55;padding:4px 0 4px 17px;position:relative}.fdc-termo-lista li::before{content:'•';position:absolute;left:0;color:rgba(255,255,255,.65)}.fdc-termo-check{display:flex;align-items:center;gap:7px;font-size:11px;color:#fff;cursor:pointer;font-weight:700}.fdc-termo-check input{accent-color:#fff;width:14px;height:14px}",
       ".fdc-v9-side{position:sticky;top:14px}.fdc-v9-summary{background:#fff;border:1px solid #e7e3e0;border-radius:12px;padding:15px}.fdc-v9-summary h3{margin:0 0 12px;font-size:14px}.fdc-v9-summary-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid #eee;font-size:11px}.fdc-v9-summary-row:last-child{border-bottom:0}.fdc-v9-summary-row span{color:#777}.fdc-v9-summary-row strong{color:#333;text-align:right}.fdc-v9-check{margin-top:11px;background:#edf7f0;border-radius:8px;padding:10px;font-size:10px;line-height:1.45;color:#275d3c}.fdc-v9-status{margin-top:10px;background:#fafafa;border:1px solid #e8e5e3;border-radius:9px;padding:10px}.fdc-v9-status-title{font-size:11px;font-weight:800;margin-bottom:7px;color:#555}.fdc-status-items{display:flex;flex-wrap:wrap;gap:5px}.fdc-st{font-size:10px;padding:3px 8px;border-radius:20px;background:#efefef;color:#999}.fdc-st.ok{background:#e8f5f0;color:#0a5c3a}",
+      ".fdc-desconto-box{margin-bottom:13px;padding:12px;border:1px solid #dfb3e9;border-radius:9px;background:#fbf5fd}.fdc-desconto-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:7px}.fdc-desconto-title{font-size:11px;font-weight:800;color:#74358a}.fdc-desconto-status{font-size:9px;font-weight:800;color:#39734c}.fdc-desconto-msg{min-height:31px;margin-bottom:8px;font-size:11px;line-height:1.4;color:#555}.fdc-desconto-msg strong{color:#74358a}.fdc-desconto-track{height:9px;background:#eadff0;border-radius:999px;overflow:visible;position:relative}.fdc-desconto-fill{height:100%;width:0;background:linear-gradient(90deg,#b66acb,#74358a);border-radius:999px;transition:width .25s ease}.fdc-desconto-mark{position:absolute;top:50%;width:13px;height:13px;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:50%;background:#d7c7dd;box-shadow:0 0 0 1px #c5a9cc}.fdc-desconto-mark.m120{left:40%}.fdc-desconto-mark.m200{left:66.666%}.fdc-desconto-mark.m300{left:100%}.fdc-desconto-mark.ok{background:#74358a}.fdc-desconto-levels{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:10px}.fdc-desconto-level{padding:5px 3px;border:1px solid #e2d7e6;border-radius:6px;text-align:center;background:#fff}.fdc-desconto-level.atual{border-color:#bd79ce;background:#f5e9f8}.fdc-desconto-level.bloq{opacity:.55}.fdc-desconto-level b{display:block;color:#74358a;font-size:13px}.fdc-desconto-level span{display:block;color:#8c7b92;font-size:9px}.fdc-desconto-code{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-top:9px;padding-top:8px;border-top:1px dashed #d6b5df}.fdc-desconto-code strong{font-family:monospace;color:#74358a;font-size:11px;letter-spacing:.04em}.fdc-desconto-copy{border:0;border-radius:5px;padding:5px 7px;background:#74358a;color:#fff;font-size:9px;font-weight:800;cursor:pointer}.fdc-desconto-copy:disabled{opacity:.45;cursor:not-allowed}.fdc-desconto-box.desativado{opacity:.58;background:#f8f5f9}",
       ".fdc-box-ok{display:none;background:#72cd41;border-radius:9px;padding:13px;margin-top:10px}.fdc-box-ok-inner{display:flex;align-items:flex-start;gap:10px}.fdc-box-ok-icon{font-size:20px}.fdc-box-ok-txt strong{font-size:13px;color:#fff;display:block;margin-bottom:4px}.fdc-box-ok-txt p{font-size:11px;color:#fff;line-height:1.45;margin:0}",
       /* Modal: keep existing business logic/IDs, but optimize UX */
       ".fdc-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);z-index:99999;align-items:center;justify-content:center}.fdc-overlay.ativo{display:flex}",
@@ -840,6 +984,7 @@
 
           '<section id="fdc-bloco-trava" class="fdc-v9-card fdc-bloco-trava">',
             '<div class="fdc-v9-card-head"><h3 class="fdc-v9-card-title">📅 Quando receber seu pedido?</h3></div>',
+            '<div id="fdc-prazo-personalizado" class="fdc-prazo-personalizado">🟣 Este carrinho contém um produto personalizado. O agendamento começa no próximo dia útil.</div>',
             '<button class="fdc-btn-ag" id="fdc-btn-ag" onclick="fdcAbrirModal()">Escolher data e período</button>',
             '<div id="fdc-resumo-ag" style="display:none" class="fdc-resumo-ag">',
               '<div class="fdc-resumo-ag-grid">',
@@ -909,6 +1054,22 @@
         '<aside class="fdc-v9-side">',
           '<div class="fdc-v9-summary">',
             '<h3>Revisão do pedido</h3>',
+            '<div id="fdc-desconto-box" class="fdc-desconto-box">',
+              '<div class="fdc-desconto-head"><span class="fdc-desconto-title">🎁 Cupom de primeira compra</span><span id="fdc-desconto-status" class="fdc-desconto-status">Ativo</span></div>',
+              '<div id="fdc-desconto-msg" class="fdc-desconto-msg" aria-live="polite">Calculando seu desconto...</div>',
+              '<div class="fdc-desconto-track" role="progressbar" aria-label="Progresso do desconto progressivo" aria-valuemin="0" aria-valuemax="300" aria-valuenow="0">',
+                '<div id="fdc-desconto-fill" class="fdc-desconto-fill"></div>',
+                '<span id="fdc-desconto-mark-120" class="fdc-desconto-mark m120" aria-hidden="true"></span>',
+                '<span id="fdc-desconto-mark-200" class="fdc-desconto-mark m200" aria-hidden="true"></span>',
+                '<span id="fdc-desconto-mark-300" class="fdc-desconto-mark m300" aria-hidden="true"></span>',
+              '</div>',
+              '<div class="fdc-desconto-levels">',
+                '<div id="fdc-desconto-level-120" class="fdc-desconto-level"><b>5%</b><span>R$ 120</span></div>',
+                '<div id="fdc-desconto-level-200" class="fdc-desconto-level"><b>7%</b><span>R$ 200</span></div>',
+                '<div id="fdc-desconto-level-300" class="fdc-desconto-level"><b>10%</b><span>R$ 300</span></div>',
+              '</div>',
+              '<div class="fdc-desconto-code"><span>Código: <strong id="fdc-desconto-codigo">—</strong></span><button id="fdc-desconto-copiar" class="fdc-desconto-copy" type="button" disabled>Copiar</button></div>',
+            '</div>',
             '<div class="fdc-v9-summary-row"><span>Recebimento</span><strong id="fdc-v9-receb">Entrega</strong></div>',
             '<div class="fdc-v9-summary-row"><span>Agendamento</span><strong id="fdc-v9-ag">Ainda não escolhido</strong></div>',
             '<div class="fdc-v9-summary-row"><span>Destinatário</span><strong id="fdc-v9-nome">Ainda não preenchido</strong></div>',
@@ -1522,6 +1683,7 @@ fdcFecharModal();salvarSessao();fdcVerificar();
   };
 
   function fdcRenderCal(){
+    atualizarAvisoPrazoPersonalizado();
     document.getElementById("fdc-mes-titulo").textContent=MESES[mesAtual]+" "+anoAtual;
     var grid=document.getElementById("fdc-cal-grid");grid.innerHTML="";
     DIASABREV.forEach(function(d){var e=document.createElement("div");e.className="fdc-dow";e.textContent=d;grid.appendChild(e);});
@@ -2139,6 +2301,17 @@ fdcFecharModal();salvarSessao();fdcVerificar();
     preCarregarEmailJS();
     restaurarSessao();
     atualizarTrava();
+    atualizarAvisoPrazoPersonalizado();
+    iniciarDescontoProgressivo();
+
+    var btnCopiarDesconto=document.getElementById("fdc-desconto-copiar");
+    if(btnCopiarDesconto)btnCopiarDesconto.addEventListener("click",function(){
+      var codigoEl=document.getElementById("fdc-desconto-codigo"),codigo=codigoEl?codigoEl.textContent.trim():"";
+      if(!codigo||codigo==="—")return;
+      var concluir=function(){btnCopiarDesconto.textContent="Copiado!";setTimeout(function(){btnCopiarDesconto.textContent="Copiar";},1500);};
+      if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(codigo).then(concluir).catch(function(){concluir();});}
+      else concluir();
+    });
 
     // Mostra a seção de pick se algum produto do carrinho for elegível
     if(carrinhoTemPick()){
