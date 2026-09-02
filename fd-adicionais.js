@@ -58,6 +58,11 @@
     }
   ];
 
+  // Deixe como true somente quando quiser exibir a vitrine de complementos.
+  // A configuração fica preservada para facilitar uma futura reativação,
+  // mas a seção permanece desativada nesta versão.
+  var MOSTRAR_COMPLEMENTOS_RECOMENDADOS = false;
+
   // ─────────────────────────────────────────────
   // CONFIGURAÇÃO — regras de tags
   // ─────────────────────────────────────────────
@@ -70,14 +75,19 @@
       tooltip: "Rosas Colombianas Premium"
     },
     {
-      teste: function (t) { return contemPalavra(t, "adicional"); },
-      cor: "#036bfc", texto: "Produto Adicional",
-      tooltip: "Esse produto não é vendido separadamente"
+      teste: function (t) { return contemPalavra(t, "bubble"); },
+      cor: "#7b2cbf", texto: "1 dia útil",
+      tooltip: "Necessário pedir com um dia de antecedência"
     },
     {
       teste: function (t) { return contemPalavra(t, "caneca") && contemPersonalizada(t); },
-      cor: "#d72e4e", texto: "1 Dia Útil",
-      tooltip: "Necessário pedir com 1 dia de antecedência"
+      cor: "#7b2cbf", texto: "1 dia útil",
+      tooltip: "Necessário pedir com um dia de antecedência"
+    },
+    {
+      teste: function (t) { return contemPalavra(t, "adicional"); },
+      cor: "#036bfc", texto: "Produto Adicional",
+      tooltip: "Esse produto não é vendido separadamente"
     },
     {
       teste: function (t) { return contemPalavra(t, "kit") && contemPersonalizada(t); },
@@ -236,6 +246,7 @@
   // MÓDULO 3 — SEÇÃO DE COMPLEMENTOS (página produto)
   // ─────────────────────────────────────────────
   function construirComplementos() {
+    if (!MOSTRAR_COMPLEMENTOS_RECOMENDADOS) return;
     // Detecta página de produto pelo seletor real do tema
     var isProduto = !!(document.querySelector(".abas-custom") || document.querySelector("div#descricao"));
     if (!isProduto) return;
