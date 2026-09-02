@@ -600,6 +600,34 @@
     return fallback;
   }
 
+  var FD_POSICIONAMENTO_RESPONSIVO_ATIVO=false;
+  function fdEhMobile(){
+    return window.matchMedia?window.matchMedia("(max-width: 767px)").matches:(window.innerWidth||0)<=767;
+  }
+
+  function fdPosicionarPersonalizador(box){
+    if(!box)return;
+    var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
+    var imagem=fdEncontrarElementoVisivel(".conteiner-imagem")||fdEncontrarElementoVisivel(".produto-imagem, .foto-principal, .galeria-produto");
+    // No mobile, a galeria costuma ser renderizada depois do bloco de título.
+    // Inserimos logo após a foto para que ela nunca fique entre o título e a imagem.
+    if(fdEhMobile()&&imagem&&imagem.parentNode){
+      imagem.parentNode.insertBefore(box,imagem.nextSibling);
+    }else if(infoProduto&&infoProduto.parentNode){
+      infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
+    }else{
+      var anchor=fdEncontrarElementoVisivel(".produto-comprar, .acao-produto, .acoes-produto")||document.querySelector(".produto")||document.querySelector("main");
+      if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(box,anchor);
+    }
+    if(!FD_POSICIONAMENTO_RESPONSIVO_ATIVO&&window.addEventListener){
+      FD_POSICIONAMENTO_RESPONSIVO_ATIVO=true;
+      window.addEventListener("resize",function(){
+        var atual=document.getElementById("fd-personalizacao-produto")||document.getElementById("fd-foto-personalizador");
+        if(atual)fdPosicionarPersonalizador(atual);
+      });
+    }
+  }
+
   function fdFotoCriarUI(titulo,tipo){
     if(document.getElementById("fd-foto-personalizador"))return;
     fdFotoCSS();
@@ -611,11 +639,7 @@
         '<div class="fdp-title">Personalize sua foto 10x15</div><div class="fdp-sub">Escolha a orientação e ajuste o enquadramento antes de adicionar ao carrinho.</div>':
         '<div class="fdp-title">Envie sua foto</div><div class="fdp-sub">Envie uma foto JPG ou PNG para este produto.</div>'))+
       '<div class="fdp-grid" id="fdp-grid"></div>';
-    var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
-    var anchor=infoProduto||fdEncontrarElementoVisivel(".produto-comprar, .acao-produto, .acoes-produto");
-    if(infoProduto&&infoProduto.parentNode)infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
-    else if(anchor&&anchor.parentNode)anchor.parentNode.insertBefore(box,anchor);
-    else{anchor=document.querySelector(".produto")||document.querySelector("main");if(anchor&&anchor.parentNode)anchor.parentNode.appendChild(box);}
+    fdPosicionarPersonalizador(box);
   }
 
   function fdFotoAbrirEditor(state,index,onApply,onCancel,modo){
@@ -1023,15 +1047,7 @@
     // título, preço e CEP) e antes dos blocos seguintes do anúncio.
     // Inserir antes do .info-principal-produto fazia o módulo subir para o
     // topo no mobile e ficar sobre os dados no desktop.
-    var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
-    var anchor=infoProduto||fdEncontrarElementoVisivel(".produto-comprar, .acao-produto, .acoes-produto");
-    if(anchor){
-      if(infoProduto&&infoProduto.parentNode)infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
-      else if(anchor.parentNode)anchor.parentNode.insertBefore(box,anchor);
-    }else{
-      anchor=document.querySelector(".produto")||document.querySelector("main");
-      if(anchor&&anchor.parentNode)anchor.parentNode.appendChild(box);
-    }
+    fdPosicionarPersonalizador(box);
     if(!box.parentNode){FD_PERSONALIZACAO_MODULE_READY=false;return;}
     var estados=[];
     function quantidade(){return Math.max(1,fdFotoQuantidadeProduto());}
