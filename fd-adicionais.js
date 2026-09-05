@@ -332,6 +332,220 @@
 
 
   // ─────────────────────────────────────────────
+  // MÓDULO 4 — BARRA INFERIOR MOBILE
+  // ─────────────────────────────────────────────
+  var FD_BARRA_INFERIOR_CONFIG = {
+    ativa: true,
+    instagram: "https://www.instagram.com/floriculturadias.sp/",
+    inicio: "/",
+    carrinho: "/carrinho/index"
+  };
+  var FD_BARRA_INFERIOR_EVENTOS = false;
+
+  function fdBarraPaginaBloqueada() {
+    var caminho = String(window.location.pathname || "").toLowerCase();
+    return caminho.indexOf("/checkout") === 0 ||
+      document.body.classList.contains("pagina-finalizacao") ||
+      document.body.classList.contains("carrinho-checkout");
+  }
+
+  function fdBarraInjetarCSS() {
+    if (document.getElementById("fd-barra-inferior-css")) return;
+    var s = document.createElement("style");
+    s.id = "fd-barra-inferior-css";
+    s.innerHTML = [
+      "#fd-barra-inferior-mobile{display:none}",
+      "@media(max-width:767px){",
+      "body.fd-barra-mobile-ativa:not(.fd-barra-mobile-com-wrapper){padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))!important}",
+      "body.fd-barra-mobile-ativa.fd-barra-mobile-com-wrapper{padding-bottom:0!important}",
+      "body.fd-barra-mobile-ativa.fd-barra-mobile-com-wrapper>.all-elements{padding-bottom:calc(68px + env(safe-area-inset-bottom,0px))!important;box-sizing:border-box}",
+      "#fd-barra-inferior-mobile{position:fixed;z-index:99990;right:0;bottom:0;left:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));height:calc(68px + env(safe-area-inset-bottom,0px));min-height:68px;padding:5px 4px calc(5px + env(safe-area-inset-bottom,0px));box-sizing:border-box;border-top:1px solid #e8e8e8;background:rgba(255,255,255,.98);box-shadow:0 -5px 18px rgba(50,25,33,.1);font-family:'DM Sans','Helvetica Neue',Arial,sans-serif;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);transform:translateZ(0)}",
+      "#fd-barra-inferior-mobile *{box-sizing:border-box}",
+      "#fd-barra-inferior-mobile .fd-barra-item{position:relative;display:flex;min-width:0;min-height:54px;margin:0;padding:5px 1px 2px;border:0;border-radius:8px;background:transparent;color:#606060;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none!important;font-size:10px;font-weight:400;line-height:1.15;text-align:center;cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}",
+      "#fd-barra-inferior-mobile .fd-barra-item:before{content:'';position:absolute;top:-5px;right:28%;left:28%;height:2px;border-radius:0 0 2px 2px;background:transparent}",
+      "#fd-barra-inferior-mobile .fd-barra-item:hover,#fd-barra-inferior-mobile .fd-barra-item:focus{color:#a81537;text-decoration:none!important}",
+      "#fd-barra-inferior-mobile .fd-barra-item.fd-ativo{color:#a81537;font-weight:600}",
+      "#fd-barra-inferior-mobile .fd-barra-item.fd-ativo:before{background:#a81537}",
+      "#fd-barra-inferior-mobile .fd-barra-icone{position:relative;display:flex;width:24px;height:24px;align-items:center;justify-content:center;font-size:21px;line-height:1}",
+      "#fd-barra-inferior-mobile .fd-barra-icone i{display:block;margin:0;font-size:21px;line-height:1}",
+      "#fd-barra-inferior-mobile .fd-barra-rotulo{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}",
+      "#fd-barra-inferior-mobile .fd-barra-badge{position:absolute;top:-6px;right:-9px;display:flex;min-width:16px;height:16px;padding:0 4px;border:2px solid #fff;border-radius:10px;background:#5b8956;color:#fff;align-items:center;justify-content:center;font-size:9px;font-weight:700;line-height:1}",
+      "#fd-barra-inferior-mobile .fd-barra-badge[hidden]{display:none!important}",
+      "body.fd-barra-teclado-aberto #fd-barra-inferior-mobile{transform:translateY(120%);pointer-events:none}",
+      "body:has(.fdp-overlay.open) #fd-barra-inferior-mobile,body:has(.fdc-overlay.ativo) #fd-barra-inferior-mobile,body:has(.fdc-popup-overlay.ativo) #fd-barra-inferior-mobile{visibility:hidden;pointer-events:none}",
+      "}",
+      "@media(max-width:350px){#fd-barra-inferior-mobile .fd-barra-item{font-size:9px}}",
+      "@media print{#fd-barra-inferior-mobile{display:none!important}}"
+    ].join("");
+    document.head.appendChild(s);
+  }
+
+  function fdBarraQuantidadeCarrinho() {
+    var seletores = [
+      ".header-mobile .qtd-carrinho",
+      "#cabecalho .qtd-carrinho",
+      ".carrinho .qtd-carrinho"
+    ];
+    var maior = 0;
+    for (var i = 0; i < seletores.length; i++) {
+      var elementos = document.querySelectorAll(seletores[i]);
+      for (var j = 0; j < elementos.length; j++) {
+        if (elementos[j].closest && elementos[j].closest("#fd-barra-inferior-mobile")) continue;
+        var numero = parseInt(String(elementos[j].textContent || "").replace(/\D/g, ""), 10);
+        if (!isNaN(numero) && numero > maior) maior = numero;
+      }
+    }
+    if (maior === 0 && Array.isArray(window.CARRINHO_PRODS)) maior = window.CARRINHO_PRODS.length;
+    return maior;
+  }
+
+  function fdBarraMarcarAtivo(chave) {
+    var barra = document.getElementById("fd-barra-inferior-mobile");
+    if (!barra) return;
+    var itens = barra.querySelectorAll("[data-fd-barra-acao]");
+    for (var i = 0; i < itens.length; i++) {
+      var ativo = itens[i].getAttribute("data-fd-barra-acao") === chave;
+      itens[i].classList.toggle("fd-ativo", ativo);
+      if (itens[i].tagName === "A") {
+        if (ativo) itens[i].setAttribute("aria-current", "page");
+        else itens[i].removeAttribute("aria-current");
+      } else {
+        itens[i].setAttribute("aria-pressed", ativo ? "true" : "false");
+      }
+    }
+  }
+
+  function fdBarraAtualizar() {
+    var barra = document.getElementById("fd-barra-inferior-mobile");
+    if (!barra) return;
+
+    var badge = barra.querySelector(".fd-barra-badge");
+    var linkCarrinho = barra.querySelector('[data-fd-barra-acao="carrinho"]');
+    var quantidade = fdBarraQuantidadeCarrinho();
+    if (badge) {
+      var textoBadge = quantidade > 99 ? "99+" : String(quantidade);
+      if (badge.textContent !== textoBadge) badge.textContent = textoBadge;
+      if (badge.hidden !== (quantidade < 1)) badge.hidden = quantidade < 1;
+    }
+    if (linkCarrinho) {
+      var rotuloCarrinho = quantidade === 1 ? "Carrinho, 1 produto" : "Carrinho, " + quantidade + " produtos";
+      if (linkCarrinho.getAttribute("aria-label") !== rotuloCarrinho) linkCarrinho.setAttribute("aria-label", rotuloCarrinho);
+    }
+
+    var caminho = String(window.location.pathname || "").toLowerCase();
+    var ativo = "";
+    if (document.body.classList.contains("menu-go-left")) ativo = "categorias";
+    else if (caminho.indexOf("/carrinho") === 0) ativo = "carrinho";
+    else if (caminho.indexOf("/buscar") === 0) ativo = "buscar";
+    else if (caminho === "/" || caminho === "") ativo = "inicio";
+    fdBarraMarcarAtivo(ativo);
+  }
+
+  function fdBarraAbrirMenu() {
+    var hamburguer = document.getElementById("menu_hamburguer");
+    var atalho = document.querySelector("a.atalho-menu");
+    if (hamburguer) hamburguer.click();
+    else if (atalho) atalho.click();
+    window.setTimeout(fdBarraAtualizar, 0);
+  }
+
+  function fdBarraAbrirBusca() {
+    if (document.body.classList.contains("menu-go-left")) {
+      var hamburguer = document.getElementById("menu_hamburguer");
+      if (hamburguer) hamburguer.click();
+    }
+    var campo = document.querySelector(".atalhos-mobile .busca input#auto-complete") ||
+      document.querySelector("#cabecalho input#auto-complete") ||
+      document.querySelector('#form-buscar input[name="q"]') ||
+      document.querySelector('.busca input[name="q"]');
+    if (!campo) {
+      window.location.assign("/buscar");
+      return;
+    }
+    fdBarraMarcarAtivo("buscar");
+    try { campo.focus({ preventScroll: true }); } catch (e) { campo.focus(); }
+    try { campo.scrollIntoView({ behavior: "smooth", block: "center" }); } catch (e2) { campo.scrollIntoView(); }
+  }
+
+  function fdBarraLigarEventos(barra) {
+    if (!barra.getAttribute("data-fd-eventos")) {
+      barra.setAttribute("data-fd-eventos", "1");
+      barra.addEventListener("click", function (ev) {
+        var item = ev.target.closest ? ev.target.closest("[data-fd-barra-acao]") : null;
+        if (!item) return;
+        var acao = item.getAttribute("data-fd-barra-acao");
+        if (acao === "categorias") {
+          ev.preventDefault();
+          fdBarraAbrirMenu();
+        } else if (acao === "buscar") {
+          ev.preventDefault();
+          fdBarraAbrirBusca();
+        } else if (acao === "instagram") {
+          fdBarraMarcarAtivo("instagram");
+        }
+      });
+    }
+
+    if (FD_BARRA_INFERIOR_EVENTOS) return;
+    FD_BARRA_INFERIOR_EVENTOS = true;
+    document.addEventListener("click", function (ev) {
+      var alvo = ev.target;
+      if (!alvo || !alvo.closest) return;
+      if (alvo.closest("#menu_hamburguer,.mask-background,.close-header__button")) {
+        window.setTimeout(fdBarraAtualizar, 0);
+      }
+    });
+    document.addEventListener("focusin", function (ev) {
+      var alvo = ev.target;
+      if (alvo && alvo.matches && alvo.matches("input,textarea,select,[contenteditable='true']")) {
+        document.body.classList.add("fd-barra-teclado-aberto");
+      }
+    });
+    document.addEventListener("focusout", function () {
+      window.setTimeout(function () {
+        var alvo = document.activeElement;
+        if (!alvo || !alvo.matches || !alvo.matches("input,textarea,select,[contenteditable='true']")) {
+          document.body.classList.remove("fd-barra-teclado-aberto");
+        }
+      }, 50);
+    });
+    window.addEventListener("popstate", fdBarraAtualizar);
+    window.addEventListener("pageshow", fdBarraAtualizar);
+  }
+
+  function construirBarraInferiorMobile() {
+    if (!FD_BARRA_INFERIOR_CONFIG.ativa || !document.body) return;
+    var existente = document.getElementById("fd-barra-inferior-mobile");
+    if (fdBarraPaginaBloqueada()) {
+      if (existente && existente.parentNode) existente.parentNode.removeChild(existente);
+      document.body.classList.remove("fd-barra-mobile-ativa", "fd-barra-mobile-com-wrapper");
+      return;
+    }
+
+    fdBarraInjetarCSS();
+    var barra = existente;
+    if (!barra) {
+      barra = document.createElement("nav");
+      barra.id = "fd-barra-inferior-mobile";
+      barra.setAttribute("aria-label", "Navegação principal mobile");
+      barra.innerHTML = [
+        '<a class="fd-barra-item" data-fd-barra-acao="inicio" href="' + FD_BARRA_INFERIOR_CONFIG.inicio + '" aria-label="Início"><span class="fd-barra-icone"><i class="icon-home" aria-hidden="true"></i></span><span class="fd-barra-rotulo">Início</span></a>',
+        '<button class="fd-barra-item" data-fd-barra-acao="categorias" type="button" aria-label="Abrir categorias"><span class="fd-barra-icone"><i class="icon-th" aria-hidden="true"></i></span><span class="fd-barra-rotulo">Categorias</span></button>',
+        '<button class="fd-barra-item" data-fd-barra-acao="buscar" type="button" aria-label="Buscar produtos"><span class="fd-barra-icone"><i class="icon-search" aria-hidden="true"></i></span><span class="fd-barra-rotulo">Buscar</span></button>',
+        '<a class="fd-barra-item" data-fd-barra-acao="instagram" href="' + FD_BARRA_INFERIOR_CONFIG.instagram + '" target="_blank" rel="noopener noreferrer" aria-label="Abrir Instagram da Floricultura Dias"><span class="fd-barra-icone"><i class="icon-instagram" aria-hidden="true"></i></span><span class="fd-barra-rotulo">Instagram</span></a>',
+        '<a class="fd-barra-item" data-fd-barra-acao="carrinho" href="' + FD_BARRA_INFERIOR_CONFIG.carrinho + '" aria-label="Carrinho"><span class="fd-barra-icone"><i class="icon-shopping-cart" aria-hidden="true"></i><strong class="fd-barra-badge" hidden>0</strong></span><span class="fd-barra-rotulo">Carrinho</span></a>'
+      ].join("");
+    }
+
+    if (barra.parentNode !== document.body) document.body.appendChild(barra);
+    document.body.classList.add("fd-barra-mobile-ativa");
+    document.body.classList.toggle("fd-barra-mobile-com-wrapper", !!document.body.querySelector(":scope>.all-elements"));
+    fdBarraLigarEventos(barra);
+    fdBarraAtualizar();
+  }
+
+
+  // ─────────────────────────────────────────────
   // MÓDULO 5 — PERSONALIZADOR DE FOTOS V2
   // Regras:
   //   • nome com "foto" + "polaroid" => personalizador Polaroid
@@ -1213,6 +1427,7 @@
     aplicarTagsListagem();
     aplicarTagProduto();
     construirComplementos();
+    construirBarraInferiorMobile();
     corrigirMensagensFrete();
     iniciarModuloPersonalizacao();
     iniciarModuloFotos();
@@ -1234,6 +1449,7 @@
         aplicarTagsListagem();
         aplicarTagProduto();
         construirComplementos();
+        construirBarraInferiorMobile();
         corrigirMensagensFrete();
         iniciarModuloPersonalizacao();
         iniciarModuloFotos();
