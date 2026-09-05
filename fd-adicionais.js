@@ -823,10 +823,16 @@
     if(!box)return;
     var infoProduto=fdEncontrarElementoVisivel(".info-principal-produto");
     var imagem=fdEncontrarElementoVisivel(".conteiner-imagem")||fdEncontrarElementoVisivel(".produto-imagem, .foto-principal, .galeria-produto");
-    // No mobile, a galeria costuma ser renderizada depois do bloco de título.
-    // Inserimos logo após a foto para que ela nunca fique entre o título e a imagem.
-    if(fdEhMobile()&&imagem&&imagem.parentNode){
-      imagem.parentNode.insertBefore(box,imagem.nextSibling);
+    var miniaturasMobile=fdEncontrarElementoVisivel(".produto-thumbs.thumbs-horizontal");
+    if(!miniaturasMobile){
+      var carrosselMobile=fdEncontrarElementoVisivel(".produto-thumbs .flexslider.visible-phone, .produto-thumbs .miniaturas");
+      miniaturasMobile=carrosselMobile&&carrosselMobile.closest?carrosselMobile.closest(".produto-thumbs"):carrosselMobile;
+    }
+    // No mobile, a foto principal e as miniaturas são blocos irmãos.
+    // O personalizador deve vir depois de toda a galeria, nunca entre eles.
+    var ancoraMobile=miniaturasMobile||imagem;
+    if(fdEhMobile()&&ancoraMobile&&ancoraMobile.parentNode){
+      ancoraMobile.parentNode.insertBefore(box,ancoraMobile.nextSibling);
     }else if(infoProduto&&infoProduto.parentNode){
       infoProduto.parentNode.insertBefore(box,infoProduto.nextSibling);
     }else{
@@ -840,6 +846,21 @@
         if(atual)fdPosicionarPersonalizador(atual);
       });
     }
+  }
+
+  function fdEncontrarBotaoComprar(alvo){
+    if(!alvo||!alvo.closest)return null;
+    // A barra, o cabeçalho e o menu usam classes genéricas como
+    // ".botao.principal"; elas não representam uma compra de produto.
+    if(alvo.closest("#fd-barra-inferior-mobile,#cabecalho,.atalhos-mobile,.menu.superior"))return null;
+    return alvo.closest([
+      ".produto .botao-comprar",
+      ".produto .adicionar-carrinho",
+      ".produto #btn-comprar",
+      ".produto .btn-comprar",
+      ".produto .comprar button[type='submit']",
+      ".produto .comprar input[type='submit']"
+    ].join(","));
   }
 
   function fdFotoCriarUI(titulo,tipo){
@@ -1175,10 +1196,9 @@
       if(q!==lastQty){lastQty=q;renderCards();}
     },500);
 
-    var buySelectors=[".botao-comprar", ".botao.principal", ".adicionar-carrinho", "#btn-comprar", ".btn-comprar", "button[type='submit']", "input[type='submit']"];
     document.addEventListener("click",function(ev){
-      var el=ev.target;while(el&&el!==document.body&&!(el.matches&&buySelectors.some(function(s){try{return el.matches(s);}catch(e){return false;}})))el=el.parentElement;
-      if(!el||el===document.body)return;
+      var el=fdEncontrarBotaoComprar(ev.target);
+      if(!el)return;
       if(!todosProntos()){ev.preventDefault();ev.stopPropagation();alert("Adicione todas as fotos antes de adicionar o produto ao carrinho.");return;}
       if(el.dataset.fdPersonalizacaoOk==="1")return;
       ev.preventDefault();ev.stopPropagation();el.dataset.fdPersonalizacaoOk="1";
@@ -1369,10 +1389,9 @@
     if(FD_PERSONALIZACAO_QTY_TIMER)clearInterval(FD_PERSONALIZACAO_QTY_TIMER);
     var ultimaQuantidade=quantidade();
     FD_PERSONALIZACAO_QTY_TIMER=setInterval(function(){var q=quantidade();if(q!==ultimaQuantidade){ultimaQuantidade=q;render();}},500);
-    var buySelectors=[".botao-comprar",".botao.principal",".adicionar-carrinho","#btn-comprar",".btn-comprar","button[type='submit']","input[type='submit']"];
     document.addEventListener("click",function(ev){
-      var el=ev.target;while(el&&el!==document.body&&!(el.matches&&buySelectors.some(function(s){try{return el.matches(s);}catch(e){return false;}})))el=el.parentElement;
-      if(!el||el===document.body)return;
+      var el=fdEncontrarBotaoComprar(ev.target);
+      if(!el)return;
       if(!validar()){ev.preventDefault();ev.stopPropagation();alert("Preencha toda a personalização antes de adicionar o produto ao carrinho.");return;}
       if(el.dataset.fdPersonalizacaoGenericaOk==="1")return;
       ev.preventDefault();ev.stopPropagation();el.dataset.fdPersonalizacaoGenericaOk="1";
@@ -1382,6 +1401,8 @@
   }
 
   function iniciarModuloPersonalizacao(){
+    var existente=document.getElementById("fd-personalizacao-produto");
+    if(existente){fdPosicionarPersonalizador(existente);return;}
     var tentativas=0,timer=setInterval(function(){
       tentativas++;
       var tt=fdFotoTitulo();
@@ -1392,6 +1413,8 @@
   }
 
   function iniciarModuloFotos(){
+    var existente=document.getElementById("fd-foto-personalizador");
+    if(existente){fdPosicionarPersonalizador(existente);return;}
     var tentativas=0;
     var timer=setInterval(function(){
       tentativas++;
